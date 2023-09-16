@@ -1,7 +1,7 @@
 package com.easy.query.plugin.core.config;
 
 
-import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.util.StrUtil;
 
 public class CustomConfig {
     /**

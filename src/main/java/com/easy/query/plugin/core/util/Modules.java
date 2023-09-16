@@ -1,8 +1,5 @@
 package com.easy.query.plugin.core.util;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ReflectUtil;
-import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.config.CustomConfig;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -31,21 +28,21 @@ public class Modules {
     private static Map<String, Map<String, String>> modulePackageMap;
     private static Boolean isManvenProject;
 
-    /**
-     * 得到包路径
-     *
-     * @param moduleName  模块名称
-     * @param packageName 系统配置包名
-     * @return {@code String}
-     */
-    public static String getPackagePath(String moduleName, String packageName) {
-        Map<String, String> moduleMap = modulePackageMap.get(moduleName);
-        if (CollUtil.isEmpty(moduleMap)) {
-            NotificationUtils.notifyError("模块不存在!", "", ProjectUtils.getCurrentProject());
-            throw new RuntimeException("模块不存在:" + moduleName);
-        }
-        return moduleMap.getOrDefault(packageName, "");
-    }
+//    /**
+//     * 得到包路径
+//     *
+//     * @param moduleName  模块名称
+//     * @param packageName 系统配置包名
+//     * @return {@code String}
+//     */
+//    public static String getPackagePath(String moduleName, String packageName) {
+//        Map<String, String> moduleMap = modulePackageMap.get(moduleName);
+//        if (CollUtil.isEmpty(moduleMap)) {
+//            NotificationUtils.notifyError("模块不存在!", "", ProjectUtils.getCurrentProject());
+//            throw new RuntimeException("模块不存在:" + moduleName);
+//        }
+//        return moduleMap.getOrDefault(packageName, "");
+//    }
 
     public static Module[] getModule(Project project) {
         return ModuleManager.getInstance(project).getModules();
@@ -267,25 +264,25 @@ public class Modules {
             return new CustomConfig();
         }
         CustomConfig config = new CustomConfig();
-        try {
-            Arrays.stream(file.getText().split("\n"))
-                    .filter(el -> el.startsWith("processor"))
-                    .forEach(el -> {
-                        String text = StrUtil.subAfter(el, ".", false);
-                        if (StrUtil.count(el, ".") > 1) {
-                            String[] split = text.split("\\.");
-                            text = split[0];
-                            if (split.length > 1) {
-                                text += StrUtil.upperFirst(split[1]);
-                            }
-                        }
-                        String prefix = StrUtil.toCamelCase(StrUtil.subBefore(text, "=", false)).trim();
-                        String suffix = StrUtil.subAfter(text, "=", false).trim();
-                        ReflectUtil.setFieldValue(config, prefix, suffix);
-                    });
-        } catch (Exception e) {
-
-        }
+//        try {
+//            Arrays.stream(file.getText().split("\n"))
+//                    .filter(el -> el.startsWith("processor"))
+//                    .forEach(el -> {
+//                        String text = StrUtil.subAfter(el, ".", false);
+//                        if (StrUtil.count(el, ".") > 1) {
+//                            String[] split = text.split("\\.");
+//                            text = split[0];
+//                            if (split.length > 1) {
+//                                text += StrUtil.upperFirst(split[1]);
+//                            }
+//                        }
+//                        String prefix = StrUtil.toCamelCase(StrUtil.subBefore(text, "=", false)).trim();
+//                        String suffix = StrUtil.subAfter(text, "=", false).trim();
+////                        ReflectUtil.setFieldValue(config, prefix, suffix);
+//                    });
+//        } catch (Exception e) {
+//
+//        }
         return config;
     }
 }

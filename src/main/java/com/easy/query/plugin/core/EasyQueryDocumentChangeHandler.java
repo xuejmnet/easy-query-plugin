@@ -1,16 +1,16 @@
 package com.easy.query.plugin.core;
 
-import cn.hutool.core.util.BooleanUtil;
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.config.CustomConfig;
 import com.easy.query.plugin.core.entity.AptPropertyInfo;
+import com.easy.query.plugin.core.util.BooleanUtil;
 import com.easy.query.plugin.core.util.ClassUtil;
 import com.easy.query.plugin.core.util.KtFileUtil;
 import com.easy.query.plugin.core.util.Modules;
+import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.ProjectUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
+import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.VelocityUtils;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
 import com.intellij.openapi.Disposable;

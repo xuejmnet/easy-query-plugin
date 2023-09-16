@@ -1,8 +1,5 @@
 package com.easy.query.plugin.core;
 
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.ReflectUtil;
-import cn.hutool.core.util.StrUtil;
 import com.intellij.ide.fileTemplates.impl.UrlUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
@@ -84,7 +81,7 @@ public class Template {
      */
     @NotNull
     public static String getTemplateContent(String templateName) {
-        URL resource = Template.class.getResource(StrUtil.format("/templates/{}.vm", templateName));
+        URL resource = Template.class.getResource("/templates/"+templateName+".vm");
         String templateContent = null;
         try {
             templateContent = StringUtil.convertLineSeparators(UrlUtil.loadText(resource));

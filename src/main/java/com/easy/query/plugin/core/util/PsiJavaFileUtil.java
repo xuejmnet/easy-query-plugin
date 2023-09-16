@@ -1,6 +1,5 @@
 package com.easy.query.plugin.core.util;
 
-import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;

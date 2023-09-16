@@ -1,6 +1,5 @@
 package com.easy.query.plugin.core.util;
 
-import cn.hutool.core.util.StrUtil;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiComment;
