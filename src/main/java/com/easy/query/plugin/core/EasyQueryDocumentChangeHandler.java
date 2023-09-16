@@ -61,7 +61,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         return false;
                     }
                     Boolean userData = oldFile.getUserData(CHANGE);
-                    return !(Objects.isNull(oldFile) || !oldFile.getName().endsWith(".java") || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(oldFile);
+                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java")&&!oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(oldFile);
                 }).collect(Collectors.toList());
         Map<PsiDirectory, List<PsiFile>> psiDirectoryMap = new HashMap<>();
         try {
