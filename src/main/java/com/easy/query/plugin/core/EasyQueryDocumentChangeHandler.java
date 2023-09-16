@@ -2,6 +2,7 @@ package com.easy.query.plugin.core;
 
 import com.easy.query.plugin.core.config.CustomConfig;
 import com.easy.query.plugin.core.entity.AptPropertyInfo;
+import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.easy.query.plugin.core.util.BooleanUtil;
 import com.easy.query.plugin.core.util.ClassUtil;
 import com.easy.query.plugin.core.util.KtFileUtil;
@@ -74,12 +75,11 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     continue;
                 }
                 String moduleDirPath = Modules.getPath(moduleForFile);
-                PsiClassOwner psiJavaFile = (PsiClassOwner) VirtualFileUtils.getPsiFile(project, oldFile);
-
+                PsiClassOwner psiFile = (PsiClassOwner) VirtualFileUtils.getPsiFile(project, oldFile);
+                FileTypeEnum fileType = PsiUtil.getFileType(psiFile);
                 String path = moduleDirPath + CustomConfig.getConfig(config.getGenPath(),
-                        "target/generated-sources/annotations/",
-                        "build/generated/source/kapt/main/", Modules.isManvenProject(moduleForFile))
-                        + psiJavaFile.getPackageName().replace(".", "/") + "/proxy";
+                        fileType, Modules.isManvenProject(moduleForFile))
+                        + psiFile.getPackageName().replace(".", "/") + "/proxy";
 
                 PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);
                 // 等待索引准备好
@@ -87,12 +87,12 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     // 在智能模式下，执行需要等待索引准备好的操作，比如创建文件
                     // 创建文件等操作代码
                     oldFile.putUserData(CHANGE, false);
-                    PsiClass[] classes = psiJavaFile.getClasses();
+                    PsiClass[] classes = psiFile.getClasses();
                     if (classes.length == 0) {
-                        log.warn("psiJavaFile.getText():[" + psiJavaFile.getText() + "],psiJavaFile.getClasses() is empty");
+                        log.warn("psiJavaFile.getText():[" + psiFile.getText() + "],psiJavaFile.getClasses() is empty");
                         return;
                     }
-                    PsiClass psiClass = psiJavaFile.getClasses()[0];
+                    PsiClass psiClass = psiFile.getClasses()[0];
                     PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
                     if (entityProxy == null) {
                         log.warn("annotation [EntityProxy] is null");
@@ -130,11 +130,11 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     context.put("entityName", entityName);
                     context.put("entityFullName", entityFullName);
                     context.put("proxyEntityName", proxyEntityName);
-                    context.put("packageName", psiJavaFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy"));
+                    context.put("packageName", psiFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy"));
                     context.put("properties", aptProperties);
                     String suffix = Modules.getProjectTypeSuffix(moduleForFile);
-                    PsiFile psiFile = VelocityUtils.render(context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
-                    psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(psiFile);
+                    PsiFile psiProxyFile = VelocityUtils.render(context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
+                    psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(psiProxyFile);
                 });
             }
             // 等待索引准备好

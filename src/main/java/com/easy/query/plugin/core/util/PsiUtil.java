@@ -1,12 +1,16 @@
 package com.easy.query.plugin.core.util;
 
+import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.javadoc.PsiDocComment;
+import org.jetbrains.kotlin.psi.KtFile;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +27,15 @@ import java.util.regex.Pattern;
  * @author xuejiaming
  */
 public class PsiUtil {
+    public static FileTypeEnum getFileType(PsiClassOwner psiFile){
+        if(psiFile instanceof PsiJavaFile){
+            return FileTypeEnum.Java;
+        }
+        if(psiFile instanceof KtFile){
+            return FileTypeEnum.Kotlin;
+        }
+        return FileTypeEnum.Unknown;
+    }
     public static Set<String> getPsiAnnotationValues(PsiAnnotation annotation, String attr,Set<String> values){
         String psiAnnotationValue = getPsiAnnotationValueIfEmpty(annotation, attr, null);
         if(Objects.nonNull(psiAnnotationValue)){

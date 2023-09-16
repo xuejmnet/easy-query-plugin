@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.config;
 
 
+import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.easy.query.plugin.core.util.StrUtil;
 
 public class CustomConfig {
@@ -200,11 +201,25 @@ public class CustomConfig {
         this.tableDefIgnoreEntitySuffixes = tableDefIgnoreEntitySuffixes;
     }
 
-    public static String getConfig(String value, String defaultJava, String defaultKt, boolean isMaven) {
+    public static String getConfig(String value, FileTypeEnum fileType, boolean isMaven) {
         if (StrUtil.isNotBlank(value)) {
             return value;
         }
-        return isMaven ? defaultJava : defaultKt;
+        if(isMaven){
+            if(fileType==FileTypeEnum.Java){
+                return "target/generated-sources/annotations/";
+            }
+            if(fileType==FileTypeEnum.Kotlin){
+                return "target/generated-sources/kapt/compile/";
+            }
+        }
+        if(!isMaven){
+            if(fileType==FileTypeEnum.Java){
+                return "target/generated-sources/annotations/";
+            }
+            return "build/generated/source/kapt/main/";
+        }
+        return "target/generated-sources/annotations/";
 
     }
 
