@@ -3,18 +3,24 @@ package com.easy.query.plugin.core.util;
 import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
+import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiComment;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.javadoc.PsiDocComment;
 import org.jetbrains.kotlin.psi.KtFile;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -109,7 +115,30 @@ public class PsiUtil {
     public static String getPsiFieldPropertyType(PsiField field){
         // 获取属性类型
         PsiType fieldType = field.getType();
+        if(((PsiClassType)fieldType).resolve() instanceof PsiTypeParameter){
+            return "java.lang.Object";
+        }
 
         return fieldType.getCanonicalText();
+    }
+
+
+    public static Collection<PsiField> getAllFields(PsiClass psiClass) {
+        LinkedHashMap<String, PsiField> fields = getAllFields0(psiClass);
+        return fields.values();
+    }
+    private static LinkedHashMap<String,PsiField> getAllFields0(PsiClass psiClass) {
+        LinkedHashMap<String,PsiField> fields = new LinkedHashMap<>();
+        // 递归获取父类的所有Field
+        PsiClass superClass = psiClass.getSuperClass();
+        if (superClass != null) {
+            LinkedHashMap<String, PsiField> allFields0 = getAllFields0(superClass);
+            fields.putAll(allFields0);
+        }
+        // 获取当前类的所有Field
+        for (PsiField declaredField : psiClass.getAllFields()) {
+            fields.put(declaredField.getName(),declaredField);
+        }
+        return fields;
     }
 }

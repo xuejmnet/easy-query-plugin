@@ -22,7 +22,7 @@ public class ClassUtil {
         String capitalizedPropertyName = capitalize(propertyName);
 
         // 检查是否有公共的 getter 方法
-        PsiMethod[] getMethods = psiClass.findMethodsByName("get" + capitalizedPropertyName, false);
+        PsiMethod[] getMethods = psiClass.findMethodsByName("get" + capitalizedPropertyName, true);
         if(getMethods.length==0){
             return false;
         }
@@ -32,7 +32,7 @@ public class ClassUtil {
         }
 
         // 检查是否有公共的 setter 方法
-        PsiMethod[] setMethods = psiClass.findMethodsByName("set" + capitalizedPropertyName, false);
+        PsiMethod[] setMethods = psiClass.findMethodsByName("set" + capitalizedPropertyName, true);
         if(setMethods.length==0){
             return false;
         }
