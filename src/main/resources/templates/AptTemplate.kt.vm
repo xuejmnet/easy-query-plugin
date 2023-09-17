@@ -2,9 +2,7 @@ package $packageName;
 
 import com.easy.query.core.expression.parser.core.available.TableAvailable;
 import com.easy.query.core.proxy.AbstractProxyEntity;
-import com.easy.query.core.proxy.PropColumn;
 import com.easy.query.core.proxy.SQLColumn;
-import com.easy.query.core.proxy.impl.SQLPropColumn;
 import ${entityFullName};
 
 /**
@@ -14,20 +12,18 @@ import ${entityFullName};
  */
 public class ${proxyEntityName} extends AbstractProxyEntity<${proxyEntityName}, ${entityName}>{
 
-    #foreach($property in $properties)
-        ${property.comment}
-        * {@link ${entityName}#${property.propertyName}}
-        */
-        public static final PropColumn ${property.propertyName} = new SQLPropColumn("${property.propertyName}");
-    #end
+##    #foreach($property in $properties)
+##        ${property.comment}
+##        * {@link ${entityName}#${property.propertyName}}
+##        */
+##        public static final PropColumn ${property.propertyName} = new SQLPropColumn("${property.propertyName}");
+##    #end
     private static final Class<${entityName}> entityClass = ${entityName}.class;
 
-    /**
-     * 创建使用的表
-     */
     public static ${proxyEntityName} createTable() {
         return new ${proxyEntityName}();
     }
+
     private ${proxyEntityName}() {
     }
 
