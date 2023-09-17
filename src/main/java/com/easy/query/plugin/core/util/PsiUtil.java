@@ -82,13 +82,14 @@ public class PsiUtil {
         // 使用替换移除匹配的字符
         return matcher.replaceAll("").trim();
     }
-    public static String getPsiFieldClearComment(PsiField field, String def){
+    public static String getPsiFieldClearComment(PsiField field){
 
         String psiFieldComment = getPsiFieldComment(field, null);
         if(Objects.isNull(psiFieldComment)){
-            return def;
+            return "/**";
         }
-        return "* "+removeStarsAndTrim(psiFieldComment);
+        return "/**\n" +
+               "     * "+removeStarsAndTrim(psiFieldComment);
     }
 
     public static String getPsiFieldComment(PsiField field, String def){

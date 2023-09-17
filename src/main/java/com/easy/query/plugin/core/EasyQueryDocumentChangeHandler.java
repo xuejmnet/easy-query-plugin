@@ -122,7 +122,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                             continue;
                         }
                         String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field);
-                        String psiFieldComment = PsiUtil.getPsiFieldClearComment(field, "");
+                        String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
                         aptProperties.add(new AptPropertyInfo(proxyEntityName, name, psiFieldPropertyType, psiFieldComment, entityName));
                     }
 
