@@ -16,10 +16,6 @@ public class AptPropertyInfo {
      */
     private final String comment;
     /**
-     * 代理对象泛型
-     */
-    private final String proxyEntityName;
-    /**
      * 属性类型
      */
     private final String propertyType;
@@ -27,14 +23,15 @@ public class AptPropertyInfo {
      * 对象名
      */
     private final String entityName;
+    private final boolean valueObject;
 
-    public AptPropertyInfo(String proxyEntityName,String propertyName, String propertyType, String comment, String entityName){
+    public AptPropertyInfo(String propertyName, String propertyType, String comment, String entityName,boolean valueObject){
 
-        this.proxyEntityName = proxyEntityName;
         this.propertyName = propertyName;
         this.propertyType = propertyType;
         this.comment = comment;
         this.entityName = entityName;
+        this.valueObject = valueObject;
     }
 
     public String getPropertyName() {
@@ -45,15 +42,15 @@ public class AptPropertyInfo {
         return comment;
     }
 
-    public String getProxyEntityName() {
-        return proxyEntityName;
-    }
-
     public String getPropertyType() {
         return propertyType;
     }
 
     public String getEntityName() {
         return entityName;
+    }
+
+    public boolean isValueObject() {
+        return valueObject;
     }
 }

@@ -1,7 +1,9 @@
 package com.easy.query.plugin.core;
 
 import com.easy.query.plugin.core.config.CustomConfig;
+import com.easy.query.plugin.core.entity.AptFileCompiler;
 import com.easy.query.plugin.core.entity.AptPropertyInfo;
+import com.easy.query.plugin.core.entity.AptValueObjectInfo;
 import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.easy.query.plugin.core.util.BooleanUtil;
 import com.easy.query.plugin.core.util.ClassUtil;
@@ -33,6 +35,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.testFramework.LightVirtualFile;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.velocity.VelocityContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtFile;
@@ -62,7 +65,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         return false;
                     }
                     Boolean userData = oldFile.getUserData(CHANGE);
-                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java")&&!oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(oldFile);
+                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(oldFile);
                 }).collect(Collectors.toList());
         Map<PsiDirectory, List<PsiFile>> psiDirectoryMap = new HashMap<>();
         try {
@@ -108,13 +111,21 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
                     //获取对应的忽略属性
                     Set<String> tableAndProxyIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityTable, "ignoreProperties", proxyIgnoreProperties);
-                    //是否存在忽略属性
-                    boolean hasIgnoreProperties = !tableAndProxyIgnoreProperties.isEmpty();
+
                     PsiField[] fields = psiClass.getAllFields();
-                    List<AptPropertyInfo> aptProperties = new ArrayList<>(fields.length);
+
+                    AptValueObjectInfo aptValueObjectInfo = new AptValueObjectInfo(entityName);
+                    String packageName = psiFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy");
+                    AptFileCompiler aptFileCompiler = new AptFileCompiler(packageName,entityName);
+                    aptFileCompiler.addImports(entityFullName);
                     for (PsiField field : fields) {
+                        PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
+                        if (columnIgnore != null) {
+                            continue;
+                        }
                         String name = field.getName();
-                        if (hasIgnoreProperties && tableAndProxyIgnoreProperties.contains(name)) {
+                        //是否存在忽略属性
+                        if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(name)) {
                             continue;
                         }
                         boolean isBeanProperty = ClassUtil.hasGetterAndSetter(psiClass, name);
@@ -123,15 +134,30 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         }
                         String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field);
                         String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
-                        aptProperties.add(new AptPropertyInfo(proxyEntityName, name, psiFieldPropertyType, psiFieldComment, entityName));
+                        PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
+                        boolean isValueObject = valueObject != null;
+                        String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
+                        aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject));
+
+                        if (isValueObject) {
+                            aptFileCompiler.addImports("com.easy.query.core.proxy.AbstractValueObjectProxyEntity");
+                            aptFileCompiler.addImports(psiFieldPropertyType);
+                            PsiType fieldType = field.getType();
+                            PsiClass fieldClass = ((PsiClassType) fieldType).resolve();
+                            if (fieldClass == null) {
+                                log.warn("field [" + name + "] is value object,cant resolve PsiClass");
+                                continue;
+                            }
+                            AptValueObjectInfo fieldAptValueObjectInfo = new AptValueObjectInfo(fieldClass.getName());
+                            aptValueObjectInfo.getChildren().add(fieldAptValueObjectInfo);
+                            addValueObjectClass(fieldAptValueObjectInfo, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
+                        }
+
                     }
 
                     VelocityContext context = new VelocityContext();
-                    context.put("entityName", entityName);
-                    context.put("entityFullName", entityFullName);
-                    context.put("proxyEntityName", proxyEntityName);
-                    context.put("packageName", psiFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy"));
-                    context.put("properties", aptProperties);
+                    context.put("aptValueObjectInfo", aptValueObjectInfo);
+                    context.put("aptFileCompiler", aptFileCompiler);
                     String suffix = Modules.getProjectTypeSuffix(moduleForFile);
                     PsiFile psiProxyFile = VelocityUtils.render(context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
                     psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(psiProxyFile);
@@ -158,6 +184,50 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void addValueObjectClass(AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
+        PsiField[] allFields = fieldValueObjectClass.getAllFields();
+        if (allFields.length == 0) {
+            return;
+        }
+
+        String entityName = fieldValueObjectClass.getName();
+        aptFileCompiler.addImports(fieldValueObjectClass.getQualifiedName());
+        for (PsiField field : allFields) {
+            PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
+            if (columnIgnore != null) {
+                continue;
+            }
+            String name = field.getName();
+            //是否存在忽略属性
+            if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(name)) {
+                continue;
+            }
+            boolean isBeanProperty = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, name);
+            if (!isBeanProperty) {
+                continue;
+            }
+            String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field);
+            String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+            PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
+            boolean isValueObject = valueObject != null;
+            String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
+            aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject));
+
+            if (valueObject != null) {
+                aptFileCompiler.addImports(psiFieldPropertyType);
+                PsiType fieldType = field.getType();
+                PsiClass fieldClass = ((PsiClassType) fieldType).resolve();
+                if (fieldClass == null) {
+                    log.warn("field [" + name + "] is value object,cant resolve PsiClass");
+                    continue;
+                }
+                AptValueObjectInfo innerValueObject = new AptValueObjectInfo(fieldClass.getName());
+                aptValueObjectInfo.getChildren().add(innerValueObject);
+                addValueObjectClass(innerValueObject, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
+            }
         }
     }
 
