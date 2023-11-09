@@ -13,7 +13,7 @@ import java.util.Objects;
 public class AptValueObjectInfo {
     private final String entityName;
     private final List<AptPropertyInfo> properties;
-    private  List<AptValueObjectInfo> children;
+    private final List<AptValueObjectInfo> children;
 
     public AptValueObjectInfo(String entityName){
 
@@ -32,8 +32,5 @@ public class AptValueObjectInfo {
 
     public List<AptValueObjectInfo> getChildren() {
         return children;
-    }
-    public boolean isParent(String mainEntityName){
-        return Objects.equals(mainEntityName,entityName);
     }
 }

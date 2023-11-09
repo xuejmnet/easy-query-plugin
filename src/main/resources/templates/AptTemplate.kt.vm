@@ -12,7 +12,7 @@ ${imp}
  *
  * @author xuejiaming
  */
-public class ${aptFileCompiler.getEntityClassName()}Proxy extends AbstractProxyEntity<${aptFileCompiler.getEntityClassName()}Proxy, ${aptFileCompiler.getEntityClassName()}>{
+public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}>{
 
 #macro(renderPropertyUI $valueObject)
 #foreach($property in $valueObject.getProperties())
@@ -24,7 +24,7 @@ public class ${aptFileCompiler.getEntityClassName()}Proxy extends AbstractProxyE
         return getValueObject(new ${property.getEntityName()}Proxy(getTable(), getValueProperty("${property.getPropertyName()}")));
     }
     #else
-    public SQLColumn<${aptFileCompiler.getEntityClassName()}Proxy,${property.getPropertyType()}> ${property.getPropertyName()}(){
+    public SQLColumn<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getPropertyName()}(){
         return get("${property.getPropertyName()}");
     }
     #end
@@ -33,11 +33,11 @@ public class ${aptFileCompiler.getEntityClassName()}Proxy extends AbstractProxyE
 #end
     private static final Class<${aptFileCompiler.getEntityClassName()}> entityClass = ${aptFileCompiler.getEntityClassName()}.class;
 
-    public static ${aptFileCompiler.getEntityClassName()}Proxy createTable() {
-        return new ${aptFileCompiler.getEntityClassName()}Proxy();
+    public static ${aptFileCompiler.getEntityClassProxyName()} createTable() {
+        return new ${aptFileCompiler.getEntityClassProxyName()}();
     }
 
-    private ${aptFileCompiler.getEntityClassName()}Proxy() {
+    private ${aptFileCompiler.getEntityClassProxyName()}() {
     }
 
     #renderPropertyUI($aptValueObjectInfo)
@@ -49,7 +49,7 @@ public class ${aptFileCompiler.getEntityClassName()}Proxy extends AbstractProxyE
 #macro(renderValueObjectUI $valueObjectParent)
 #foreach($valueObject in $valueObjectParent.getChildren())
 
-    public static class ${valueObject.getEntityName()}Proxy extends AbstractValueObjectProxyEntity<${aptFileCompiler.getEntityClassName()}Proxy, ${valueObject.getEntityName()}> {
+    public static class ${valueObject.getEntityName()}Proxy extends AbstractValueObjectProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${valueObject.getEntityName()}> {
 
         private ${valueObject.getEntityName()}Proxy(TableAvailable table, String propertyName) {
             super(table, propertyName);
