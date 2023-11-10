@@ -17,6 +17,7 @@ import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.VelocityUtils;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
@@ -36,11 +37,15 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.testFramework.LightVirtualFile;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.velocity.VelocityContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtFile;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -51,6 +56,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     private static final Logger log = Logger.getInstance(EasyQueryDocumentChangeHandler.class);
     public static final Key<Boolean> CHANGE = Key.create("change" );
     private static final Key<Boolean> LISTENER = Key.create("listener" );
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 //    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Override
@@ -253,7 +259,19 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                 return;
             }
             FileEditorManager.getInstance(project).addFileEditorManagerListener(this);
-
+            new Thread(() -> {
+                scheduler.scheduleAtFixedRate(() -> {
+                    try {
+                        DumbService.getInstance(project).runWhenSmart(() -> {
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                PsiJavaFileUtil.createAptFile();
+                            });
+                        });
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }, 10, 1, TimeUnit.MINUTES);
+            }).start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -274,6 +292,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     @Override
     public void editorCreated(@NotNull EditorFactoryEvent event) {
         try {
+
             EditorFactoryListener.super.editorCreated(event);
             Editor editor = event.getEditor();
             editor.addEditorMouseListener(new EditorMouseListener() {
@@ -284,8 +303,10 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             });
             Document document = editor.getDocument();
             if (Boolean.TRUE.equals(document.getUserData(LISTENER))) {
+                if (!document.getUserData(LISTENER)) {
+                    document.addDocumentListener(this);
+                }
                 document.putUserData(LISTENER, true);
-                document.addDocumentListener(this);
             }
             ProjectUtils.setCurrentProject(editor.getProject());
         } catch (Exception e) {
@@ -325,7 +346,6 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         }
         VirtualFile currentFile = VirtualFileUtils.getVirtualFile(document);
         if (Objects.nonNull(currentFile)) {
-
             currentFile.putUserData(CHANGE, true);
         }
     }

@@ -34,7 +34,7 @@ public class PsiJavaFileUtil {
         Map<String, String> map = new HashMap<>();
         getImportSet(psiJavaFile)
                 .forEach(el -> {
-                    String qualifiedName = el.replace("import", "").replace(";", "").trim();
+                    String qualifiedName = el.replace("import", "" ).replace(";", "" ).trim();
                     map.put(StrUtil.subAfter(qualifiedName, ".", true), qualifiedName);
                 });
         return map;
@@ -119,19 +119,17 @@ public class PsiJavaFileUtil {
     public static void createAptFile() {
         Collection<PsiClass> sonPsiClass = PsiJavaFileUtil.getSonPsiClass("com.easy.query.core.proxy.AbstractProxyEntity",
                 GlobalSearchScope.allScope(ProjectUtils.getCurrentProject()));
-        Collection<PsiClass> annotationPsiClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityProxy");
-        if (sonPsiClass.size() != annotationPsiClass.size()) {
-            List<VirtualFile> virtualFiles = annotationPsiClass.stream()
-                    .filter(el -> !sonPsiClass.contains(el))
-                    .map(el -> {
-                        VirtualFile virtualFile = el.getContainingFile()
-                                .getVirtualFile();
-                        virtualFile.putUserData(EasyQueryDocumentChangeHandler.CHANGE, true);
-                        return virtualFile;
-                    })
-                    .collect(Collectors.toList());
-            EasyQueryDocumentChangeHandler.createAptFile(virtualFiles);
-        }
+        Collection<PsiClass> annotationPsiClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityProxy" );
+        List<VirtualFile> virtualFiles = annotationPsiClass.stream()
+                .filter(el -> !sonPsiClass.contains(el))
+                .map(el -> {
+                    VirtualFile virtualFile = el.getContainingFile()
+                            .getVirtualFile();
+                    virtualFile.putUserData(EasyQueryDocumentChangeHandler.CHANGE, true);
+                    return virtualFile;
+                })
+                .collect(Collectors.toList());
+        EasyQueryDocumentChangeHandler.createAptFile(virtualFiles);
     }
 
 }
