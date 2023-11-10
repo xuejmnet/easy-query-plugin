@@ -3,6 +3,7 @@ package com.easy.query.plugin.core.util;
 import com.intellij.openapi.project.Project;
 
 import java.util.Objects;
+import java.util.UUID;
 
 public class ProjectUtils {
 
@@ -14,7 +15,6 @@ public class ProjectUtils {
      * @return {@code Project}
      */
     public static Project getCurrentProject() {
-
         return currentProject;
     }
 

@@ -8,6 +8,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.AnnotationTargetsSearch;
 import com.intellij.psi.search.searches.ClassInheritorsSearch;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,6 +55,9 @@ public class PsiJavaFileUtil {
      */
     public static Collection<PsiClass> getSonPsiClass(String qualifiedName, SearchScope searchScope) {
         PsiClass clazz = getPsiClass(qualifiedName);
+        if(clazz==null){
+            return Collections.emptyList();
+        }
         return ClassInheritorsSearch.search(clazz, searchScope, true).findAll();
     }
 
@@ -116,9 +120,12 @@ public class PsiJavaFileUtil {
     /**
      * 生成 apt 文件
      */
-    public static void createAptFile() {
+    public static void createAptFile(Project project) {
         Collection<PsiClass> sonPsiClass = PsiJavaFileUtil.getSonPsiClass("com.easy.query.core.proxy.AbstractProxyEntity",
                 GlobalSearchScope.allScope(ProjectUtils.getCurrentProject()));
+        if(sonPsiClass.isEmpty()){
+            return;
+        }
         Collection<PsiClass> annotationPsiClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityProxy" );
         List<VirtualFile> virtualFiles = annotationPsiClass.stream()
                 .filter(el -> !sonPsiClass.contains(el))
@@ -129,7 +136,9 @@ public class PsiJavaFileUtil {
                     return virtualFile;
                 })
                 .collect(Collectors.toList());
-        EasyQueryDocumentChangeHandler.createAptFile(virtualFiles);
+        if(CollectionUtils.isNotEmpty(virtualFiles)){
+            EasyQueryDocumentChangeHandler.createAptFile(virtualFiles,project);
+        }
     }
 
 }

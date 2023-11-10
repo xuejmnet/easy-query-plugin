@@ -13,6 +13,6 @@ public class AutoCompileAction extends AnAction {
         // TODO: insert action logic here
         Project project = e.getProject();
         ProjectUtils.setCurrentProject(project);
-        PsiJavaFileUtil.createAptFile();
+        PsiJavaFileUtil.createAptFile(project);
     }
 }
