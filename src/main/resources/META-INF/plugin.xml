@@ -14,9 +14,17 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
-  ]]></description>
+    <h3>Features:</h3>
+    <ul>
+    <li>The resulting APT file supports hints</li>
+    <li>APT automatic compilation</li>
+    </ul>
+
+    <ul>
+    <li>APT文件支持代码提示</li>
+    <li>APT自动编译</li>
+    </ul>
+    ]]></description>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
