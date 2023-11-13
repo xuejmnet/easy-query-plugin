@@ -38,5 +38,10 @@
             <add-to-group group-id="GenerateGroup" anchor="first"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift P"/>
         </action>
+<!--        <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"-->
+<!--                text="sql preview action">-->
+<!--            <add-to-group group-id="GenerateGroup" anchor="after"-->
+<!--                          relative-to-action="com.easy.query.plugin.action.AutoCompileAction"/>-->
+<!--        </action>-->
     </actions>
 </idea-plugin>
