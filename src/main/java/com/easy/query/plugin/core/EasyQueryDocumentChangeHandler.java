@@ -71,7 +71,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         return false;
                     }
                     Boolean userData = oldFile.getUserData(CHANGE);
-                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(oldFile);
+                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project,oldFile);
                 }).collect(Collectors.toList());
         Map<PsiDirectory, List<PsiFile>> psiDirectoryMap = new HashMap<>();
         try {
@@ -297,11 +297,11 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     }
 
 
-    private static boolean checkFile(VirtualFile currentFile) {
+    private static boolean checkFile(Project project,VirtualFile currentFile) {
         if (Objects.isNull(currentFile) || currentFile instanceof LightVirtualFile) {
             return false;
         }
-        PsiManager psiManager = PsiManager.getInstance(ProjectUtils.getCurrentProject());
+        PsiManager psiManager = PsiManager.getInstance(project);
         PsiFile psiFile = psiManager.findFile(currentFile);
         // 支持java和kotlin
         if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {

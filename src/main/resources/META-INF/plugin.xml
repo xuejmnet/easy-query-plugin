@@ -48,8 +48,8 @@
         </action>
 <!--        <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"-->
 <!--                text="sql preview action">-->
-<!--            <add-to-group group-id="GenerateGroup" anchor="after"-->
-<!--                          relative-to-action="com.easy.query.plugin.action.AutoCompileAction"/>-->
+<!--            <add-to-group group-id="GenerateGroup" anchor="last"/>-->
+<!--            <keyboard-shortcut keymap="$default" first-keystroke="shift M"/>-->
 <!--        </action>-->
     </actions>
 </idea-plugin>
