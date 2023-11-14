@@ -17,7 +17,7 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
 #macro(renderPropertyUI $valueObject)
 #foreach($property in $valueObject.getProperties())
     ${property.comment}
-    * {@link ${property.getEntityName()}#${property.propertyName}}
+    * {@link ${property.getOwner()}#${property.propertyName}}
     */
     #if(${property.isValueObject()})
     public ${property.getEntityName()}Proxy ${property.getPropertyName()}(){

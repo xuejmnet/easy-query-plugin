@@ -17,15 +17,17 @@ import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.VelocityUtils;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationListener;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.event.*;
-import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.editor.event.DocumentEvent;
+import com.intellij.openapi.editor.event.DocumentListener;
+import com.intellij.openapi.editor.event.EditorFactoryEvent;
+import com.intellij.openapi.editor.event.EditorFactoryListener;
+import com.intellij.openapi.editor.event.EditorMouseEvent;
+import com.intellij.openapi.editor.event.EditorMouseListener;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
@@ -35,18 +37,31 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.*;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassOwner;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiDirectory;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiType;
 import com.intellij.testFramework.LightVirtualFile;
-import org.apache.commons.collections.CollectionUtils;
+import com.intellij.util.messages.MessageBus;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.velocity.VelocityContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtFile;
 
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -71,7 +86,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         return false;
                     }
                     Boolean userData = oldFile.getUserData(CHANGE);
-                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project,oldFile);
+                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
                 }).collect(Collectors.toList());
         Map<PsiDirectory, List<PsiFile>> psiDirectoryMap = new HashMap<>();
         try {
@@ -79,6 +94,10 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             // 检查索引是否已准备好
             for (VirtualFile oldFile : virtualFiles) {
                 Module moduleForFile = ModuleUtil.findModuleForFile(oldFile, project);
+                if (moduleForFile == null) {
+                    log.warn("moduleForFile is null," + oldFile.getName());
+                    continue;
+                }
                 CustomConfig config = Modules.moduleConfig(moduleForFile);
                 if (!ObjectUtil.defaultIfNull(config.isEnable(), true)) {
                     continue;
@@ -143,7 +162,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
                         boolean isValueObject = valueObject != null;
                         String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
-                        aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject));
+                        aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject, entityName));
 
                         if (isValueObject) {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.AbstractValueObjectProxyEntity");
@@ -217,7 +236,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
             boolean isValueObject = valueObject != null;
             String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
-            aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject));
+            aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject, entityName));
 
             if (valueObject != null) {
                 aptFileCompiler.addImports(psiFieldPropertyType);
@@ -251,22 +270,27 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             if (Objects.isNull(project)) {
                 return;
             }
-            FileEditorManager.getInstance(project).addFileEditorManagerListener(this);
+//            Deprecated
+//            Use com.intellij.util.messages.MessageBus instead: see FileEditorManagerListener.FILE_EDITOR_MANAGER
+
+//            FileEditorManager.getInstance(project).addFileEditorManagerListener(this);
+            MessageBus messageBus = project.getMessageBus();
+            messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
         } catch (Exception e) {
-            log.error("初始化EasyQueryDocumentChangeHandler出错:"+e.getMessage(),e);
+            log.error("初始化EasyQueryDocumentChangeHandler出错:" + e.getMessage(), e);
         }
 
     }
 
 
-    private void addEditorListener(Editor editor){
+    private void addEditorListener(Editor editor) {
         Document document = editor.getDocument();
-        if(BooleanUtils.isNotTrue(document.getUserData(LISTENER))){
+        if (BooleanUtils.isNotTrue(document.getUserData(LISTENER))) {
             editor.addEditorMouseListener(new EditorMouseListener() {
                 @Override
                 public void mouseExited(@NotNull EditorMouseEvent event) {
-                    if(BooleanUtils.isTrue(editor.getDocument().getUserData(CHANGE))){
-                        createAptFile(Arrays.asList(VirtualFileUtils.getVirtualFile(editor.getDocument())), event.getEditor().getProject());
+                    if (BooleanUtils.isTrue(editor.getDocument().getUserData(CHANGE))) {
+                        createAptFile(Collections.singletonList(VirtualFileUtils.getVirtualFile(editor.getDocument())), event.getEditor().getProject());
                     }
                 }
             });
@@ -274,13 +298,15 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             document.addDocumentListener(this);
         }
     }
-    private void removeEditorListener(Editor editor){
+
+    private void removeEditorListener(Editor editor) {
         Document document = editor.getDocument();
-        if(BooleanUtils.isTrue(document.getUserData(LISTENER))){
+        if (BooleanUtils.isTrue(document.getUserData(LISTENER))) {
             document.putUserData(LISTENER, false);
             document.removeDocumentListener(this);
         }
     }
+
     @Override
     public void editorCreated(@NotNull EditorFactoryEvent event) {
 
@@ -297,7 +323,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     }
 
 
-    private static boolean checkFile(Project project,VirtualFile currentFile) {
+    private static boolean checkFile(Project project, VirtualFile currentFile) {
         if (Objects.isNull(currentFile) || currentFile instanceof LightVirtualFile) {
             return false;
         }
