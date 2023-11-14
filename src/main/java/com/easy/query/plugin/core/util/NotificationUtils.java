@@ -23,7 +23,7 @@ public class NotificationUtils {
     static ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     private static final String GROUP_LINK = "https://qm.qq.com/q/LgNvWFRdGU";
     private static final String GITHUB_LINK = "https://github.com/xuejmnet/easy-query";
-    public static final String CONTENT = "如果EasyQueryPlugin插件能减轻您一些繁琐的工作，麻烦您给个免费的star ⭐️";
+    public static final String CONTENT = "如果EasyQueryAssistant插件能减轻您一些繁琐的工作，麻烦您给个免费的star ⭐️";
     public static boolean isNotified = false;
 
     /**

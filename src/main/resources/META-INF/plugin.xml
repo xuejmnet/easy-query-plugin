@@ -5,7 +5,7 @@
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>EasyQueryPlugin</name>
+    <name>EasyQueryAssistant</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="326308290@qq.com" url="https://github.com/xuejmnet">xuejiaming</vendor>
@@ -17,12 +17,12 @@
     <h3>Features:</h3>
     <ul>
     <li>The resulting APT file supports hints</li>
-    <li>APT automatic compilation</li>
+    <li>APT automatic compilation SHIFT+P Shortcut keys</li>
     </ul>
 
     <ul>
     <li>APT文件支持代码提示</li>
-    <li>APT自动编译</li>
+    <li>APT自动编译 SHIFT+P快捷键</li>
     </ul>
     ]]></description>
 
