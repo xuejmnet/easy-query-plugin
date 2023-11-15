@@ -14,15 +14,13 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
+    This is a helper for the "easy-query" ORM, enabling automatic compilation of APT files and seamless use of the proxy mode API.
+    <a href="https://xuejmnet.github.io/easy-query-doc/">document</a>
     <h3>Features:</h3>
     <ul>
     <li>The resulting APT file supports hints</li>
     <li>APT automatic compilation SHIFT+P Shortcut keys</li>
-    </ul>
-
-    <ul>
-    <li>APT文件支持代码提示</li>
-    <li>APT自动编译 SHIFT+P快捷键</li>
+    <li>format sql with params SHIFT+M</li>
     </ul>
     ]]></description>
 
@@ -46,10 +44,10 @@
             <add-to-group group-id="GenerateGroup" anchor="first"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift P"/>
         </action>
-<!--        <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"-->
-<!--                text="sql preview action">-->
-<!--            <add-to-group group-id="GenerateGroup" anchor="last"/>-->
-<!--            <keyboard-shortcut keymap="$default" first-keystroke="shift M"/>-->
-<!--        </action>-->
+        <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"
+                text="sql preview action">
+            <add-to-group group-id="GenerateGroup" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="shift M"/>
+        </action>
     </actions>
 </idea-plugin>
