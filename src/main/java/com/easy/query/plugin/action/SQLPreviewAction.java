@@ -1,50 +1,15 @@
 package com.easy.query.plugin.action;
 
 import com.easy.query.plugin.core.expression.SimpleFunction;
-import com.easy.query.plugin.core.util.CompilerManagerUtil;
-import com.easy.query.plugin.core.util.NotificationUtils;
-import com.easy.query.plugin.core.util.ObjectUtil;
-import com.easy.query.plugin.core.util.ProjectUtils;
-import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.windows.SQLPreviewDialog;
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.ExecutionResult;
-import com.intellij.execution.RunManager;
-import com.intellij.execution.RunManagerEx;
-import com.intellij.execution.RunnerAndConfigurationSettings;
-import com.intellij.execution.configurations.JavaCommandLineState;
-import com.intellij.execution.configurations.JavaParameters;
-import com.intellij.execution.process.ProcessAdapter;
-import com.intellij.execution.process.ProcessEvent;
-import com.intellij.execution.process.ProcessHandler;
-import com.intellij.execution.process.ProcessOutputTypes;
-import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.Key;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
-import com.intellij.psi.PsiImportList;
 import com.intellij.psi.PsiJavaFile;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class SQLPreviewAction extends AnAction {
 
@@ -53,27 +18,24 @@ public class SQLPreviewAction extends AnAction {
         // TODO: insert action logic here
         // 如果是从项目视图中右键点击的进来的则创建新的类
         Editor editor = e.getData(CommonDataKeys.EDITOR);
-        if(editor!=null){
+        if (editor != null) {
             String selectedText = editor.getSelectionModel().getSelectedText();
-            if (StrUtil.isNotBlank(selectedText)) {
-                Project project = editor.getProject();
-                PsiJavaFile psiFile = (PsiJavaFile) e.getData(CommonDataKeys.PSI_FILE);
-                preview(project,selectedText, psiFile, () -> {
-                });
-                return;
-            }
+            preview(selectedText, () -> {
+            });
         }
     }
-    private static final String SYSTEM_OUT_PRINTLN_TO_SQL = "\nSystem.out.println(%s.toSQL());";
+
+
     //预览
-    public void preview(Project project,String selectedText, PsiJavaFile psiFile, SimpleFunction function) {
-        if(StringUtils.isBlank(selectedText)){
+    public void preview(String selectedText, SimpleFunction function) {
+        if (StringUtils.isBlank(selectedText)) {
             return;
         }
 //        &&StringUtils.containsIgnoreCase(selectedText,"Preparing")
 //                &&StringUtils.containsIgnoreCase(selectedText,"Parameters")
         try {
-            new SQLPreviewDialog(selectedText).setVisible(true);
+            SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(selectedText);
+            sqlPreviewDialog.setVisible(true);
 //            System.out.println("预览选择文字:"+selectedText);
 //            String[] multiLogs = selectedText.split("\n");
 //            if (selectedText.startsWith("QueryWrapper")) {

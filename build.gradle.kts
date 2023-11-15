@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.1"
+version = "0.0.2"
 
 repositories {
     maven {
@@ -23,7 +23,7 @@ intellij {
     plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin", "com.intellij.database"))
 }
 //dependencies {
-//    implementation("cn.hutool:hutool-core:5.8.21")
+//    implementation("com.intellij:forms_rt:7.0.3")
 //}
 java {
     sourceCompatibility = JavaVersion.VERSION_17

@@ -41,12 +41,12 @@
         <action id="com.easy.query.plugin.action.AutoCompileAction"
                 class="com.easy.query.plugin.action.AutoCompileAction" text="AutoCompile"
                 description="auto complie for easy-query proxy">
-            <add-to-group group-id="GenerateGroup" anchor="first"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift P"/>
         </action>
         <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"
                 text="sql preview action">
-            <add-to-group group-id="GenerateGroup" anchor="last"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift M"/>
         </action>
     </actions>
