@@ -45,7 +45,7 @@
             <keyboard-shortcut keymap="$default" first-keystroke="shift P"/>
         </action>
         <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"
-                text="sql preview action">
+                text="SQLFormatPreview">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift M"/>
         </action>
