@@ -124,17 +124,22 @@ public class SQLPreviewDialog extends JDialog {
         switch (m) {
             case "String":
             case "Timestamp":
+            case "BigDecimal":
+            case "Date":
+            case "Time":
+            case "LocalDate":
+            case "LocalTime":
                 result = "'" + result + "'";
                 break;
             case "LocalDateTime":
                 result = "'" + result.replace("T", " ") + "'";
                 break;
-            case "Integer":
-                // Handle Integer case if needed
-                break;
-            case "Date":
-                result = "STR_TO_DATE('" + result + "','%Y-%m-%d %H:%i:%s')";
-                break;
+//            case "Integer":
+//                // Handle Integer case if needed
+//                break;
+//            case "Date":
+//                result = "STR_TO_DATE('" + result + "','%Y-%m-%d %H:%i:%s')";
+//                break;
             default:
                 // Handle other cases if needed
                 break;
