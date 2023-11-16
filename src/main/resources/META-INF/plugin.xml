@@ -47,6 +47,7 @@
         <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"
                 text="SQLFormatPreview">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="ConsoleEditorPopupMenu" anchor="before" relative-to-action="ConsoleView.ClearAll"/>
             <keyboard-shortcut keymap="$default" first-keystroke="shift M"/>
         </action>
     </actions>
