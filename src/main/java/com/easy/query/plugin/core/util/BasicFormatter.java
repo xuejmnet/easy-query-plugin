@@ -110,6 +110,16 @@ public class BasicFormatter {
                 lcToken = token.toLowerCase(Locale.ROOT);
 
                 switch (token) {
+                case "`": {
+                    String t;
+                    do {
+                        t = tokens.nextToken();
+                        token += t;
+                    }
+                    // cannot handle single quotes
+                    while (!"`".equals(t) && tokens.hasMoreTokens());
+                    break;
+                }
                 case "'": {
                     String t;
                     do {
