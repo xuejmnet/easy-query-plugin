@@ -198,7 +198,11 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         for (PsiFile tmpFile : psiFiles) {
                             PsiFile file = psiDirectory.findFile(tmpFile.getName());
                             if (ObjectUtil.isNotNull(file)) {
-                                file.getViewProvider().getDocument().setText(tmpFile.getText());
+                                String text = tmpFile.getText();
+                                Document document = file.getViewProvider().getDocument();
+                                if(!Objects.equals(document.getText(),text)){
+                                    document.setText(text);
+                                }
                             } else {
                                 psiDirectory.add(tmpFile);
                             }
