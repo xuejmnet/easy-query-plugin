@@ -16,10 +16,11 @@ import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class VirtualFileUtils {
-    private static Map<String, PsiDirectory> PSI_DIRECTORY_MAP = new HashMap<>();
+    private static Map<String,Map<String, PsiDirectory>> PSI_DIRECTORY_MAP = new ConcurrentHashMap<>();
     private static FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
 
     public static PsiFile getPsiFile(Project project, VirtualFile virtualFile) {
@@ -98,17 +99,18 @@ public class VirtualFileUtils {
      * @param key
      * @return {@code PsiDirectory}
      */
-    public static PsiDirectory getPsiDirectory(Module module, String packageName, String key) {
+    public static PsiDirectory getPsiDirectory(Project project,Module module, String packageName, String key) {
 
         Set javaResourceRootTypes = StrUtil.isEmpty(key) ? JavaModuleSourceRootTypes.RESOURCES : JavaModuleSourceRootTypes.SOURCES;
-        PsiDirectory psiDirectory = PSI_DIRECTORY_MAP.get(packageName);
+        Map<String, PsiDirectory> psiDirectoryMap = PSI_DIRECTORY_MAP.computeIfAbsent(project.getName(), o -> new ConcurrentHashMap<>());
+        PsiDirectory psiDirectory = psiDirectoryMap.get(packageName);
         if (ObjectUtil.isNull(psiDirectory)) {
             AtomicReference<PsiDirectory> subPsiDirectory = new AtomicReference<>();
             WriteCommandAction.runWriteCommandAction(module.getProject(), () -> {
                 subPsiDirectory.set(createSubDirectory(module, javaResourceRootTypes, packageName));
             });
             psiDirectory = subPsiDirectory.get();
-            PSI_DIRECTORY_MAP.put(packageName, psiDirectory);
+            psiDirectoryMap.put(packageName, psiDirectory);
         }
         return psiDirectory;
     }

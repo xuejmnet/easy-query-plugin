@@ -22,9 +22,10 @@ intellij {
 
     plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin", "com.intellij.database"))
 }
-//dependencies {
+dependencies {
 //    implementation("com.intellij:forms_rt:7.0.3")
-//}
+    implementation("com.alibaba.fastjson2:fastjson2:2.0.41")
+}
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17

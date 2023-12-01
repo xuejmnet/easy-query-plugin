@@ -16,6 +16,8 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.util.containers.JBIterable;
 
 import java.sql.Types;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -157,11 +159,11 @@ public class TableUtils {
                     return Integer.class;
                 }
             case Types.TIME:
-                return java.sql.Time.class;
+                return LocalTime.class;
             case Types.TIMESTAMP:
-                return java.sql.Timestamp.class;
+//                return java.sql.Timestamp.class;
             case Types.DATE:
-                return Date.class;
+                return LocalDateTime.class;
             case Types.BINARY:
             case Types.VARBINARY:
             case Types.LONGVARBINARY:
@@ -181,6 +183,36 @@ public class TableUtils {
             default:
                 return Object.class;
         }
+    }
+    /**
+     * 得到类名
+     *
+     * @param tableName   表名
+     * @param tablePrefix 表前缀
+     * @return {@code String}
+     */
+    public static String getClassName(String tableName, String tablePrefix) {
+        tableName = getTableName(tableName, tablePrefix);
+        return StrUtil.upperFirst(tableName);
+    }
+
+    /**
+     * 得到表名
+     *
+     * @param tableName   表名
+     * @param tablePrefix 表前缀
+     * @return {@code String}
+     */
+    public static String getTableName(String tableName, String tablePrefix) {
+        tablePrefix = ObjectUtil.defaultIfNull(tablePrefix, "");
+        String[] tablePrefixArr = tablePrefix.split(";");
+        for (String prefix : tablePrefixArr) {
+            if (tableName.startsWith(prefix)) {
+                tableName = tableName.replaceFirst(prefix, "");
+                break;
+            }
+        }
+        return StrUtil.toCamelCase(tableName);
     }
 
 }

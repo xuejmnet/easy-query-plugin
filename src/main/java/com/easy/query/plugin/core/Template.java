@@ -1,6 +1,12 @@
 package com.easy.query.plugin.core;
 
+import com.easy.query.plugin.core.config.EasyQueryConfig;
+import com.easy.query.plugin.core.constant.EasyQueryConstant;
+import com.easy.query.plugin.core.persistent.EasyQueryFlexPluginConfigData;
+import com.easy.query.plugin.core.util.ObjectUtil;
+import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.ide.fileTemplates.impl.UrlUtil;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,53 +31,20 @@ public class Template {
 //        return code;
 //    }
 //
-//    public static @NotNull MybatisFlexConfig getMybatisFlexConfig() {
-//        MybatisFlexConfig config = MybatisFlexPluginConfigData.getCurrentProjectMybatisFlexConfig();
-//        if (StrUtil.isEmpty(config.getControllerTemplate())) {
-//            config.setControllerTemplate(getTemplateContent(MybatisFlexConstant.CONTROLLER_TEMPLATE));
-//            config.setModelTemplate(getTemplateContent(MybatisFlexConstant.MODEL_TEMPLATE));
-//            config.setInterfaceTempalate(getTemplateContent(MybatisFlexConstant.INTERFACE_TEMPLATE));
-//            config.setImplTemplate(getTemplateContent(MybatisFlexConstant.IMPL_TEMPLATE));
-//            config.setMapperTemplate(getTemplateContent(MybatisFlexConstant.MAPPER_TEMPLATE));
-//            config.setXmlTemplate(getTemplateContent(MybatisFlexConstant.XML_TEMPLATE));
-//        }
-//
-//        if (ObjectUtil.isNull(config.getControllerSuffix())) {
-//            config.setControllerSuffix(MybatisFlexConstant.CONTROLLER);
-//        }
-//        if (ObjectUtil.isNull(config.getInterfaceSuffix())) {
-//            config.setInterfaceSuffix(MybatisFlexConstant.SERVICE);
-//        }
-//        if (ObjectUtil.isNull(config.getImplSuffix())) {
-//            config.setImplSuffix(MybatisFlexConstant.SERVICE_IMPL);
-//        }
-//        if (ObjectUtil.isNull(config.getModelSuffix())) {
-//            config.setModelSuffix(MybatisFlexConstant.ENTITY);
-//        }
-//        if (ObjectUtil.isNull(config.getMapperSuffix())) {
-//            config.setMapperSuffix(MybatisFlexConstant.MAPPER);
-//        }
-//
-//        if(ObjectUtil.isNull(config.getContrPath())){
-//            config.setContrPath(MybatisFlexConstant.CONTROLLER.toLowerCase());
-//        }
-//        if(ObjectUtil.isNull(config.getDomainPath())){
-//            config.setDomainPath(MybatisFlexConstant.DOMAIN.toLowerCase());
-//        }
-//        if(ObjectUtil.isNull(config.getImplPath())){
-//            config.setImplPath(MybatisFlexConstant.IMPL.toLowerCase());
-//        }
-//        if(ObjectUtil.isNull(config.getServicePath())){
-//            config.setServicePath(MybatisFlexConstant.SERVICE.toLowerCase());
-//        }
-//        if(ObjectUtil.isNull(config.getMapperPath())){
-//            config.setMapperPath(MybatisFlexConstant.MAPPER.toLowerCase());
-//        }
-//        if(ObjectUtil.isNull(config.getXmlPath())){
-//            config.setXmlPath(MybatisFlexConstant.MAPPERS.toLowerCase());
-//        }
-//        return config;
-//    }
+    public static @NotNull EasyQueryConfig getEasyQueryConfig(Project project) {
+        EasyQueryConfig config = EasyQueryFlexPluginConfigData.getCurrentProjectMybatisFlexConfig(project);
+        if (StrUtil.isEmpty(config.getModelTemplate())) {
+            config.setModelTemplate(getTemplateContent(EasyQueryConstant.MODEL_TEMPLATE));
+        }
+
+        if (ObjectUtil.isNull(config.getModelSuffix())) {
+            config.setModelSuffix(EasyQueryConstant.ENTITY);
+        }
+        if(ObjectUtil.isNull(config.getDomainPath())){
+            config.setDomainPath(EasyQueryConstant.DOMAIN.toLowerCase());
+        }
+        return config;
+    }
 
     /**
      * 得到模板内容

@@ -16,6 +16,7 @@ import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import javax.swing.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * 模块
@@ -48,47 +49,7 @@ public class Modules {
         return ModuleManager.getInstance(project).getModules();
     }
 
-//    /**
-//     * 获取模块
-//     *
-//     * @param project 项目
-//     * @return {@code List<String>}
-//     */
-//    public static void addModulesItem(Project project, List<JComboBox> modulesComboxs) {
-//        Module[] modules = ModuleManager.getInstance(project).getModules();
-//        if (ArrayUtil.isEmpty(modules)) {
-//            NotificationUtils.notifyError("目录层级有误!", "", project);
-//            return;
-//        }
-//
-//        boolean isManvenProject = isManvenProject(modules[0]);
-//        for (JComboBox modulesCombox : modulesComboxs) {
-//            modulesCombox.setRenderer(new ModuleComBoxRender());
-//
-//            moduleMap = Arrays.stream(modules)
-//                    .filter(module -> {
-//                        if (isManvenProject) {
-//                            return ArrayUtil.isNotEmpty(ModuleRootManager.getInstance(module).getSourceRoots());
-//                        }
-//                        // 非maven项目只显示main模块,只有main模块才有java目录
-//                        return module.getName().contains(".main");
-//                    })
-//                    .collect(Collectors.toMap(el -> {
-//                        String name = el.getName();
-//                        if (name.contains(".")) {
-//                            String[] strArr = name.split("\\.");
-//                            return strArr[strArr.length - 2];
-//                        }
-//                        return name;
-//                    }, module -> module));
-//            FilterComboBoxModel model = new FilterComboBoxModel(moduleMap.keySet().stream().collect(Collectors.toList()));
-//            modulesCombox.setModel(model);
-//
-//            modulesCombox.setSelectedIndex(0);
-//        }
-//        getModulePackages();
-//    }
-//
+
 //    public static void getModulePackages() {
 //        modulePackageMap = new HashMap<>();
 //        Project project = ProjectUtils.getCurrentProject();
@@ -135,16 +96,16 @@ public class Modules {
         return isManvenProject(module) ? ".java" : ".kt";
     }
 
-
-    /**
-     * 获取模块
-     *
-     * @param moduleName 模块名称
-     * @return {@code Module}
-     */
-    public static Module getModule(String moduleName) {
-        return moduleMap.get(moduleName);
-    }
+//
+//    /**
+//     * 获取模块
+//     *
+//     * @param moduleName 模块名称
+//     * @return {@code Module}
+//     */
+//    public static Module getModule(String moduleName) {
+//        return moduleMap.get(moduleName);
+//    }
 
     /**
      * 获取模块路径
@@ -187,15 +148,6 @@ public class Modules {
     }
 
 
-//    /**
-//     * 初始化模块
-//     *
-//     * @param project 项目
-//     * @param list    列表
-//     */
-//    public static void initModules(Project project, List<JComboBox> list) {
-//        addModulesItem(project, list);
-//    }
 
     /**
      * service联动
