@@ -3,6 +3,7 @@ package ${aptFileCompiler.getPackageName()};
 import com.easy.query.core.expression.parser.core.available.TableAvailable;
 import com.easy.query.core.proxy.AbstractProxyEntity;
 import com.easy.query.core.proxy.SQLColumn;
+import com.easy.query.core.proxy.AbstractSelector;
 #foreach($imp in ${aptFileCompiler.getImports()})
 ${imp}    
 #end
@@ -37,7 +38,7 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
         return new ${aptFileCompiler.getEntityClassProxyName()}();
     }
 
-    private ${aptFileCompiler.getEntityClassProxyName()}() {
+    public ${aptFileCompiler.getEntityClassProxyName()}() {
     }
 
     #renderPropertyUI($aptValueObjectInfo)
@@ -63,5 +64,32 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
 #end
 
     #renderValueObjectUI($aptValueObjectInfo)
+
+
+    /**
+    * 数据库列的简单获取
+    * @return
+    */
+    public ${aptFileCompiler.getSelectorInfo().getName()} cols() {
+        return new ${aptFileCompiler.getSelectorInfo().getName()}(this);
+    }
+
+public static class ${aptFileCompiler.getSelectorInfo().getName()} extends AbstractSelector<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}, ${aptFileCompiler.getSelectorInfo().getName()}> {
+
+    public ${aptFileCompiler.getSelectorInfo().getName()}(${aptFileCompiler.getEntityClassProxyName()} proxy) {
+        super(proxy);
+    }
+
+
+#foreach($property in ${aptFileCompiler.getSelectorInfo().getProperties()})
+    ${property.getComment()}
+        * {@link ${aptFileCompiler.getEntityClassName()}#${property.getPropertyName()}}
+        */
+    public ${aptFileCompiler.getSelectorInfo().getName()} ${property.getPropertyName()}() {
+        return add(getProxy().${property.getPropertyName()}());
+        }
+
+#end
+}
 
 }

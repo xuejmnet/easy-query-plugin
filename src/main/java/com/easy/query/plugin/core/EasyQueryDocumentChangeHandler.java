@@ -3,6 +3,8 @@ package com.easy.query.plugin.core;
 import com.easy.query.plugin.core.config.CustomConfig;
 import com.easy.query.plugin.core.entity.AptFileCompiler;
 import com.easy.query.plugin.core.entity.AptPropertyInfo;
+import com.easy.query.plugin.core.entity.AptSelectPropertyInfo;
+import com.easy.query.plugin.core.entity.AptSelectorInfo;
 import com.easy.query.plugin.core.entity.AptValueObjectInfo;
 import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.easy.query.plugin.core.util.BooleanUtil;
@@ -37,16 +39,25 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiCodeBlock;
 import com.intellij.psi.PsiDirectory;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiSubstitutor;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.util.messages.MessageBus;
 import org.apache.commons.lang3.BooleanUtils;
@@ -126,6 +137,38 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         log.warn("annotation [EntityProxy] is null" );
                         return;
                     }
+//                    PsiClass anInterface = JavaPsiFacade.getInstance(project).getElementFactory().createInterface("ProxyEntityAvailable<Topic, TopicProxy>" );
+//                    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+//                    PsiClass anInterface1 = elementFactory.createInterface("com.easy.query.core.proxy.ProxyEntityAvailable" );
+//                    psiClass.add(anInterface1);
+
+//                    PsiClass[] interfaces = psiClass.getInterfaces();
+                    // 创建接口添加到PsiClass中
+                    if (psiClass.getInterfaces().length == 0) {
+
+                    }
+//                    PsiClass psiClass1 = JavaPsiFacade.getInstance(project).findClass("org.example.entity.ProxyEntityAvailable", GlobalSearchScope.allScope(project));
+//                    if(psiClass1!=null){
+//                        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+//                        PsiJavaCodeReferenceElement referenceElementByType = elementFactory.createClassReferenceElement(psiClass);
+////                        PsiJavaCodeReferenceElement ref = elementFactory.createClassReferenceElement(psiClass1);
+////                        String text = psiClass1.getText();
+////                        PsiSubstitutor substitutor = PsiSubstitutor.EMPTY;
+////                        PsiClassType typeWithSubstitutor = elementFactory.createType(psiClass, substitutor);
+////                        PsiJavaCodeReferenceElement parameterRef = elementFactory.createReferenceElementByType(typeWithSubstitutor);
+//                        PsiJavaCodeReferenceElement referenceFromText = elementFactory.createReferenceFromText("ProxyEntityAvailable<TopicProxy>", psiClass);
+//
+//                        PsiMethod method = elementFactory.createMethodFromText("public Class<TopicProxy> proxyTableClass() {return TopicProxy.class;}",psiClass);
+//                        method.getModifierList().addAnnotation("Override");
+////                        PsiCodeBlock codeBlockFromText = elementFactory.createCodeBlockFromText("implements ProxyEntityAvailable<Topic, TopicProxy>", psiClass);
+//                        WriteCommandAction.runWriteCommandAction(project,()->{
+//
+////                            ref.getParameterList().add(parameterRef);
+//                            psiClass.getImplementsList().add(referenceFromText);
+//                            psiClass.add(method);
+//                        });
+//                    }
+
                     String entityName = psiClass.getName();
                     String entityFullName = psiClass.getQualifiedName();
                     //获取对应的代理对象名称
@@ -141,7 +184,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
                     AptValueObjectInfo aptValueObjectInfo = new AptValueObjectInfo(entityName);
                     String packageName = psiFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy" );
-                    AptFileCompiler aptFileCompiler = new AptFileCompiler(packageName, entityName, proxyEntityName);
+                    AptFileCompiler aptFileCompiler = new AptFileCompiler(packageName, entityName, proxyEntityName,new AptSelectorInfo(proxyEntityName+"Selector"));
                     aptFileCompiler.addImports(entityFullName);
                     for (PsiField field : fields) {
                         PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore" );
@@ -163,7 +206,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         boolean isValueObject = valueObject != null;
                         String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf("." ) + 1) : entityName;
                         aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject, entityName));
-
+                        aptFileCompiler.getSelectorInfo().getProperties().add(new AptSelectPropertyInfo(name,psiFieldComment));
                         if (isValueObject) {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.AbstractValueObjectProxyEntity" );
                             aptFileCompiler.addImports(psiFieldPropertyType);

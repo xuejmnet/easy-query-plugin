@@ -43,6 +43,9 @@ public class EasyQueryConfig {
      * 是否生成noArgsConstructor
      */
     private boolean noArgsConstructor;
+
+    private boolean accessors;
+    private boolean requiredArgsConstructor;
     /**
      * 是否生成swagger
      */
@@ -53,6 +56,9 @@ public class EasyQueryConfig {
      * 实体模板
      */
     private String modelTemplate;
+
+    private boolean entityProxy;
+    private boolean entityProxyInterface;
 
     //=============包名
 
@@ -169,6 +175,23 @@ public class EasyQueryConfig {
         this.noArgsConstructor = noArgsConstructor;
     }
 
+
+    public boolean isAccessors() {
+        return accessors;
+    }
+
+    public void setAccessors(boolean accessors) {
+        this.accessors = accessors;
+    }
+
+    public boolean isRequiredArgsConstructor() {
+        return requiredArgsConstructor;
+    }
+
+    public void setRequiredArgsConstructor(boolean requiredArgsConstructor) {
+        this.requiredArgsConstructor = requiredArgsConstructor;
+    }
+
     public boolean isSwagger() {
         return swagger;
     }
@@ -215,5 +238,21 @@ public class EasyQueryConfig {
 
     public void setDomainPath(String domainPath) {
         this.domainPath = domainPath;
+    }
+
+    public boolean isEntityProxy() {
+        return entityProxy;
+    }
+
+    public void setEntityProxy(boolean entityProxy) {
+        this.entityProxy = entityProxy;
+    }
+
+    public boolean isEntityProxyInterface() {
+        return entityProxyInterface;
+    }
+
+    public void setEntityProxyInterface(boolean entityProxyInterface) {
+        this.entityProxyInterface = entityProxyInterface;
     }
 }

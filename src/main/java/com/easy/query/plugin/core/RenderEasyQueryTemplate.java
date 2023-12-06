@@ -173,7 +173,6 @@ public class RenderEasyQueryTemplate {
             PsiDirectory packageDirectory = VirtualFileUtils.getPsiDirectory(project,module, _package, EasyQueryConstant.ENTITY);
             DumbService.getInstance(project).runWhenSmart(() -> {
                 String fileName = className + suffix + ".java";
-                System.out.println("写入文件文件名:"+fileName);
                 PsiFile file = factory.createFileFromText(fileName, JavaFileType.INSTANCE, sw.toString());
                 templateMap.computeIfAbsent(packageDirectory, k -> new ArrayList<>()).add(CodeReformatUtil.reformat(file));
             });

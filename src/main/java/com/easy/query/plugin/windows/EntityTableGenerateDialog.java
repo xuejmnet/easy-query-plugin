@@ -71,6 +71,13 @@ public class EntityTableGenerateDialog extends JDialog {
     private JTextField tablePrefix;
     private JButton columnMappingBtn;
     private JButton modelTemplateBtn;
+    private JCheckBox builderCheckBox;
+    private JCheckBox dataCheckBox;
+    private JCheckBox allArgsConstructorCheckBox;
+    private JCheckBox noArgsConstructorCheckBox;
+    private JCheckBox accessorsCheckBox;
+    private JCheckBox requiredArgsConstructorCheckBox;
+    private JTextField author;
 
 
     Map<String, Module> moduleMap;
@@ -88,7 +95,7 @@ public class EntityTableGenerateDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-        setSize(550, 400);
+        setSize(700, 400);
         setTitle("Entity Generate");
         DialogUtil.centerShow(this);
 
@@ -232,6 +239,13 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setModelPackage(modelPackagePath.getText());
         config.setModelModule(getTextFieldVal(modelCombox));
         config.setTablePrefix(tablePrefix.getText());
+        config.setAuthor(author.getText());
+        config.setBuilder(builderCheckBox.isSelected());
+        config.setData(dataCheckBox.isSelected());
+        config.setAllArgsConstructor(allArgsConstructorCheckBox.isSelected());
+        config.setNoArgsConstructor(noArgsConstructorCheckBox.isSelected());
+        config.setAccessors(accessorsCheckBox.isSelected());
+        config.setRequiredArgsConstructor(requiredArgsConstructorCheckBox.isSelected());
         return config;
     }
 

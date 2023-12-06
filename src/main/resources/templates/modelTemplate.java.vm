@@ -41,6 +41,9 @@ import $classImport;
  * @author $author
  * @since $since
  */
+#if($config.data)
+@Data
+#end
 #if($config.accessors)
 @Accessors(chain = true)
 #end
@@ -84,15 +87,15 @@ public class ${modelName} #if(${config.modelSuperClass}) extends ${table.superCl
 
 #end
 
-###if($config.data==false)
-##    #foreach($column in $table.columnList)
-##    public  $column.fieldType  get${column.methodName}() {
-##        return ${column.fieldName};
-##    }
-##
-##    public void set${column.methodName}(${column.fieldType} ${column.fieldName}) {
-##        this.${column.fieldName} = ${column.fieldName};
-##    }
-###end
-###end
+#if($config.data==false)
+    #foreach($column in $table.columnList)
+    public  $column.fieldType  get${column.methodName}() {
+        return ${column.fieldName};
+    }
+
+    public void set${column.methodName}(${column.fieldType} ${column.fieldName}) {
+        this.${column.fieldName} = ${column.fieldName};
+    }
+#end
+#end
         }
