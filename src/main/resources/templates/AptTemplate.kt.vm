@@ -3,7 +3,8 @@ package ${aptFileCompiler.getPackageName()};
 import com.easy.query.core.expression.parser.core.available.TableAvailable;
 import com.easy.query.core.proxy.AbstractProxyEntity;
 import com.easy.query.core.proxy.SQLColumn;
-import com.easy.query.core.proxy.AbstractSelector;
+import com.easy.query.core.proxy.SQLSelectAsExpression;
+import com.easy.query.core.proxy.fetcher.AbstractFetcher;
 #foreach($imp in ${aptFileCompiler.getImports()})
 ${imp}
 #end
@@ -25,8 +26,8 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
         return getValueObject(new ${property.getEntityName()}Proxy(getTable(), getValueProperty("${property.getPropertyName()}")));
     }
     #else
-    public SQLColumn<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getPropertyName()}(){
-        return get("${property.getPropertyName()}");
+    public ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getPropertyName()}(){
+        return get("${property.getPropertyName()}"${property.getIncludePlaceholder()});
     }
     #end
 
@@ -70,14 +71,13 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
     * 数据库列的简单获取
     * @return
     */
-    public ${aptFileCompiler.getSelectorInfo().getName()} cols() {
-        return new ${aptFileCompiler.getSelectorInfo().getName()}(this);
-    }
+    public ${aptFileCompiler.getSelectorInfo().getName()} FETCHER =new ${aptFileCompiler.getSelectorInfo().getName()}(this,null,SQLSelectAsExpression.empty);
 
-public static class ${aptFileCompiler.getSelectorInfo().getName()} extends AbstractSelector<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}, ${aptFileCompiler.getSelectorInfo().getName()}> {
 
-    public ${aptFileCompiler.getSelectorInfo().getName()}(${aptFileCompiler.getEntityClassProxyName()} proxy) {
-        super(proxy);
+public static class ${aptFileCompiler.getSelectorInfo().getName()} extends AbstractFetcher<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}, ${aptFileCompiler.getSelectorInfo().getName()}> {
+
+    public ${aptFileCompiler.getSelectorInfo().getName()}(${aptFileCompiler.getEntityClassProxyName()} proxy, ${aptFileCompiler.getSelectorInfo().getName()} prev, SQLSelectAsExpression sqlSelectAsExpression) {
+        super(proxy, prev, sqlSelectAsExpression);
     }
 
 
@@ -90,6 +90,11 @@ public static class ${aptFileCompiler.getSelectorInfo().getName()} extends Abstr
         }
 
 #end
+
+    @Override
+    protected ${aptFileCompiler.getSelectorInfo().getName()} createFetcher(${aptFileCompiler.getEntityClassProxyName()} cp, AbstractFetcher<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}, ${aptFileCompiler.getSelectorInfo().getName()}> prev, SQLSelectAsExpression sqlSelectExpression) {
+            return new ${aptFileCompiler.getSelectorInfo().getName()}(cp, this, sqlSelectExpression);
+    }
 }
 
 }

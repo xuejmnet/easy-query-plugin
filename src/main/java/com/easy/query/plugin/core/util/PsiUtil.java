@@ -120,7 +120,23 @@ public class PsiUtil {
             return "java.lang.Object";
         }
 
-        return fieldType.getCanonicalText();
+        return parseGenericType(fieldType.getCanonicalText());
+    }
+    public static String parseGenericType(String genericTypeString) {
+        if(genericTypeString.contains(",")){
+            return genericTypeString;
+        }
+        // 正则表达式用于匹配泛型类型字符串
+        String regex = "<(.+?)>$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(genericTypeString);
+
+        // 如果匹配成功，返回内部类型字符串；否则返回空字符串
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return genericTypeString;
+        }
     }
 
 
