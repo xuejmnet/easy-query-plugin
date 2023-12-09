@@ -211,6 +211,8 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
                         if (navigate == null) {
                             aptFileCompiler.getSelectorInfo().getProperties().add(new AptSelectPropertyInfo(name, psiFieldComment));
+                        }else{
+                            aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                         }
 
                         if (isValueObject) {
@@ -291,7 +293,9 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
             PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
             aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, psiFieldPropertyType, psiFieldComment, fieldName, isValueObject, entityName,navigate!=null));
-
+            if (navigate!=null) {
+                aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
+            }
             if (valueObject != null) {
                 aptFileCompiler.addImports(psiFieldPropertyType);
                 PsiType fieldType = field.getType();
