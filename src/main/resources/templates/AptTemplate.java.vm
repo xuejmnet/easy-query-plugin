@@ -20,9 +20,7 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
 #macro(renderPropertyUI $valueObject)
 #foreach($property in $valueObject.getProperties())
     ${property.comment}
-    #if(${aptFileCompiler.isJava()})
-      * {@link ${property.getOwner()}#${property.propertyName}}
-    #end
+    * {@link ${property.getOwner()}#${property.getPropertyNameGetMethodName()}}
     */
     #if(${property.isValueObject()})
     public ${property.getEntityName()}Proxy ${property.getPropertyName()}(){
@@ -86,10 +84,8 @@ public static class ${aptFileCompiler.getSelectorInfo().getName()} extends Abstr
 
 #foreach($property in ${aptFileCompiler.getSelectorInfo().getProperties()})
     ${property.getComment()}
-    #if(${aptFileCompiler.isJava()})
-            * {@link ${aptFileCompiler.getEntityClassName()}#${property.getPropertyName()}}
-    #end
-        */
+    * {@link ${aptFileCompiler.getEntityClassName()}#${property.getPropertyNameGetMethodName()}}
+    */
     public ${aptFileCompiler.getSelectorInfo().getName()} ${property.getPropertyName()}() {
         return add(getProxy().${property.getPropertyName()}());
         }

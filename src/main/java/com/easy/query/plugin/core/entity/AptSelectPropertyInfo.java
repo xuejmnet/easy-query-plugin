@@ -1,5 +1,7 @@
 package com.easy.query.plugin.core.entity;
 
+import com.easy.query.plugin.core.util.StrUtil;
+
 /**
  * create time 2023/12/6 10:00
  * 文件说明
@@ -18,6 +20,9 @@ public class AptSelectPropertyInfo {
 
     public String getPropertyName() {
         return propertyName;
+    }
+    public String getPropertyNameGetMethodName() {
+        return "get"+ StrUtil.toUpperCaseFirstOne(propertyName);
     }
 
     public String getComment() {
