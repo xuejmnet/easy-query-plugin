@@ -15,14 +15,16 @@ public class AptFileCompiler {
     private final String entityClassName;
     private final String entityClassProxyName;
     private final AptSelectorInfo selectorInfo;
+    private final boolean kt;
     private final String packageName;
     private Set<String> imports;
 
-    public AptFileCompiler(String packageName,String entityClassName,String entityClassProxyName,AptSelectorInfo selectorInfo) {
+    public AptFileCompiler(String packageName,String entityClassName,String entityClassProxyName,AptSelectorInfo selectorInfo,boolean kt) {
         this.packageName = packageName;
         this.entityClassName = entityClassName;
         this.entityClassProxyName = entityClassProxyName;
         this.selectorInfo = selectorInfo;
+        this.kt = kt;
         this.imports = new LinkedHashSet<>();
     }
 
@@ -47,5 +49,9 @@ public class AptFileCompiler {
     }
     public AptSelectorInfo getSelectorInfo() {
         return selectorInfo;
+    }
+
+    public boolean isJava() {
+        return !kt;
     }
 }

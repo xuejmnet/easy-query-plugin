@@ -138,13 +138,13 @@ public class PsiJavaFileUtil {
                 })
                 .collect(Collectors.toList());
         if(CollectionUtils.isNotEmpty(virtualFiles)){
-            EasyQueryDocumentChangeHandler.createAptFile(virtualFiles,project);
+            EasyQueryDocumentChangeHandler.createAptFile(virtualFiles,project,true);
         }
     }
     public static void createAptCurrentFile(VirtualFile virtualFile,Project project) {
         if(virtualFile!=null){
             virtualFile.putUserData(EasyQueryDocumentChangeHandler.CHANGE, true);
-            EasyQueryDocumentChangeHandler.createAptFile(Collections.singletonList(virtualFile),project);
+            EasyQueryDocumentChangeHandler.createAptFile(Collections.singletonList(virtualFile),project,false);
         }
     }
 

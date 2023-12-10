@@ -201,23 +201,35 @@ public class CustomConfig {
         this.tableDefIgnoreEntitySuffixes = tableDefIgnoreEntitySuffixes;
     }
 
-    public static String getConfig(String value, FileTypeEnum fileType, boolean isMaven) {
+    public static String getConfig(String value, FileTypeEnum fileType, boolean isMaven,boolean fileProxy) {
         if (StrUtil.isNotBlank(value)) {
             return value;
         }
         if(isMaven){
             if(fileType==FileTypeEnum.Java){
+                if(fileProxy){
+                    return "src/main/java/";
+                }
                 return "target/generated-sources/annotations/";
             }
             if(fileType==FileTypeEnum.Kotlin){
+                if(fileProxy){
+                    return "src/main/kotlin/";
+                }
                 return "target/generated-sources/kapt/compile/";
             }
         }
         if(!isMaven){
             if(fileType==FileTypeEnum.Java){
+                if(fileProxy){
+                    return "src/main/java/";
+                }
                 return "target/generated-sources/annotations/";
             }
             return "build/generated/source/kapt/main/";
+        }
+        if(fileProxy){
+            return "src/main/java/";
         }
         return "target/generated-sources/annotations/";
 
