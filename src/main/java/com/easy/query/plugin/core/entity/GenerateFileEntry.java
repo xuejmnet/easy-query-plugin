@@ -30,9 +30,9 @@ public class GenerateFileEntry {
             return true;
         }
 
-        if ("com.easy.query.core.enums.FileGenerateEnum.GENERATE_CURRENT_COMPILE_OVERRIDE".equals(strategy)) {
+        if ("com.easy.query.core.enums.FileGenerateEnum.GENERATE_CURRENT_COMPILE_OVERRIDE".endsWith(strategy)) {
             return !allCompileFrom;
         }
-        return "com.easy.query.core.enums.FileGenerateEnum.GENERATE_COMPILE_ALWAYS_OVERRIDE".equals(strategy);
+        return "com.easy.query.core.enums.FileGenerateEnum.GENERATE_COMPILE_ALWAYS_OVERRIDE".endsWith(strategy);
     }
 }
