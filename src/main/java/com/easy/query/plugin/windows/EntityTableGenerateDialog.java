@@ -4,13 +4,16 @@ import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.Template;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.TableInfo;
-import com.easy.query.plugin.core.persistent.EasyQueryFlexPluginConfigData;
+import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.render.ModuleComBoxRender;
 import com.easy.query.plugin.core.render.TableListCellRenderer;
 import com.easy.query.plugin.core.util.DialogUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.PackageUtil;
+import com.easy.query.plugin.core.validator.InputValidatorImpl;
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.ui.MessageConstants;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.easy.query.plugin.core.util.StrUtil;
@@ -39,6 +42,7 @@ import com.intellij.ui.components.fields.ExtendableTextField;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -50,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,6 +63,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class EntityTableGenerateDialog extends JDialog {
+    public static final String SINCE_CONFIG = "---请选择配置---";
+    public static final String SINCE_CONFIG_ADD = "添加配置";
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -78,6 +85,11 @@ public class EntityTableGenerateDialog extends JDialog {
     private JCheckBox accessorsCheckBox;
     private JCheckBox requiredArgsConstructorCheckBox;
     private JTextField author;
+    private JCheckBox entityProxyCheck;
+    private JCheckBox entityQueryCheck;
+    private JCheckBox entityFileProxyCheck;
+    private JComboBox sinceComBox;
+    private JButton saveConfigBtn;
 
 
     Map<String, Module> moduleMap;
@@ -95,7 +107,7 @@ public class EntityTableGenerateDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-        setSize(700, 400);
+        setSize(800, 500);
         setTitle("Entity Generate");
         DialogUtil.centerShow(this);
 
@@ -108,6 +120,12 @@ public class EntityTableGenerateDialog extends JDialog {
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
+            }
+        });
+        saveConfigBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onSaveCurrent();
             }
         });
         // call onCancel() when cross is clicked
@@ -192,11 +210,11 @@ public class EntityTableGenerateDialog extends JDialog {
                 }
             }
         });
-        initPackagePath();
-        modelCombox.addActionListener(e -> {
-            EasyQueryConfig configData = getConfigData();
-            modelPackagePath.setText(getPackagePath(String.valueOf(modelCombox.getSelectedItem()), ObjectUtil.defaultIfNull(configData.getDomainPath(), "domain")));
-        });
+//        initPackagePath();
+//        modelCombox.addActionListener(e -> {
+//            EasyQueryConfig configData = getConfigData();
+//            modelPackagePath.setText(getPackagePath(String.valueOf(modelCombox.getSelectedItem()), ObjectUtil.defaultIfNull(configData.getModelPackage(), "domain")));
+//        });
     }
 
     private void initBtn() {
@@ -213,9 +231,10 @@ public class EntityTableGenerateDialog extends JDialog {
      * @param moduleName 模块名称
      * @return {@code Module}
      */
-    public  Module getModule(String moduleName) {
+    public Module getModule(String moduleName) {
         return moduleMap.get(moduleName);
     }
+
     /**
      * 得到包路径
      *
@@ -234,7 +253,7 @@ public class EntityTableGenerateDialog extends JDialog {
     }
 
     public EasyQueryConfig getConfigData() {
-        EasyQueryConfig config = Template.getEasyQueryConfig(project);
+        EasyQueryConfig config = Template.getEasyQueryConfig(project,sinceComBox.getSelectedItem()+"");
 
         config.setModelPackage(modelPackagePath.getText());
         config.setModelModule(getTextFieldVal(modelCombox));
@@ -246,6 +265,9 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setNoArgsConstructor(noArgsConstructorCheckBox.isSelected());
         config.setAccessors(accessorsCheckBox.isSelected());
         config.setRequiredArgsConstructor(requiredArgsConstructorCheckBox.isSelected());
+        config.setEntityProxy(entityProxyCheck.isSelected());
+        config.setEntityFileProxy(entityFileProxyCheck.isSelected());
+        config.setEntityQuery(entityQueryCheck.isSelected());
         return config;
     }
 
@@ -282,10 +304,68 @@ public class EntityTableGenerateDialog extends JDialog {
         // 初始化模块
         initModules(list);
         initBtn();
+        initSinceComBox(null);
         initConfigData(null);
         initPackageList();
     }
 
+    public void initSinceComBox(Integer idx) {
+        Set<String> list = EasyQueryQueryPluginConfigData.getProjectSinceMap().keySet();
+        sinceComBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                if (SINCE_CONFIG_ADD.equals(value.toString())) {
+                    setIcon(AllIcons.General.Add);
+                } else {
+                    setIcon(null); // 清除图标
+                }
+                setText(value.toString());
+                return this;
+            }
+        });
+        sinceComBox.removeAllItems();
+        sinceComBox.addItem(SINCE_CONFIG);
+        for (String item : list) {
+            sinceComBox.insertItemAt(item, 1);
+        }
+        sinceComBox.addItem(SINCE_CONFIG_ADD);
+        if (ObjectUtil.isNull(idx)) {
+            sinceComBox.setSelectedIndex(sinceComBox.getItemCount() > 2 ? 1 : 0);
+        } else {
+            sinceComBox.setSelectedIndex(idx);
+        }
+        sinceComBox.revalidate();
+        sinceComBox.repaint();
+
+
+        sinceComBox.addActionListener(e -> {
+            Object selectedItem = sinceComBox.getSelectedItem();
+            if (ObjectUtil.isNull(selectedItem)) {
+                return;
+            }
+            if (selectedItem.toString().equals(SINCE_CONFIG_ADD)) {
+                sinceComBox.hidePopup();
+                Messages.InputDialog dialog = new Messages.InputDialog("请输入配置名称", "配置名称", Messages.getQuestionIcon(), "", new InputValidatorImpl());
+                dialog.show();
+                String configName = dialog.getInputString();
+                if (StrUtil.isBlank(configName)) {
+                    initSinceComBox(null);
+                    return;
+                }
+                EasyQueryQueryPluginConfigData.saveConfigSince(configName,getConfigData());
+                NotificationUtils.notifySuccess("保存成功", project);
+                initSinceComBox(null);
+                return;
+            } else if(SINCE_CONFIG.equals(selectedItem.toString())){
+                initConfigData(null);
+                return;
+            }
+            String key = selectedItem.toString();
+            LinkedHashMap<String, EasyQueryConfig> projectSinceMap = EasyQueryQueryPluginConfigData.getProjectSinceMap();
+            EasyQueryConfig config = projectSinceMap.getOrDefault(key, new EasyQueryConfig());
+            initConfigData(config);
+        });
+    }
 
     public void initPackageList() {
         packageList.stream().forEach(textField -> {
@@ -298,17 +378,17 @@ public class EntityTableGenerateDialog extends JDialog {
         });
     }
 
-    private void initPackagePath() {
-//        int idx = sinceComBox.getSelectedIndex();
-//        if (idx == 0) {
-        EasyQueryConfig configData = getConfigData();
-        modelPackagePath.setText(getPackagePath(String.valueOf(modelCombox.getSelectedItem()), ObjectUtil.defaultIfNull(configData.getDomainPath(), "domain")));
-//        }
-    }
+//    private void initPackagePath() {
+////        int idx = sinceComBox.getSelectedIndex();
+////        if (idx == 0) {
+//        EasyQueryConfig configData = getConfigData();
+//        modelPackagePath.setText(getPackagePath(String.valueOf(modelCombox.getSelectedItem()), ObjectUtil.defaultIfNull(configData.getModelPackage(), "domain")));
+////        }
+//    }
 
     public void initConfigData(EasyQueryConfig config) {
         if (ObjectUtil.isNull(config)) {
-            config = Template.getEasyQueryConfig(project);
+            config = Template.getEasyQueryConfig(project,sinceComBox.getSelectedItem()+"");
         }
         modelPackagePath.setText(config.getModelPackage());
         String modelModule = config.getModelModule();
@@ -324,29 +404,45 @@ public class EntityTableGenerateDialog extends JDialog {
                 jComboBox.repaint();
             }
         }
+
+        tablePrefix.setText(config.getTablePrefix());
+        author.setText(config.getAuthor());
+        dataCheckBox.setSelected(config.isData());
+        builderCheckBox.setSelected(config.isBuilder());
+        allArgsConstructorCheckBox.setSelected(config.isAllArgsConstructor());
+        noArgsConstructorCheckBox.setSelected(config.isNoArgsConstructor());
+        accessorsCheckBox.setSelected(config.isAccessors());
+        requiredArgsConstructorCheckBox.setSelected(config.isRequiredArgsConstructor());
+        entityProxyCheck.setSelected(config.isEntityProxy());
+        entityFileProxyCheck.setSelected(config.isEntityFileProxy());
+        entityQueryCheck.setSelected(config.isEntityQuery());
     }
 
     private void onOK() {
         // add your code here
-        onGenerate();
+        boolean close = onGenerate();
+        if (!close) {
+            return;
+        }
 
 
         dispose();
     }
-    private void onGenerate(){
+
+    private boolean onGenerate() {
         for (JComboBox<String> el : list) {
             JTextField textField = (JTextField) el.getEditor().getEditorComponent();
             String moduleName = textField.getText();
             if (!containsModule(moduleName)) {
                 Messages.showWarningDialog(String.format("找不到名称为：【%s】的模块", moduleName), "提示");
-                return;
+                return false;
             }
         }
 
         List<String> selectedTabeList = tableList.getSelectedValuesList();
         if (CollectionUtils.isEmpty(selectedTabeList)) {
             Messages.showWarningDialog("请选择要生成的表", "提示");
-            return;
+            return false;
         }
         List<TableInfo> selectedTableInfo = new CopyOnWriteArrayList<>();
         for (String tableName : selectedTabeList) {
@@ -355,16 +451,17 @@ public class EntityTableGenerateDialog extends JDialog {
         // boolean flag = checkTableInfo(selectedTableInfo);
         // if (flag) {
 //        String since = sinceComBox.getSelectedItem().toString();
-        EasyQueryConfig configData = getConfigData();
+//        EasyQueryConfig configData = getConfigData();
 //
 //
 //        if (!SINCE_CONFIG.equals(since)) {
 //            MybatisFlexPluginConfigData.removeSinceConfig(since);
 //            MybatisFlexPluginConfigData.configSince(since, configData);
 //        }
-        EasyQueryFlexPluginConfigData.setCurrentEasyQueryConfig(configData,project);
+//        EasyQueryQueryPluginConfigData.setCurrentEasyQueryConfig(configData, project);
 
         startGenCode(selectedTableInfo);
+        return true;
     }
 
 
@@ -377,7 +474,7 @@ public class EntityTableGenerateDialog extends JDialog {
 //            }
 //            ReflectUtil.setFieldValue(configData, box.getName(),"");
 //        }
-        RenderEasyQueryTemplate.assembleData(selectedTableInfo, configData, project,getModule(String.valueOf(modelCombox.getSelectedItem())));
+        RenderEasyQueryTemplate.assembleData(selectedTableInfo, configData, project, getModule(String.valueOf(modelCombox.getSelectedItem())));
         NotificationUtils.notifySuccess("代码生成成功", project);
         onCancel();
     }
@@ -385,6 +482,32 @@ public class EntityTableGenerateDialog extends JDialog {
     private void onCancel() {
         // add your code here if necessary
         dispose();
+    }
+    private void onSaveCurrent(){
+        Object selectedItem = sinceComBox.getSelectedItem();
+        if(Objects.isNull(selectedItem)){
+            return;
+        }
+        String key = selectedItem.toString();
+        if(SINCE_CONFIG.equals(key)){
+            Messages.InputDialog dialog = new Messages.InputDialog("请输入配置名称", "配置名称", Messages.getQuestionIcon(), "", new InputValidatorImpl());
+            dialog.show();
+            String configName = dialog.getInputString();
+            if (StrUtil.isBlank(configName)) {
+                return;
+            }
+            EasyQueryQueryPluginConfigData.saveConfigSince(configName,getConfigData());
+            NotificationUtils.notifySuccess("保存成功", project);
+            initSinceComBox(null);
+        }else{
+            int flag = Messages.showYesNoDialog("确定要覆盖当前配置["+key+"]吗？", "提示", Messages.getQuestionIcon());
+            if (MessageConstants.YES == flag) {
+                EasyQueryConfig configData = getConfigData();
+                EasyQueryQueryPluginConfigData.saveConfigSince(key,configData);
+                initConfigData(configData);
+                NotificationUtils.notifySuccess("保存成功", project);
+            }
+        }
     }
 
 

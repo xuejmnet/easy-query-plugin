@@ -1,11 +1,8 @@
 package com.easy.query.plugin.core.config;
 
-import com.alibaba.fastjson2.JSON;
 import com.easy.query.plugin.core.constant.EasyQueryConstant;
-import com.intellij.ui.tabs.TabInfo;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -58,7 +55,8 @@ public class EasyQueryConfig {
     private String modelTemplate;
 
     private boolean entityProxy;
-    private boolean entityProxyInterface;
+    private boolean entityFileProxy;
+    private boolean entityQuery;
 
     //=============包名
 
@@ -77,7 +75,6 @@ public class EasyQueryConfig {
     private String modelModule;
 
     private String modelSuffix;
-    private String domainPath;
 
     private String modelSuperClass;
 
@@ -232,13 +229,6 @@ public class EasyQueryConfig {
         this.swagger3 = swagger3;
     }
 
-    public String getDomainPath() {
-        return domainPath;
-    }
-
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
 
     public boolean isEntityProxy() {
         return entityProxy;
@@ -248,11 +238,19 @@ public class EasyQueryConfig {
         this.entityProxy = entityProxy;
     }
 
-    public boolean isEntityProxyInterface() {
-        return entityProxyInterface;
+    public boolean isEntityFileProxy() {
+        return entityFileProxy;
     }
 
-    public void setEntityProxyInterface(boolean entityProxyInterface) {
-        this.entityProxyInterface = entityProxyInterface;
+    public void setEntityFileProxy(boolean entityFileProxy) {
+        this.entityFileProxy = entityFileProxy;
+    }
+
+    public boolean isEntityQuery() {
+        return entityQuery;
+    }
+
+    public void setEntityQuery(boolean entityQuery) {
+        this.entityQuery = entityQuery;
     }
 }

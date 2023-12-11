@@ -2,7 +2,7 @@ package com.easy.query.plugin.core;
 
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.constant.EasyQueryConstant;
-import com.easy.query.plugin.core.persistent.EasyQueryFlexPluginConfigData;
+import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.ide.fileTemplates.impl.UrlUtil;
@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Set;
 
 public class Template {
@@ -31,8 +32,9 @@ public class Template {
 //        return code;
 //    }
 //
-    public static @NotNull EasyQueryConfig getEasyQueryConfig(Project project) {
-        EasyQueryConfig config = EasyQueryFlexPluginConfigData.getCurrentProjectMybatisFlexConfig(project);
+    public static @NotNull EasyQueryConfig getEasyQueryConfig(Project project,String sinceName) {
+        LinkedHashMap<String, EasyQueryConfig> projectSinceMap = EasyQueryQueryPluginConfigData.getProjectSinceMap();
+        EasyQueryConfig config = projectSinceMap.getOrDefault(sinceName, new EasyQueryConfig());
         if (StrUtil.isEmpty(config.getModelTemplate())) {
             config.setModelTemplate(getTemplateContent(EasyQueryConstant.MODEL_TEMPLATE));
         }
@@ -40,8 +42,8 @@ public class Template {
         if (ObjectUtil.isNull(config.getModelSuffix())) {
             config.setModelSuffix(EasyQueryConstant.ENTITY);
         }
-        if(ObjectUtil.isNull(config.getDomainPath())){
-            config.setDomainPath(EasyQueryConstant.DOMAIN.toLowerCase());
+        if(ObjectUtil.isNull(config.getModelPackage())){
+            config.setModelPackage(EasyQueryConstant.DOMAIN.toLowerCase());
         }
         return config;
     }
