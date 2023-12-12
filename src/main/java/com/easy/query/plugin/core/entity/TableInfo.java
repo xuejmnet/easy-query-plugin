@@ -34,36 +34,6 @@ public class TableInfo {
     private Set<String> importClassList;
     private String superClass;
 
-    private String onInsert;
-
-    private String onUpdate;
-
-    private String onSet;
-
-    public String getOnInsert() {
-        return onInsert;
-    }
-
-    public void setOnInsert(String onInsert) {
-        this.onInsert = onInsert;
-    }
-
-    public String getOnUpdate() {
-        return onUpdate;
-    }
-
-    public void setOnUpdate(String onUpdate) {
-        this.onUpdate = onUpdate;
-    }
-
-    public String getOnSet() {
-        return onSet;
-    }
-
-    public void setOnSet(String onSet) {
-        this.onSet = onSet;
-    }
-
     public Set<String> getImportClassList() {
         return importClassList;
     }

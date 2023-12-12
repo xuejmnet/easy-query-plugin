@@ -56,7 +56,6 @@ public class EasyQueryConfig {
 
     private boolean entityProxy;
     private boolean entityFileProxy;
-    private boolean entityQuery;
 
     //=============包名
 
@@ -244,13 +243,5 @@ public class EasyQueryConfig {
 
     public void setEntityFileProxy(boolean entityFileProxy) {
         this.entityFileProxy = entityFileProxy;
-    }
-
-    public boolean isEntityQuery() {
-        return entityQuery;
-    }
-
-    public void setEntityQuery(boolean entityQuery) {
-        this.entityQuery = entityQuery;
     }
 }

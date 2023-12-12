@@ -44,57 +44,13 @@ public class ColumnInfo {
      * 是否必填
      */
     private boolean notNull;
-    /**
-     * 是否逻辑删除
-     */
-    private boolean logicDelete;
-
-    private boolean tenant;
-
-    private boolean version;
-
-    private String insertValue;
-
-    private String updateValue;
-
-    public String getInsertValue() {
-        return insertValue;
-    }
-
-    public void setInsertValue(String insertValue) {
-        this.insertValue = insertValue;
-    }
-
-    public String getUpdateValue() {
-        return updateValue;
-    }
-
-    public void setUpdateValue(String updateValue) {
-        this.updateValue = updateValue;
-    }
-
-    public boolean isTenant() {
-        return tenant;
-    }
-
-    public void setTenant(boolean tenant) {
-        this.tenant = tenant;
-    }
-
-    public boolean isVersion() {
-        return version;
-    }
-
-    public void setVersion(boolean version) {
-        this.version = version;
-    }
 
     public boolean isNotNull() {
         return notNull;
     }
 
     public void setNotNull(boolean notNull) {
-        notNull = notNull;
+        this.notNull = notNull;
     }
 
     public String getMethodName() {
@@ -161,15 +117,6 @@ public class ColumnInfo {
         isAutoIncrement = autoIncrement;
     }
 
-
-    public boolean isLogicDelete() {
-        return logicDelete;
-    }
-
-    public void setLogicDelete(boolean logicDelete) {
-        this.logicDelete = logicDelete;
-    }
-
     @Override
     public String toString() {
         return "ColumnInfo{" +
@@ -182,7 +129,6 @@ public class ColumnInfo {
                 ", isAutoIncrement=" + isAutoIncrement +
                 ", methodName='" + methodName + '\'' +
                 ", notNull=" + notNull +
-                ", logicDelete=" + logicDelete +
                 '}';
     }
 }

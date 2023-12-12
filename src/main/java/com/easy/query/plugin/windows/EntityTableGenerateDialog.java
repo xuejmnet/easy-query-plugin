@@ -34,6 +34,7 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiPackage;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.PlatformIcons;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -86,10 +87,15 @@ public class EntityTableGenerateDialog extends JDialog {
     private JCheckBox requiredArgsConstructorCheckBox;
     private JTextField author;
     private JCheckBox entityProxyCheck;
-    private JCheckBox entityQueryCheck;
     private JCheckBox entityFileProxyCheck;
     private JComboBox sinceComBox;
     private JButton saveConfigBtn;
+    private JTextField modelSuffixText;
+    private JCheckBox swaggerCheckBox;
+    private JCheckBox swagger3CheckBox;
+    private JButton importBtn;
+    private JButton exportBtn;
+    private JButton confDelBtn;
 
 
     Map<String, Module> moduleMap;
@@ -103,14 +109,16 @@ public class EntityTableGenerateDialog extends JDialog {
     List<JComboBox<String>> list = Arrays.asList(modelCombox);
     List<JTextField> packageList = Arrays.asList(modelPackagePath);
 
+    private String modelTemplate;
+
     public EntityTableGenerateDialog(AnActionEvent actionEvent) {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-        setSize(800, 500);
+        setSize(800, 600);
         setTitle("Entity Generate");
         DialogUtil.centerShow(this);
-
+        confDelBtn.setIcon(PlatformIcons.DELETE_ICON);
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onOK();
@@ -210,6 +218,15 @@ public class EntityTableGenerateDialog extends JDialog {
                 }
             }
         });
+        modelTemplateBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(modelTemplate, newTemplate -> {
+                    modelTemplate = newTemplate;
+                });
+                modelTemplateEditorDialog.setVisible(true);
+            }
+        });
 //        initPackagePath();
 //        modelCombox.addActionListener(e -> {
 //            EasyQueryConfig configData = getConfigData();
@@ -258,6 +275,7 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setModelPackage(modelPackagePath.getText());
         config.setModelModule(getTextFieldVal(modelCombox));
         config.setTablePrefix(tablePrefix.getText());
+        config.setModelSuffix(modelSuffixText.getText());
         config.setAuthor(author.getText());
         config.setBuilder(builderCheckBox.isSelected());
         config.setData(dataCheckBox.isSelected());
@@ -267,7 +285,9 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setRequiredArgsConstructor(requiredArgsConstructorCheckBox.isSelected());
         config.setEntityProxy(entityProxyCheck.isSelected());
         config.setEntityFileProxy(entityFileProxyCheck.isSelected());
-        config.setEntityQuery(entityQueryCheck.isSelected());
+        config.setModelTemplate(modelTemplate);
+        config.setSwagger(swaggerCheckBox.isSelected());
+        config.setSwagger3(swagger3CheckBox.isSelected());
         return config;
     }
 
@@ -407,6 +427,7 @@ public class EntityTableGenerateDialog extends JDialog {
 
         tablePrefix.setText(config.getTablePrefix());
         author.setText(config.getAuthor());
+        modelSuffixText.setText(config.getModelSuffix());
         dataCheckBox.setSelected(config.isData());
         builderCheckBox.setSelected(config.isBuilder());
         allArgsConstructorCheckBox.setSelected(config.isAllArgsConstructor());
@@ -415,7 +436,9 @@ public class EntityTableGenerateDialog extends JDialog {
         requiredArgsConstructorCheckBox.setSelected(config.isRequiredArgsConstructor());
         entityProxyCheck.setSelected(config.isEntityProxy());
         entityFileProxyCheck.setSelected(config.isEntityFileProxy());
-        entityQueryCheck.setSelected(config.isEntityQuery());
+        swaggerCheckBox.setSelected(config.isSwagger());
+        swagger3CheckBox.setSelected(config.isSwagger3());
+        modelTemplate=config.getModelTemplate();
     }
 
     private void onOK() {
