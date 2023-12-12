@@ -64,10 +64,10 @@ public class TableUtils {
                 DasColumn dasColumn = (DasColumn) column;
                 columnInfo.setName(dasColumn.getName());
                 columnInfo.setFieldName(StrUtil.toCamelCase(dasColumn.getName().toLowerCase()));
-                String jdbcTypeStr = dasColumn.getDataType().toString();
+                String jdbcTypeStr = dasColumn.getDasType().toDataType().toString();
                 int jdbc = dialect.getJavaTypeForNativeType(jdbcTypeStr);
                 String jdbcTypeName = JdbcUtil.getJdbcTypeName(jdbc);
-                String fieldType = getFieldType(jdbc, tableInfo, jdbcTypeName, dasColumn.getDataType().size, jdbcTypeStr.toLowerCase());
+                String fieldType = getFieldType(jdbc, tableInfo, jdbcTypeName, dasColumn.getDasType().toDataType().size, jdbcTypeStr.toLowerCase());
                 columnInfo.setFieldType(fieldType);
                 columnInfo.setNotNull(dasColumn.isNotNull());
                 columnInfo.setComment(ObjectUtil.defaultIfNull(dasColumn.getComment(), "").replaceAll("\n", ""));

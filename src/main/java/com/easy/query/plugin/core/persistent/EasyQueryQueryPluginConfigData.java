@@ -101,6 +101,14 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
         state.configSince = JSONObject.toJSONString(projectSinceMap);
         instance.loadState(state);
     }
+    public static void delConfigSince(String key){
+        EasyQueryQueryPluginConfigData instance = getInstance();
+        State state = instance.getState();
+        LinkedHashMap<String, EasyQueryConfig> projectSinceMap = getProjectSinceMap();
+        projectSinceMap.remove(key);
+        state.configSince = JSONObject.toJSONString(projectSinceMap);
+        instance.loadState(state);
+    }
     public static class State {
 //        /**
 //         * 当前项目配置（项目隔离）

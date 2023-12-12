@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.9"
+version = "0.0.10"
 
 repositories {
     maven {
@@ -17,8 +17,10 @@ repositories {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2022.2.4")
-    type.set("IU") // Target IDE Platform
+//    version.set("2022.2.4")
+    version.set("2023.2.5")
+    type.set("IU") // Target
+    // IDE Platform
 
     plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin", "com.intellij.database"))
 }
@@ -43,8 +45,8 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("202.*")
-        untilBuild.set("232.*")
+        sinceBuild.set("203.7148.57")
+        untilBuild.set("233.*")
     }
 
     signPlugin {

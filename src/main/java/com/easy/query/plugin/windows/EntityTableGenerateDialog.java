@@ -136,6 +136,12 @@ public class EntityTableGenerateDialog extends JDialog {
                 onSaveCurrent();
             }
         });
+        confDelBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onDelCurrent();
+            }
+        });
         // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -529,6 +535,23 @@ public class EntityTableGenerateDialog extends JDialog {
                 EasyQueryQueryPluginConfigData.saveConfigSince(key,configData);
                 initConfigData(configData);
                 NotificationUtils.notifySuccess("保存成功", project);
+            }
+        }
+    }
+    private void onDelCurrent(){
+        Object selectedItem = sinceComBox.getSelectedItem();
+        if(Objects.isNull(selectedItem)){
+            return;
+        }
+        String key = selectedItem.toString();
+        if(SINCE_CONFIG.equals(key)){
+            return;
+        }else{
+            int flag = Messages.showYesNoDialog("确定要删除当前配置["+key+"]吗？", "提示", Messages.getQuestionIcon());
+            if (MessageConstants.YES == flag) {
+                EasyQueryQueryPluginConfigData.delConfigSince(key);
+                initConfigData(null);
+                NotificationUtils.notifySuccess("删除成功", project);
             }
         }
     }

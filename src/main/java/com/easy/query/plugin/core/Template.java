@@ -34,17 +34,14 @@ public class Template {
 //
     public static @NotNull EasyQueryConfig getEasyQueryConfig(Project project,String sinceName) {
         LinkedHashMap<String, EasyQueryConfig> projectSinceMap = EasyQueryQueryPluginConfigData.getProjectSinceMap();
-        EasyQueryConfig config = projectSinceMap.getOrDefault(sinceName, new EasyQueryConfig());
-        if (StrUtil.isEmpty(config.getModelTemplate())) {
+        EasyQueryConfig config = projectSinceMap.get(sinceName);
+        if(config==null){
+            config=new EasyQueryConfig();
             config.setModelTemplate(getTemplateContent(EasyQueryConstant.MODEL_TEMPLATE));
-        }
-
-        if (ObjectUtil.isNull(config.getModelSuffix())) {
             config.setModelSuffix(EasyQueryConstant.ENTITY);
-        }
-        if(ObjectUtil.isNull(config.getModelPackage())){
             config.setModelPackage(EasyQueryConstant.DOMAIN.toLowerCase());
         }
+
         return config;
     }
 
