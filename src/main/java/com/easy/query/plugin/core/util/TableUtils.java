@@ -1,7 +1,10 @@
 package com.easy.query.plugin.core.util;
 
 import com.easy.query.plugin.core.entity.ColumnInfo;
+import com.easy.query.plugin.core.entity.ColumnMetadata;
+import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.entity.TableInfo;
+import com.easy.query.plugin.core.entity.TableMetadata;
 import com.intellij.database.dialects.DatabaseDialectEx;
 import com.intellij.database.model.DasColumn;
 import com.intellij.database.model.DasObject;
@@ -20,7 +23,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -37,7 +42,7 @@ public class TableUtils {
      * @param event 事件
      * @return {@code List<TableInfo>}
      */
-    public static List<TableInfo> getAllTables(AnActionEvent event) {
+    public static List<TableMetadata> getAllTables(AnActionEvent event) {
         DbTableImpl table = (DbTableImpl) event.getData(CommonDataKeys.PSI_ELEMENT);
         DbElement tableParent = table.getParent();
         assert tableParent != null;
@@ -49,35 +54,36 @@ public class TableUtils {
         dasTables.addAll(viewList);
         return getTableInfoList(dasTables);
     }
-    public static List<TableInfo> getTableInfoList(List<DasTable> selectedTableList) {
-        List<TableInfo> tableInfoList = new ArrayList<>();
+    public static List<TableMetadata> getTableInfoList(List<DasTable> selectedTableList) {
+        List<TableMetadata> tableInfoList = new ArrayList<>();
         DasTable dasTable = selectedTableList.get(0);
         DatabaseDialectEx dialect = getDialect(dasTable);
         for (DasTable table : selectedTableList) {
-            TableInfo tableInfo = new TableInfo();
-            tableInfo.setName(table.getName());
-            tableInfo.setComment(table.getComment());
-            List<ColumnInfo> columnList = new CopyOnWriteArrayList<>();
+            TableMetadata tableInfo = new TableMetadata(table.getName(), table.getComment());
+            List<ColumnMetadata> columnList = new ArrayList<>();
             JBIterable<? extends DasObject> columns = table.getDasChildren(ObjectKind.COLUMN);
             for (DasObject column : columns) {
-                ColumnInfo columnInfo = new ColumnInfo();
+//                ColumnInfo columnInfo = new ColumnInfo();
                 DasColumn dasColumn = (DasColumn) column;
-                columnInfo.setName(dasColumn.getName());
-                columnInfo.setFieldName(StrUtil.toCamelCase(dasColumn.getName().toLowerCase()));
+//                columnInfo.setName(dasColumn.getName());
+//                columnInfo.setFieldName(StrUtil.toCamelCase(dasColumn.getName()));
                 String jdbcTypeStr = dasColumn.getDasType().toDataType().toString();
                 int jdbc = dialect.getJavaTypeForNativeType(jdbcTypeStr);
-                String jdbcTypeName = JdbcUtil.getJdbcTypeName(jdbc);
-                String fieldType = getFieldType(jdbc, tableInfo, jdbcTypeName, dasColumn.getDasType().toDataType().size, jdbcTypeStr.toLowerCase());
-                columnInfo.setFieldType(fieldType);
-                columnInfo.setNotNull(dasColumn.isNotNull());
-                columnInfo.setComment(ObjectUtil.defaultIfNull(dasColumn.getComment(), "").replaceAll("\n", ""));
-                columnInfo.setMethodName(StrUtil.upperFirst(columnInfo.getFieldName()));
-                columnInfo.setType(jdbcTypeName);
-                columnInfo.setPrimaryKey(table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.PRIMARY_KEY));
-                columnInfo.setAutoIncrement(table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.AUTO_GENERATED));
-                columnList.add(columnInfo);
+//                String jdbcTypeName = JdbcUtil.getJdbcTypeName(jdbc);
+//                String fieldType = getFieldType(jdbc, tableInfo, jdbcTypeName, dasColumn.getDasType().toDataType().size, jdbcTypeStr.toLowerCase());
+//                columnInfo.setFieldType(fieldType);
+//                columnInfo.setNotNull(dasColumn.isNotNull());
+//                columnInfo.setComment();
+//                columnInfo.setMethodName(StrUtil.upperFirst(columnInfo.getFieldName()));
+//                columnInfo.setType(jdbcTypeName);
+//                columnInfo.setPrimaryKey(table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.PRIMARY_KEY));
+//                columnInfo.setAutoIncrement(table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.AUTO_GENERATED));
+                String columnComment = ObjectUtil.defaultIfNull(dasColumn.getComment(), "").replaceAll("\n", "");
+                boolean primary = table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.PRIMARY_KEY);
+                boolean autoIncrement = table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.AUTO_GENERATED);
+                columnList.add(new ColumnMetadata(dasColumn.getName(),jdbcTypeStr,jdbc,dasColumn.isNotNull(),columnComment,primary,autoIncrement,dasColumn.getDasType().toDataType().size));
             }
-            tableInfo.setColumnList(columnList);
+            tableInfo.getColumns().addAll(columnList);
             tableInfoList.add(tableInfo);
         }
         return tableInfoList;
@@ -212,7 +218,37 @@ public class TableUtils {
                 break;
             }
         }
-        return StrUtil.toCamelCase(tableName);
+        return tableName;
     }
 
+    public static Map<String,List<MatchTypeMapping>> getDefaultTypeMappingMap(){
+        Map<String,List<MatchTypeMapping>> map = new HashMap<>();
+        map.put("REGEX",getRegexTypeMapping());
+        map.put("ORDINARY",getOrdinaryTypeMapping());
+        return map;
+    }
+    public static List<MatchTypeMapping> getRegexTypeMapping() {
+        List<MatchTypeMapping> list = new ArrayList<>();
+        list.add(new MatchTypeMapping("REGEX", "java.lang.String", "varchar(\\(\\d+\\))?"));
+        list.add(new MatchTypeMapping("REGEX", "java.lang.String", "char(\\(\\d+\\))?"));
+        list.add(new MatchTypeMapping("REGEX", "java.lang.String", "(tiny|medium|long)*text"));
+        list.add(new MatchTypeMapping("REGEX", "java.math.BigDecimal", "decimal(\\(\\d+,\\d+\\))?"));
+        list.add(new MatchTypeMapping("REGEX", "java.lang.Integer", "(tiny|small|medium)*int(\\(\\d+\\))?"));
+        list.add(new MatchTypeMapping("REGEX", "java.lang.Long", "bigint(\\(\\d+\\))?"));
+        return list;
+    }
+    public static List<MatchTypeMapping> getOrdinaryTypeMapping() {
+
+        List<MatchTypeMapping> list = new ArrayList<>();
+        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Boolean", "tinyint(1)"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Integer", "integer"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.lang.String", "int4"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Long", "int8"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.time.LocalDate", "date"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.time.LocalDateTime", "datetime"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.util.DateTime", "timestamp"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.time.LocalTime", "time"));
+        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Boolean", "boolean"));
+        return list;
+    }
 }

@@ -3,11 +3,14 @@ package com.easy.query.plugin.windows;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.Template;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
+import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.entity.TableInfo;
+import com.easy.query.plugin.core.entity.TableMetadata;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.render.ModuleComBoxRender;
 import com.easy.query.plugin.core.render.TableListCellRenderer;
 import com.easy.query.plugin.core.util.DialogUtil;
+import com.easy.query.plugin.core.util.FileChooserUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.PackageUtil;
@@ -102,7 +105,7 @@ public class EntityTableGenerateDialog extends JDialog {
     Map<String, Map<String, String>> modulePackageMap;
     Boolean isManvenProject;
     Project project;
-    Map<String, TableInfo> tableInfoMap;
+    Map<String, TableMetadata> tableInfoMap;
     List<String> tableNameList;
     Map<String, Set<String>> INVERTED_TABLE_INDEX = new HashMap<>();
     Map<String, Set<String>> INVERTED_MODULE_INDEX = new HashMap<>();
@@ -110,6 +113,7 @@ public class EntityTableGenerateDialog extends JDialog {
     List<JTextField> packageList = Arrays.asList(modelPackagePath);
 
     private String modelTemplate;
+    private Map<String, List<MatchTypeMapping>> typeMapping;
 
     public EntityTableGenerateDialog(AnActionEvent actionEvent) {
         setContentPane(contentPane);
@@ -141,6 +145,25 @@ public class EntityTableGenerateDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 onDelCurrent();
             }
+        });
+        exportBtn.addActionListener(e -> {
+
+            String exportPath = FileChooserUtil.chooseDirectory(project);
+
+            if (StrUtil.isEmpty(exportPath)) {
+                return;
+            }
+            EasyQueryQueryPluginConfigData.export(exportPath);
+        });
+        importBtn.addActionListener(e->{
+
+            VirtualFile virtualFile = FileChooserUtil.chooseFileVirtual(project);
+            if (ObjectUtil.isNull(virtualFile)) {
+                return;
+            }
+            String path = virtualFile.getPath();
+            EasyQueryQueryPluginConfigData.importConfig(path);
+            init();
         });
         // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -176,7 +199,7 @@ public class EntityTableGenerateDialog extends JDialog {
         project = actionEvent.getProject();
 
         tableInfoMap = TableUtils.getAllTables(actionEvent)
-                .stream().collect(Collectors.toMap(TableInfo::getName, o -> o));
+                .stream().collect(Collectors.toMap(TableMetadata::getName, o -> o));
 
         DefaultListModel<String> model = new DefaultListModel<>();
         // tableNameSet按照字母降序
@@ -227,10 +250,19 @@ public class EntityTableGenerateDialog extends JDialog {
         modelTemplateBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(modelTemplate, newTemplate -> {
+                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project,modelTemplate, newTemplate -> {
                     modelTemplate = newTemplate;
                 });
                 modelTemplateEditorDialog.setVisible(true);
+            }
+        });
+        columnMappingBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ColumnMappingDialog columnMappingDialog = new ColumnMappingDialog(typeMapping, typeMap -> {
+                    typeMapping = typeMap;
+                });
+                columnMappingDialog.setVisible(true);
             }
         });
 //        initPackagePath();
@@ -276,7 +308,7 @@ public class EntityTableGenerateDialog extends JDialog {
     }
 
     public EasyQueryConfig getConfigData() {
-        EasyQueryConfig config = Template.getEasyQueryConfig(project,sinceComBox.getSelectedItem()+"");
+        EasyQueryConfig config = Template.getEasyQueryConfig(project, sinceComBox.getSelectedItem() + "");
 
         config.setModelPackage(modelPackagePath.getText());
         config.setModelModule(getTextFieldVal(modelCombox));
@@ -294,6 +326,7 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setModelTemplate(modelTemplate);
         config.setSwagger(swaggerCheckBox.isSelected());
         config.setSwagger3(swagger3CheckBox.isSelected());
+        config.setTypeMapping(typeMapping);
         return config;
     }
 
@@ -378,11 +411,11 @@ public class EntityTableGenerateDialog extends JDialog {
                     initSinceComBox(null);
                     return;
                 }
-                EasyQueryQueryPluginConfigData.saveConfigSince(configName,getConfigData());
+                EasyQueryQueryPluginConfigData.saveConfigSince(configName, getConfigData());
                 NotificationUtils.notifySuccess("保存成功", project);
                 initSinceComBox(null);
                 return;
-            } else if(SINCE_CONFIG.equals(selectedItem.toString())){
+            } else if (SINCE_CONFIG.equals(selectedItem.toString())) {
                 initConfigData(null);
                 return;
             }
@@ -414,7 +447,7 @@ public class EntityTableGenerateDialog extends JDialog {
 
     public void initConfigData(EasyQueryConfig config) {
         if (ObjectUtil.isNull(config)) {
-            config = Template.getEasyQueryConfig(project,sinceComBox.getSelectedItem()+"");
+            config = Template.getEasyQueryConfig(project, sinceComBox.getSelectedItem() + "");
         }
         modelPackagePath.setText(config.getModelPackage());
         String modelModule = config.getModelModule();
@@ -444,7 +477,8 @@ public class EntityTableGenerateDialog extends JDialog {
         entityFileProxyCheck.setSelected(config.isEntityFileProxy());
         swaggerCheckBox.setSelected(config.isSwagger());
         swagger3CheckBox.setSelected(config.isSwagger3());
-        modelTemplate=config.getModelTemplate();
+        modelTemplate = config.getModelTemplate();
+        typeMapping = config.getTypeMapping();
     }
 
     private void onOK() {
@@ -473,7 +507,7 @@ public class EntityTableGenerateDialog extends JDialog {
             Messages.showWarningDialog("请选择要生成的表", "提示");
             return false;
         }
-        List<TableInfo> selectedTableInfo = new CopyOnWriteArrayList<>();
+        List<TableMetadata> selectedTableInfo = new CopyOnWriteArrayList<>();
         for (String tableName : selectedTabeList) {
             selectedTableInfo.add(tableInfoMap.get(tableName));
         }
@@ -494,7 +528,7 @@ public class EntityTableGenerateDialog extends JDialog {
     }
 
 
-    private void startGenCode(List<TableInfo> selectedTableInfo) {
+    private void startGenCode(List<TableMetadata> selectedTableInfo) {
         EasyQueryConfig configData = getConfigData();
 //        for (JCheckBox box : enableList) {
 //            boolean selected = box.isSelected();
@@ -512,45 +546,49 @@ public class EntityTableGenerateDialog extends JDialog {
         // add your code here if necessary
         dispose();
     }
-    private void onSaveCurrent(){
+
+    private void onSaveCurrent() {
         Object selectedItem = sinceComBox.getSelectedItem();
-        if(Objects.isNull(selectedItem)){
+        if (Objects.isNull(selectedItem)) {
             return;
         }
         String key = selectedItem.toString();
-        if(SINCE_CONFIG.equals(key)){
+        if (SINCE_CONFIG.equals(key)) {
             Messages.InputDialog dialog = new Messages.InputDialog("请输入配置名称", "配置名称", Messages.getQuestionIcon(), "", new InputValidatorImpl());
             dialog.show();
             String configName = dialog.getInputString();
             if (StrUtil.isBlank(configName)) {
                 return;
             }
-            EasyQueryQueryPluginConfigData.saveConfigSince(configName,getConfigData());
+            EasyQueryQueryPluginConfigData.saveConfigSince(configName, getConfigData());
             NotificationUtils.notifySuccess("保存成功", project);
             initSinceComBox(null);
-        }else{
-            int flag = Messages.showYesNoDialog("确定要覆盖当前配置["+key+"]吗？", "提示", Messages.getQuestionIcon());
+        } else {
+            int flag = Messages.showYesNoDialog("确定要覆盖当前配置[" + key + "]吗？", "提示", Messages.getQuestionIcon());
             if (MessageConstants.YES == flag) {
                 EasyQueryConfig configData = getConfigData();
-                EasyQueryQueryPluginConfigData.saveConfigSince(key,configData);
+                EasyQueryQueryPluginConfigData.saveConfigSince(key, configData);
                 initConfigData(configData);
                 NotificationUtils.notifySuccess("保存成功", project);
             }
         }
     }
-    private void onDelCurrent(){
+
+    private void onDelCurrent() {
         Object selectedItem = sinceComBox.getSelectedItem();
-        if(Objects.isNull(selectedItem)){
+        if (Objects.isNull(selectedItem)) {
             return;
         }
         String key = selectedItem.toString();
-        if(SINCE_CONFIG.equals(key)){
+        if (SINCE_CONFIG.equals(key)) {
+            NotificationUtils.notifyWarning("请选择要删除的配置信息", "警告", project);
             return;
-        }else{
-            int flag = Messages.showYesNoDialog("确定要删除当前配置["+key+"]吗？", "提示", Messages.getQuestionIcon());
+        } else {
+            int flag = Messages.showYesNoDialog("确定要删除当前配置[" + key + "]吗？", "提示", Messages.getQuestionIcon());
             if (MessageConstants.YES == flag) {
                 EasyQueryQueryPluginConfigData.delConfigSince(key);
                 initConfigData(null);
+                initSinceComBox(null);
                 NotificationUtils.notifySuccess("删除成功", project);
             }
         }

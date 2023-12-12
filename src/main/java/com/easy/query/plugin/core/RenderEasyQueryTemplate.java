@@ -1,8 +1,13 @@
 package com.easy.query.plugin.core;
 
+import cn.hutool.core.util.ReUtil;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.constant.EasyQueryConstant;
+import com.easy.query.plugin.core.entity.ColumnInfo;
+import com.easy.query.plugin.core.entity.ColumnMetadata;
+import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.entity.TableInfo;
+import com.easy.query.plugin.core.entity.TableMetadata;
 import com.easy.query.plugin.core.util.CodeReformatUtil;
 import com.intellij.openapi.module.Module;
 import com.easy.query.plugin.core.util.ObjectUtil;
@@ -32,6 +37,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.sql.Types;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +54,162 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RenderEasyQueryTemplate {
 
-    public static void assembleData(List<TableInfo> selectedTableInfo, EasyQueryConfig config, @NotNull Project project,Module module) {
+    private static TableInfo transTo(TableMetadata tableMetadata, EasyQueryConfig config) {
+        Map<String, List<MatchTypeMapping>> typeMapping = config.getTypeMapping() == null ? TableUtils.getDefaultTypeMappingMap() : config.getTypeMapping();
+        TableInfo tableInfo = new TableInfo();
+        tableInfo.setName(tableMetadata.getName());
+        tableInfo.setComment(tableMetadata.getComment());
+        tableInfo.setSuperClass(config.getModelSuperClass());
+        ArrayList<ColumnInfo> columnInfos = new ArrayList<>();
+        List<ColumnMetadata> columns = tableMetadata.getColumns();
+        for (ColumnMetadata column : columns) {
+            ColumnInfo columnInfo = new ColumnInfo();
+            columnInfo.setName(column.getName());
+            columnInfo.setFieldName(StrUtil.toCamelCase(column.getName()));
+            String fieldType = getFieldType(column.getJdbcType(), tableInfo, column.getJdbcTypeName(), column.getSize(), column.getJdbcTypeStr().toLowerCase(), typeMapping);
+            columnInfo.setFieldType(fieldType);
+            columnInfo.setNotNull(column.isNotNull());
+            columnInfo.setComment(column.getComment());
+            columnInfo.setMethodName(StrUtil.upperFirst(columnInfo.getFieldName()));
+            columnInfo.setType(column.getJdbcTypeName());
+            columnInfo.setPrimaryKey(column.isPrimary());
+            columnInfo.setAutoIncrement(column.isAutoIncrement());
+            columnInfos.add(columnInfo);
+        }
+        tableInfo.setColumnList(columnInfos);
+
+        return tableInfo;
+    }
+
+    private String getImport(String fieldType) {
+        switch (fieldType) {
+            case "String":
+                return "java.lang.String";
+            case "Integer":
+                return "java.lang.Integer";
+            case "Long":
+                return "java.lang.Long";
+            case "Double":
+                return "java.lang.Double";
+            case "Float":
+                return "java.lang.Float";
+            case "java.math.BigDecimal":
+                return "java.math.BigDecimal";
+            case "Date":
+                return "java.util.Date";
+        }
+        return null;
+    }
+
+    private static String getFieldType(int jdbc, TableInfo tableInfo, String jdbcTypeName, int size, String jdbcTypeStr, Map<String, List<MatchTypeMapping>> typeMapping) {
+        if (typeMapping.containsKey("ORDINARY")) {
+            for (MatchTypeMapping mapping : typeMapping.get("ORDINARY")) {
+                if (jdbcTypeStr.equals(mapping.getColumType())) {
+                    String javaField = mapping.getJavaField();
+                    if (!javaField.startsWith("java.lang.")) {
+                        tableInfo.addImportClassItem(javaField);
+                        return javaField.substring(javaField.lastIndexOf(".") + 1);
+                    }
+                    return javaField;
+                }
+            }
+        }
+        if (typeMapping.containsKey("REGEX")) {
+            for (MatchTypeMapping mapping : typeMapping.get("REGEX")) {
+                String group0 = ReUtil.getGroup0(mapping.getColumType(), jdbcTypeStr);
+                if (StrUtil.isNotEmpty(group0)) {
+                    String javaField = mapping.getJavaField();
+                    if (!javaField.startsWith("java.lang.")) {
+                        tableInfo.addImportClassItem(javaField);
+                        return javaField.substring(javaField.lastIndexOf(".") + 1);
+                    }
+                    return javaField;
+                }
+            }
+        }
+
+        String className = convert(jdbc, size).getName();
+//        if (Object.class.getName().equals(className)) {
+//            String fieldType = MybatisFlexPluginConfigData.getFieldType(jdbcTypeName);
+//            if (StrUtil.isNotBlank(fieldType)) {
+//                className = fieldType;
+//            }
+//        }
+
+        boolean flag = className.contains(";");
+        if (flag) {
+            className = className.replace(";", "").replace("[L", "");
+        }
+        tableInfo.addImportClassItem(className);
+        String fieldType = className.substring(className.lastIndexOf(".") + 1);
+        if (flag) {
+            fieldType += "[]";
+        }
+        return fieldType;
+    }
+
+    public static Class<?> convert(int sqlType, int size) {
+        switch (sqlType) {
+            case Types.BIT:
+                return Boolean.class;
+            case Types.SMALLINT:
+                return Short.class;
+            case Types.INTEGER:
+                return Integer.class;
+            case Types.BIGINT:
+                return Long.class;
+            case Types.FLOAT:
+            case Types.REAL:
+                return Float.class;
+            case Types.DOUBLE:
+                return Double.class;
+            case Types.NUMERIC:
+            case Types.DECIMAL:
+                return java.math.BigDecimal.class;
+            case Types.CHAR:
+            case Types.NCHAR:
+            case Types.VARCHAR:
+            case Types.NVARCHAR:
+            case Types.LONGVARCHAR:
+            case Types.LONGNVARCHAR:
+            case Types.CLOB:
+                return String.class;
+            case Types.TINYINT:
+                if (size == 1) {
+                    return Boolean.class;
+                } else if (size == 2) {
+                    return Short.class;
+                } else {
+                    return Integer.class;
+                }
+            case Types.TIME:
+                return LocalTime.class;
+            case Types.TIMESTAMP:
+//                return java.sql.Timestamp.class;
+            case Types.DATE:
+                return LocalDateTime.class;
+            case Types.BINARY:
+            case Types.VARBINARY:
+            case Types.LONGVARBINARY:
+            case Types.BLOB:
+                return Byte[].class;
+            // 返回对象，在点击生成代码是时候让用户自行选择
+            // case Types.NCLOB:
+            //     return java.sql.NClob.class;
+            // case Types.ARRAY:
+            //     return java.sql.Array.class;
+            // case Types.STRUCT:
+            //     return java.sql.Struct.class;
+            // case Types.REF:
+            //     return java.sql.Ref.class;
+            // case Types.SQLXML:
+            //     return java.sql.SQLXML.class;
+            default:
+                return Object.class;
+        }
+    }
+
+    public static void assembleData(List<TableMetadata> selectedTableInfo, EasyQueryConfig config, @NotNull Project project, Module module) {
 
         VelocityEngine velocityEngine = new VelocityEngine();
         // 修复因velocity.log拒绝访问，导致Velocity初始化失败
@@ -65,8 +228,8 @@ public class RenderEasyQueryTemplate {
 //        String modelModule = config.getModelModule();
 //        Map<String, String> modules = config.getModules();
         PsiFileFactory factory = PsiFileFactory.getInstance(project);
-        for (TableInfo tableInfo : selectedTableInfo) {
-
+        for (TableMetadata tableMetadata : selectedTableInfo) {
+            TableInfo tableInfo = transTo(tableMetadata, config);
             String className = TableUtils.getClassName(tableInfo.getName(), config.getTablePrefix());
             context.put("className", className);
             context.put("author", ObjectUtil.defaultIfEmpty(config.getAuthor(), "easy-query-plugin automatic generation"));
@@ -75,7 +238,7 @@ public class RenderEasyQueryTemplate {
             context.put("config", config);
             context.put("importClassList", tableInfo.getImportClassList());
             context.put("table", tableInfo);
-            renderTemplate(config.getModelTemplate(), context, className, velocityEngine, templateMap, config.getModelPackage(), suffix, factory, project,module);
+            renderTemplate(config.getModelTemplate(), context, className, velocityEngine, templateMap, config.getModelPackage(), suffix, factory, project, module);
 //            // 自定义模版渲染
 //            List<TabInfo> infoList = config.getTabList();
 //            if (CollectionUtils.isNotEmpty(infoList)) {
@@ -123,7 +286,7 @@ public class RenderEasyQueryTemplate {
                             if (e.getMessage().contains("already exists")) {
                                 PsiFile file = (PsiFile) psiFile;
                                 Messages.showErrorDialog("文件已存在：" + file.getName(), "错误");
-                            }else{
+                            } else {
                                 Messages.showErrorDialog(" 操作错误：" + e.getMessage(), "错误");
                             }
                         } catch (Exception e) {
@@ -137,6 +300,7 @@ public class RenderEasyQueryTemplate {
         // // 生成代码之后，重新构建
         // CompilerManagerUtil.make(Modules.getModule(config.getModelModule()));
     }
+
     private static void removeEmptyPackage(Map<String, String> packages, Map<String, String> templates) {
         for (Map.Entry<String, String> entry : packages.entrySet()) {
             if (StrUtil.isEmpty(entry.getValue())) {
@@ -162,20 +326,20 @@ public class RenderEasyQueryTemplate {
             Module module
     ) {
 
-            StringWriter sw = new StringWriter();
-            context.put("className", className);
-            velocityEngine.evaluate(context, sw, "easy-query", template);
+        StringWriter sw = new StringWriter();
+        context.put("className", className);
+        velocityEngine.evaluate(context, sw, "easy-query", template);
 //            Module module = Modules.getModule(modules.get(entry.getKey()));
 //            String key = entry.getKey();
 //            if (StrUtil.isEmpty(key)) {
 //                key = "resource".equals(Template.getConfigData(MybatisFlexConstant.MAPPER_XML_TYPE, "resource")) ? "" : "xml";
 //            }
-            PsiDirectory packageDirectory = VirtualFileUtils.getPsiDirectory(project,module, _package, EasyQueryConstant.ENTITY);
-            DumbService.getInstance(project).runWhenSmart(() -> {
-                String fileName = className + suffix + ".java";
-                PsiFile file = factory.createFileFromText(fileName, JavaFileType.INSTANCE, sw.toString());
-                templateMap.computeIfAbsent(packageDirectory, k -> new ArrayList<>()).add(CodeReformatUtil.reformat(file));
-            });
+        PsiDirectory packageDirectory = VirtualFileUtils.getPsiDirectory(project, module, _package, EasyQueryConstant.ENTITY);
+        DumbService.getInstance(project).runWhenSmart(() -> {
+            String fileName = className + suffix + ".java";
+            PsiFile file = factory.createFileFromText(fileName, JavaFileType.INSTANCE, sw.toString());
+            templateMap.computeIfAbsent(packageDirectory, k -> new ArrayList<>()).add(CodeReformatUtil.reformat(file));
+        });
     }
 
 }

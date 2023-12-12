@@ -1,6 +1,10 @@
 package com.easy.query.plugin.windows;
 
 import com.easy.query.plugin.core.util.DialogUtil;
+import com.intellij.lang.java.JavaLanguage;
+import com.intellij.lang.xml.XMLLanguage;
+import com.intellij.openapi.project.Project;
+import com.intellij.ui.LanguageTextField;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -11,13 +15,15 @@ import java.awt.event.WindowEvent;
 import java.util.function.Consumer;
 
 public class ModelTemplateEditorDialog extends JDialog {
+    private final Project project;
     private final Consumer<String> okFunction;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JTextArea modelTemplateText;
+    private LanguageTextField modelTemplateText;
 
-    public ModelTemplateEditorDialog(String modelTemplate, Consumer<String> okFunction) {
+    public ModelTemplateEditorDialog(Project project, String modelTemplate, Consumer<String> okFunction) {
+        this.project = project;
         this.okFunction = okFunction;
         setContentPane(contentPane);
         setModal(true);
@@ -64,5 +70,11 @@ public class ModelTemplateEditorDialog extends JDialog {
     private void onCancel() {
         // add your code here if necessary
         dispose();
+    }
+    /**
+     * 创建自定义控件
+     */
+    private void createUIComponents() {
+        modelTemplateText = new LanguageTextField(JavaLanguage.INSTANCE, project, "", false);
     }
 }

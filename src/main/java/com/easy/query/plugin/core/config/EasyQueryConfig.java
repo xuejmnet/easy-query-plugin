@@ -1,8 +1,10 @@
 package com.easy.query.plugin.core.config;
 
 import com.easy.query.plugin.core.constant.EasyQueryConstant;
+import com.easy.query.plugin.core.entity.MatchTypeMapping;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -76,6 +78,7 @@ public class EasyQueryConfig {
     private String modelSuffix;
 
     private String modelSuperClass;
+    private Map<String, List<MatchTypeMapping>> typeMapping;
 
     public String getModelSuperClass() {
         return modelSuperClass;
@@ -106,6 +109,7 @@ public class EasyQueryConfig {
         data.put(EasyQueryConstant.ENTITY, modelPackage);
         return data;
     }
+
 
     public String getModelSuffix() {
         return modelSuffix;
@@ -243,5 +247,13 @@ public class EasyQueryConfig {
 
     public void setEntityFileProxy(boolean entityFileProxy) {
         this.entityFileProxy = entityFileProxy;
+    }
+
+    public Map<String, List<MatchTypeMapping>> getTypeMapping() {
+        return typeMapping;
+    }
+
+    public void setTypeMapping(Map<String, List<MatchTypeMapping>> typeMapping) {
+        this.typeMapping = typeMapping;
     }
 }

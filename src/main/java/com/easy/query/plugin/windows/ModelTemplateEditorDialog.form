@@ -64,9 +64,15 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="d642b" class="javax.swing.JTextArea" binding="modelTemplateText">
+              <component id="d72d5" class="com.intellij.ui.LanguageTextField" binding="modelTemplateText" custom-create="true">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <autoscrolls value="true"/>
+                  <enabled value="true"/>
+                  <font/>
+                  <text value=""/>
+                  <viewer value="false"/>
+                </properties>
               </component>
             </children>
           </scrollpane>

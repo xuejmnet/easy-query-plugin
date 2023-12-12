@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.render;
 
 import com.easy.query.plugin.core.entity.TableInfo;
+import com.easy.query.plugin.core.entity.TableMetadata;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +17,7 @@ import java.util.Map;
 public class TableListCellRenderer extends JLabel implements ListCellRenderer<String> {
     private JLabel label;
     private JLabel rowEndLabel;
-    Map<String, TableInfo> tableInfoMap;
+    Map<String, TableMetadata> tableInfoMap;
     String searchTableName;
 
     Map<String, String> highlightKey=new HashMap<>();
@@ -37,7 +38,7 @@ public class TableListCellRenderer extends JLabel implements ListCellRenderer<St
         this.searchTableName = searchTableName;
     }
 
-    public TableListCellRenderer(Map<String, TableInfo> tableInfoMap) {
+    public TableListCellRenderer(Map<String, TableMetadata> tableInfoMap) {
         setOpaque(true);
         setLayout(new BorderLayout());
         this.tableInfoMap = tableInfoMap;

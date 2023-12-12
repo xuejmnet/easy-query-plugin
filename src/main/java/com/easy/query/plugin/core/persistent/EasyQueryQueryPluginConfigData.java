@@ -1,9 +1,14 @@
 package com.easy.query.plugin.core.persistent;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
+import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.util.ProjectUtils;
+import com.easy.query.plugin.core.util.TableUtils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -11,10 +16,14 @@ import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -107,6 +116,38 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
         LinkedHashMap<String, EasyQueryConfig> projectSinceMap = getProjectSinceMap();
         projectSinceMap.remove(key);
         state.configSince = JSONObject.toJSONString(projectSinceMap);
+        instance.loadState(state);
+    }
+
+    public static void export(String targetPath) {
+        LinkedHashMap<String, EasyQueryConfig> projectSinceMap = getProjectSinceMap();
+        FileUtil.writeString(JSONObject.toJSONString(projectSinceMap), new File(targetPath + File.separator + "EasyQueryData.json"), "UTF-8");
+        Messages.showDialog("导出成功，请到选择的目录查看", "提示", new String[]{"确定"}, -1, Messages.getInformationIcon());
+    }
+    public static void importConfig(String path) {
+        File file = new File(path);
+        if (!file.exists()) {
+            Messages.showDialog("文件不存在", "提示", new String[]{"确定"}, -1, Messages.getInformationIcon());
+            return;
+        }
+        String content = FileUtil.readString(file, StandardCharsets.UTF_8);
+        LinkedHashMap<String, EasyQueryConfig> config = JSONObject.parseObject(content, new TypeReference<LinkedHashMap<String, EasyQueryConfig>>() {
+        });
+
+        setCurrentConfig(config);
+
+        Messages.showDialog("导入成功", "提示", new String[]{"确定"}, -1, Messages.getInformationIcon());
+    }
+
+    /**
+     * 设置mybatis flex配置
+     *
+     * @param config 配置
+     */
+    public static void setCurrentConfig(LinkedHashMap<String, EasyQueryConfig> config) {
+        EasyQueryQueryPluginConfigData instance = getInstance();
+        State state = instance.getState();
+        state.configSince = JSONObject.toJSONString(config);
         instance.loadState(state);
     }
     public static class State {

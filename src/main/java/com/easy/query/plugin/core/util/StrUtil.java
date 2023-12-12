@@ -176,11 +176,11 @@ public class StrUtil {
 
         for (int i = 0; i < splitArr.length; i++) {
             if (i == 0) {
-                sb.append(splitArr[0].toLowerCase());
+                sb.append(toLowerCaseFirstOne(splitArr[0]));
                 continue;
             }
 
-            sb.append(toUpperCaseFirstOne(splitArr[i].toLowerCase()));
+            sb.append(toUpperCaseFirstOne(splitArr[i]));
         }
 
         return sb.toString();
@@ -191,6 +191,15 @@ public class StrUtil {
             return s;
         } else {
             return Character.toUpperCase(s.charAt(0)) +
+                    s.substring(1);
+        }
+    }
+    // 首字母转小写
+    public static String toLowerCaseFirstOne(String s) {
+        if (Character.isLowerCase(s.charAt(0))) {
+            return s;
+        } else {
+            return Character.toLowerCase(s.charAt(0)) +
                     s.substring(1);
         }
     }
