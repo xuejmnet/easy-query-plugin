@@ -107,31 +107,12 @@ public class RenderEasyQueryTemplate {
             columnInfo.setType(column.getJdbcTypeName());
             columnInfo.setPrimaryKey(column.isPrimary());
             columnInfo.setAutoIncrement(column.isAutoIncrement());
+            columnInfo.setSize(column.getSize());
             columnInfos.add(columnInfo);
         }
         tableInfo.setColumnList(columnInfos);
 
         return tableInfo;
-    }
-
-    private String getImport(String fieldType) {
-        switch (fieldType) {
-            case "String":
-                return "java.lang.String";
-            case "Integer":
-                return "java.lang.Integer";
-            case "Long":
-                return "java.lang.Long";
-            case "Double":
-                return "java.lang.Double";
-            case "Float":
-                return "java.lang.Float";
-            case "java.math.BigDecimal":
-                return "java.math.BigDecimal";
-            case "Date":
-                return "java.util.Date";
-        }
-        return null;
     }
 
     private static ImportAndClass getImportAndClass(String fullName){

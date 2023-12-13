@@ -44,6 +44,7 @@ public class ColumnInfo {
      * 是否必填
      */
     private boolean notNull;
+    private int size;
 
     public boolean isNotNull() {
         return notNull;
@@ -117,6 +118,14 @@ public class ColumnInfo {
         isAutoIncrement = autoIncrement;
     }
 
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
     @Override
     public String toString() {
         return "ColumnInfo{" +
@@ -129,6 +138,7 @@ public class ColumnInfo {
                 ", isAutoIncrement=" + isAutoIncrement +
                 ", methodName='" + methodName + '\'' +
                 ", notNull=" + notNull +
+                ", size=" + size +
                 '}';
     }
 }
