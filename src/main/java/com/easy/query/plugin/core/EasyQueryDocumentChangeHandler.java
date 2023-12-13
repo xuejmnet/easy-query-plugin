@@ -32,6 +32,7 @@ import com.intellij.openapi.editor.event.EditorFactoryEvent;
 import com.intellij.openapi.editor.event.EditorFactoryListener;
 import com.intellij.openapi.editor.event.EditorMouseEvent;
 import com.intellij.openapi.editor.event.EditorMouseListener;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
@@ -334,7 +335,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
         try {
             // 所有的文档监听
-            EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this, this);
+//            EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this, this);
             //获取已打开的编辑器
             Editor[] allEditors = EditorFactory.getInstance().getAllEditors();
             for (Editor editor : allEditors) {
