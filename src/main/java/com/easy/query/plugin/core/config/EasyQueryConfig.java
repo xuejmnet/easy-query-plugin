@@ -4,8 +4,10 @@ import com.easy.query.plugin.core.constant.EasyQueryConstant;
 import com.easy.query.plugin.core.entity.MatchTypeMapping;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * create time 2023/11/30 11:35
@@ -78,6 +80,8 @@ public class EasyQueryConfig {
     private String modelSuffix;
 
     private String modelSuperClass;
+
+    private String ignoreColumns;
     private Map<String, List<MatchTypeMapping>> typeMapping;
 
     public String getModelSuperClass() {
@@ -255,5 +259,13 @@ public class EasyQueryConfig {
 
     public void setTypeMapping(Map<String, List<MatchTypeMapping>> typeMapping) {
         this.typeMapping = typeMapping;
+    }
+
+    public String getIgnoreColumns() {
+        return ignoreColumns;
+    }
+
+    public void setIgnoreColumns(String ignoreColumns) {
+        this.ignoreColumns = ignoreColumns;
     }
 }

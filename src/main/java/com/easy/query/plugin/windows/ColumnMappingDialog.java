@@ -122,7 +122,7 @@ public class ColumnMappingDialog extends JDialog {
 
     private void onOK() {
         // add your code here
-        saveMapping.accept(typeMapping);
+        saveMapping.accept(getTableData());
         dispose();
     }
 

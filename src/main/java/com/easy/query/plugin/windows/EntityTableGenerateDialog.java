@@ -4,7 +4,6 @@ import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.Template;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.MatchTypeMapping;
-import com.easy.query.plugin.core.entity.TableInfo;
 import com.easy.query.plugin.core.entity.TableMetadata;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.render.ModuleComBoxRender;
@@ -99,6 +98,8 @@ public class EntityTableGenerateDialog extends JDialog {
     private JButton importBtn;
     private JButton exportBtn;
     private JButton confDelBtn;
+    private JTextField ignoreColumnsText;
+    private JTextField superClassText;
 
 
     Map<String, Module> moduleMap;
@@ -119,7 +120,7 @@ public class EntityTableGenerateDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-        setSize(800, 600);
+        setSize(800, 800);
         setTitle("Entity Generate");
         DialogUtil.centerShow(this);
         confDelBtn.setIcon(PlatformIcons.DELETE_ICON);
@@ -327,6 +328,8 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setSwagger(swaggerCheckBox.isSelected());
         config.setSwagger3(swagger3CheckBox.isSelected());
         config.setTypeMapping(typeMapping);
+        config.setIgnoreColumns(ignoreColumnsText.getText());
+        config.setModelSuperClass(superClassText.getText());
         return config;
     }
 
@@ -479,6 +482,8 @@ public class EntityTableGenerateDialog extends JDialog {
         swagger3CheckBox.setSelected(config.isSwagger3());
         modelTemplate = config.getModelTemplate();
         typeMapping = config.getTypeMapping();
+        superClassText.setText( config.getModelSuperClass());
+        ignoreColumnsText.setText(config.getIgnoreColumns());
     }
 
     private void onOK() {

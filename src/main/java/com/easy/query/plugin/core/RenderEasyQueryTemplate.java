@@ -9,6 +9,7 @@ import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.entity.TableInfo;
 import com.easy.query.plugin.core.entity.TableMetadata;
 import com.easy.query.plugin.core.util.CodeReformatUtil;
+import com.easy.query.plugin.core.util.GenUtils;
 import com.intellij.openapi.module.Module;
 import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.StrUtil;
@@ -27,6 +28,7 @@ import com.intellij.psi.PsiFileFactory;
 import com.intellij.ui.tabs.TabInfo;
 import com.intellij.util.IncorrectOperationException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.jetbrains.annotations.NotNull;
@@ -41,10 +43,15 @@ import java.sql.Types;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * create time 2023/11/30 21:39
@@ -53,16 +60,42 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xuejiaming
  */
 public class RenderEasyQueryTemplate {
+    public static class ImportAndClass{
+        public final String importPackage;
+        public final String className;
+
+        public ImportAndClass(String importPackage, String className){
+
+            this.importPackage = importPackage;
+            this.className = className;
+        }
+    }
+    private static Set<String> getIgnoreColumns(String ignoreColumns){
+        if(StringUtils.isBlank(ignoreColumns)){
+            return new HashSet<>();
+        }
+        return Arrays.stream(StringUtils.split(ignoreColumns, ",")).collect(Collectors.toSet());
+    }
 
     private static TableInfo transTo(TableMetadata tableMetadata, EasyQueryConfig config) {
         Map<String, List<MatchTypeMapping>> typeMapping = config.getTypeMapping() == null ? TableUtils.getDefaultTypeMappingMap() : config.getTypeMapping();
         TableInfo tableInfo = new TableInfo();
         tableInfo.setName(tableMetadata.getName());
         tableInfo.setComment(tableMetadata.getComment());
-        tableInfo.setSuperClass(config.getModelSuperClass());
+        if(StringUtils.isNotBlank(config.getModelSuperClass())){
+            ImportAndClass importAndClass = getImportAndClass(config.getModelSuperClass());
+            if(importAndClass.importPackage!=null){
+                tableInfo.addImportClassItem(importAndClass.importPackage);
+            }
+            tableInfo.setSuperClass(importAndClass.className);
+        }
         ArrayList<ColumnInfo> columnInfos = new ArrayList<>();
         List<ColumnMetadata> columns = tableMetadata.getColumns();
+        Set<String> ignoreColumns = getIgnoreColumns(config.getIgnoreColumns());
         for (ColumnMetadata column : columns) {
+            if(ignoreColumns.contains(column.getName())){
+                continue;
+            }
             ColumnInfo columnInfo = new ColumnInfo();
             columnInfo.setName(column.getName());
             columnInfo.setFieldName(StrUtil.toCamelCase(column.getName()));
@@ -101,16 +134,29 @@ public class RenderEasyQueryTemplate {
         return null;
     }
 
+    private static ImportAndClass getImportAndClass(String fullName){
+        if(fullName==null){
+            return new ImportAndClass(null,"UNKNOWN");
+        }
+        if(fullName.contains(".")){
+            String className = fullName.substring(fullName.lastIndexOf(".") + 1);
+            if (!fullName.startsWith("java.lang.")) {
+                return new ImportAndClass(fullName,className);
+            }
+            return new ImportAndClass(null,className);
+        }
+        return new ImportAndClass(null,fullName);
+    }
+
     private static String getFieldType(int jdbc, TableInfo tableInfo, String jdbcTypeName, int size, String jdbcTypeStr, Map<String, List<MatchTypeMapping>> typeMapping) {
         if (typeMapping.containsKey("ORDINARY")) {
             for (MatchTypeMapping mapping : typeMapping.get("ORDINARY")) {
                 if (jdbcTypeStr.equals(mapping.getColumType())) {
-                    String javaField = mapping.getJavaField();
-                    if (!javaField.startsWith("java.lang.")) {
-                        tableInfo.addImportClassItem(javaField);
-                        return javaField.substring(javaField.lastIndexOf(".") + 1);
+                    ImportAndClass importAndClass = getImportAndClass(mapping.getJavaField());
+                    if(importAndClass.importPackage!=null){
+                        tableInfo.addImportClassItem(importAndClass.importPackage);
                     }
-                    return javaField;
+                    return importAndClass.className;
                 }
             }
         }
@@ -118,12 +164,11 @@ public class RenderEasyQueryTemplate {
             for (MatchTypeMapping mapping : typeMapping.get("REGEX")) {
                 String group0 = ReUtil.getGroup0(mapping.getColumType(), jdbcTypeStr);
                 if (StrUtil.isNotEmpty(group0)) {
-                    String javaField = mapping.getJavaField();
-                    if (!javaField.startsWith("java.lang.")) {
-                        tableInfo.addImportClassItem(javaField);
-                        return javaField.substring(javaField.lastIndexOf(".") + 1);
+                    ImportAndClass importAndClass = getImportAndClass(mapping.getJavaField());
+                    if(importAndClass.importPackage!=null){
+                        tableInfo.addImportClassItem(importAndClass.importPackage);
                     }
-                    return javaField;
+                    return importAndClass.className;
                 }
             }
         }
@@ -230,7 +275,7 @@ public class RenderEasyQueryTemplate {
         PsiFileFactory factory = PsiFileFactory.getInstance(project);
         for (TableMetadata tableMetadata : selectedTableInfo) {
             TableInfo tableInfo = transTo(tableMetadata, config);
-            String className = TableUtils.getClassName(tableInfo.getName(), config.getTablePrefix());
+            String className = GenUtils.tableToJava(tableInfo.getName(),new String[]{config.getTablePrefix()});
             context.put("className", className);
             context.put("author", ObjectUtil.defaultIfEmpty(config.getAuthor(), "easy-query-plugin automatic generation"));
             context.put("since", ObjectUtil.defaultIfEmpty(config.getSince(), "1.0"));
