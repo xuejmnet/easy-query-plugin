@@ -18,6 +18,7 @@ repositories {
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     version.set("2023.2.5")
+//    version.set("2022.2.5")
 //    version.set("2023.3")
     type.set("IU") // Target
     // IDE Platform
@@ -47,7 +48,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("202.*")
-        untilBuild.set("232.*")
+        untilBuild.set("233.*")
     }
 
     signPlugin {

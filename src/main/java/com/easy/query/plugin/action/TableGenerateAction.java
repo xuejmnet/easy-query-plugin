@@ -3,11 +3,9 @@ package com.easy.query.plugin.action;
 import com.easy.query.plugin.core.util.ProjectUtils;
 import com.easy.query.plugin.windows.EntityTableGenerateDialog;
 import com.intellij.database.model.DasTable;
-import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import org.jetbrains.annotations.NotNull;
 
 public class TableGenerateAction extends AnAction {
 
@@ -30,8 +28,4 @@ public class TableGenerateAction extends AnAction {
         e.getPresentation().setVisible(isSelectedTable);
     }
 
-    @Override
-    public @NotNull ActionUpdateThread getActionUpdateThread() {
-        return super.getActionUpdateThread();
-    }
 }

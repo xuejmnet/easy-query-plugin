@@ -67,7 +67,7 @@ public class TableUtils {
                 DasColumn dasColumn = (DasColumn) column;
 //                columnInfo.setName(dasColumn.getName());
 //                columnInfo.setFieldName(StrUtil.toCamelCase(dasColumn.getName()));
-                String jdbcTypeStr = dasColumn.getDasType().toDataType().toString();
+                String jdbcTypeStr = dasColumn.getDataType().toString();
                 int jdbc = dialect.getJavaTypeForNativeType(jdbcTypeStr);
 //                String jdbcTypeName = JdbcUtil.getJdbcTypeName(jdbc);
 //                String fieldType = getFieldType(jdbc, tableInfo, jdbcTypeName, dasColumn.getDasType().toDataType().size, jdbcTypeStr.toLowerCase());
@@ -81,7 +81,7 @@ public class TableUtils {
                 String columnComment = ObjectUtil.defaultIfNull(dasColumn.getComment(), "").replaceAll("\n", "");
                 boolean primary = table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.PRIMARY_KEY);
                 boolean autoIncrement = table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.AUTO_GENERATED);
-                columnList.add(new ColumnMetadata(dasColumn.getName(),jdbcTypeStr,jdbc,dasColumn.isNotNull(),columnComment,primary,autoIncrement,dasColumn.getDasType().toDataType().size));
+                columnList.add(new ColumnMetadata(dasColumn.getName(),jdbcTypeStr,jdbc,dasColumn.isNotNull(),columnComment,primary,autoIncrement,dasColumn.getDataType().size));
             }
             tableInfo.getColumns().addAll(columnList);
             tableInfoList.add(tableInfo);
