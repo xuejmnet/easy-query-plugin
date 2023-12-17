@@ -329,7 +329,8 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setSwagger3(swagger3CheckBox.isSelected());
         config.setTypeMapping(typeMapping);
         config.setIgnoreColumns(ignoreColumnsText.getText());
-        config.setModelSuperClass(superClassText.getText());
+        String superClass = superClassText.getText();
+        config.setModelSuperClass(StringUtils.isBlank(superClass)?null:superClass);
         return config;
     }
 

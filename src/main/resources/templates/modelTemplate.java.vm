@@ -117,7 +117,9 @@ public class ${modelName} #if(${config.modelSuperClass}) extends ${table.superCl
         #end
     #end
     #if($column.primaryKey)
-    @Column(primaryKey = true)
+    @Column(primaryKey = true,value = "$column.name")
+    #else
+    @Column(value = "$column.name")
     #end
     private $column.fieldType  $column.fieldName;
 
