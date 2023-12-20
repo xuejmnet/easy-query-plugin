@@ -127,7 +127,11 @@ public class PsiJavaFileUtil {
         if(sonPsiClass.isEmpty()){
             return;
         }
-        Collection<PsiClass> annotationPsiClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityProxy" );
+        Collection<PsiClass> annotationPsiProxyClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityProxy" );
+        Collection<PsiClass> annotationPsiFileProxyClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityFileProxy" );
+        ArrayList<PsiClass> annotationPsiClass = new ArrayList<>();
+        annotationPsiClass.addAll(annotationPsiProxyClass);
+        annotationPsiClass.addAll(annotationPsiFileProxyClass);
         List<VirtualFile> virtualFiles = annotationPsiClass.stream()
                 .filter(el -> !sonPsiClass.contains(el))
                 .map(el -> {
