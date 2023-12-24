@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.util;
 
+import cn.hutool.core.util.ReflectUtil;
 import com.easy.query.plugin.core.entity.ColumnInfo;
 import com.easy.query.plugin.core.entity.ColumnMetadata;
 import com.easy.query.plugin.core.entity.MatchTypeMapping;
@@ -9,6 +10,8 @@ import com.intellij.database.dialects.DatabaseDialectEx;
 import com.intellij.database.model.DasColumn;
 import com.intellij.database.model.DasObject;
 import com.intellij.database.model.DasTable;
+import com.intellij.database.model.DasTypedObject;
+import com.intellij.database.model.DataType;
 import com.intellij.database.model.ObjectKind;
 import com.intellij.database.psi.DbDataSourceImpl;
 import com.intellij.database.psi.DbElement;
@@ -18,6 +21,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.util.containers.JBIterable;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Types;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -54,6 +59,7 @@ public class TableUtils {
         dasTables.addAll(viewList);
         return getTableInfoList(dasTables);
     }
+
     public static List<TableMetadata> getTableInfoList(List<DasTable> selectedTableList) {
         List<TableMetadata> tableInfoList = new ArrayList<>();
         DasTable dasTable = selectedTableList.get(0);
@@ -67,7 +73,10 @@ public class TableUtils {
                 DasColumn dasColumn = (DasColumn) column;
 //                columnInfo.setName(dasColumn.getName());
 //                columnInfo.setFieldName(StrUtil.toCamelCase(dasColumn.getName()));
-                String jdbcTypeStr = dasColumn.getDataType().toString();
+                DataType dataType = getDataType(dasColumn);
+                String jdbcTypeStr = dataType==null?"varchar(32)":dataType.toString();
+//                String jdbcTypeStr = dasColumn.getDataType().toString();
+//                String jdbcTypeStr = dasColumn.getDasType().toDataType().toString();
                 int jdbc = dialect.getJavaTypeForNativeType(jdbcTypeStr);
 //                String jdbcTypeName = JdbcUtil.getJdbcTypeName(jdbc);
 //                String fieldType = getFieldType(jdbc, tableInfo, jdbcTypeName, dasColumn.getDasType().toDataType().size, jdbcTypeStr.toLowerCase());
@@ -78,16 +87,41 @@ public class TableUtils {
 //                columnInfo.setType(jdbcTypeName);
 //                columnInfo.setPrimaryKey(table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.PRIMARY_KEY));
 //                columnInfo.setAutoIncrement(table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.AUTO_GENERATED));
-                String columnComment = ObjectUtil.defaultIfNull(dasColumn.getComment(), "").replaceAll("\n", "");
+                String columnComment = ObjectUtil.defaultIfNull(dasColumn.getComment(), "" ).replaceAll("\n" , "" );
                 boolean primary = table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.PRIMARY_KEY);
                 boolean autoIncrement = table.getColumnAttrs(dasColumn).contains(DasColumn.Attribute.AUTO_GENERATED);
-                columnList.add(new ColumnMetadata(dasColumn.getName(),jdbcTypeStr,jdbc,dasColumn.isNotNull(),columnComment,primary,autoIncrement,dasColumn.getDataType().size));
+                columnList.add(new ColumnMetadata(dasColumn.getName(), jdbcTypeStr, jdbc, dasColumn.isNotNull(), columnComment, primary, autoIncrement, dataType==null?0:dataType.size));
             }
             tableInfo.getColumns().addAll(columnList);
             tableInfoList.add(tableInfo);
         }
         return tableInfoList;
     }
+
+    public static DataType getDataType(DasColumn dasColumn) {
+        Method getDataType = ReflectUtil.getMethod(DasTypedObject.class, "getDataType" );
+        if (getDataType != null) {
+            Object dataType = ReflectUtil.invoke(dasColumn, getDataType);
+            if (dataType != null) {
+                return (DataType)dataType;
+            }
+        }
+        Method getDasType = ReflectUtil.getMethod(DasTypedObject.class, "getDasType" );
+        if (getDasType != null) {
+            Object dasType = ReflectUtil.invoke(dasColumn, getDasType);
+            if (dasType != null) {
+                Method toDataType = ReflectUtil.getMethod(dasType.getClass(), "toDataType" );
+                if (toDataType != null) {
+                    Object invoke = ReflectUtil.invoke(dasColumn, toDataType);
+                    if (invoke != null) {
+                        return (DataType)invoke;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private static String getFieldType(int jdbc, TableInfo tableInfo, String jdbcTypeName, int size, String jdbcTypeStr) {
 //        Map<String, List<MatchTypeMapping>> typeMapping = MybatisFlexPluginConfigData.getTypeMapping();
 //        if (typeMapping.containsKey("ORDINARY")) {
@@ -114,22 +148,24 @@ public class TableUtils {
 //            }
 //        }
 
-        boolean flag = className.contains(";");
+        boolean flag = className.contains(";" );
         if (flag) {
-            className = className.replace(";", "").replace("[L", "");
+            className = className.replace(";" , "" ).replace("[L" , "" );
         }
         tableInfo.addImportClassItem(className);
-        String fieldType = className.substring(className.lastIndexOf(".") + 1);
+        String fieldType = className.substring(className.lastIndexOf("." ) + 1);
         if (flag) {
             fieldType += "[]";
         }
         return fieldType;
     }
+
     public static DatabaseDialectEx getDialect(DasTable dasTable) {
         DbTableImpl table = (DbTableImpl) dasTable;
         DbDataSourceImpl dataSource = table.getDataSource();
         return dataSource.getDatabaseDialect();
     }
+
     public static Class<?> convert(int sqlType, int size) {
         switch (sqlType) {
             case Types.BIT:
@@ -190,6 +226,7 @@ public class TableUtils {
                 return Object.class;
         }
     }
+
     /**
      * 得到类名
      *
@@ -210,45 +247,47 @@ public class TableUtils {
      * @return {@code String}
      */
     public static String getTableName(String tableName, String tablePrefix) {
-        tablePrefix = ObjectUtil.defaultIfNull(tablePrefix, "");
-        String[] tablePrefixArr = tablePrefix.split(";");
+        tablePrefix = ObjectUtil.defaultIfNull(tablePrefix, "" );
+        String[] tablePrefixArr = tablePrefix.split(";" );
         for (String prefix : tablePrefixArr) {
             if (tableName.startsWith(prefix)) {
-                tableName = tableName.replaceFirst(prefix, "");
+                tableName = tableName.replaceFirst(prefix, "" );
                 break;
             }
         }
         return tableName;
     }
 
-    public static Map<String,List<MatchTypeMapping>> getDefaultTypeMappingMap(){
-        Map<String,List<MatchTypeMapping>> map = new HashMap<>();
-        map.put("REGEX",getRegexTypeMapping());
-        map.put("ORDINARY",getOrdinaryTypeMapping());
+    public static Map<String, List<MatchTypeMapping>> getDefaultTypeMappingMap() {
+        Map<String, List<MatchTypeMapping>> map = new HashMap<>();
+        map.put("REGEX" , getRegexTypeMapping());
+        map.put("ORDINARY" , getOrdinaryTypeMapping());
         return map;
     }
+
     public static List<MatchTypeMapping> getRegexTypeMapping() {
         List<MatchTypeMapping> list = new ArrayList<>();
-        list.add(new MatchTypeMapping("REGEX", "java.lang.String", "varchar(\\(\\d+\\))?"));
-        list.add(new MatchTypeMapping("REGEX", "java.lang.String", "char(\\(\\d+\\))?"));
-        list.add(new MatchTypeMapping("REGEX", "java.lang.String", "(tiny|medium|long)*text"));
-        list.add(new MatchTypeMapping("REGEX", "java.math.BigDecimal", "decimal(\\(\\d+,\\d+\\))?"));
-        list.add(new MatchTypeMapping("REGEX", "java.lang.Integer", "(tiny|small|medium)*int(\\(\\d+\\))?"));
-        list.add(new MatchTypeMapping("REGEX", "java.lang.Long", "bigint(\\(\\d+\\))?"));
+        list.add(new MatchTypeMapping("REGEX" , "java.lang.String" , "varchar(\\(\\d+\\))?" ));
+        list.add(new MatchTypeMapping("REGEX" , "java.lang.String" , "char(\\(\\d+\\))?" ));
+        list.add(new MatchTypeMapping("REGEX" , "java.lang.String" , "(tiny|medium|long)*text" ));
+        list.add(new MatchTypeMapping("REGEX" , "java.math.BigDecimal" , "decimal(\\(\\d+,\\d+\\))?" ));
+        list.add(new MatchTypeMapping("REGEX" , "java.lang.Integer" , "(tiny|small|medium)*int(\\(\\d+\\))?" ));
+        list.add(new MatchTypeMapping("REGEX" , "java.lang.Long" , "bigint(\\(\\d+\\))?" ));
         return list;
     }
+
     public static List<MatchTypeMapping> getOrdinaryTypeMapping() {
 
         List<MatchTypeMapping> list = new ArrayList<>();
-        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Boolean", "tinyint(1)"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Integer", "integer"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.lang.String", "int4"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Long", "int8"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.time.LocalDate", "date"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.time.LocalDateTime", "datetime"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.util.DateTime", "timestamp"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.time.LocalTime", "time"));
-        list.add(new MatchTypeMapping("ORDINARY", "java.lang.Boolean", "boolean"));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.lang.Boolean" , "tinyint(1)" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.lang.Integer" , "integer" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.lang.String" , "int4" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.lang.Long" , "int8" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.time.LocalDate" , "date" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.time.LocalDateTime" , "datetime" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.util.DateTime" , "timestamp" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.time.LocalTime" , "time" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.lang.Boolean" , "boolean" ));
         return list;
     }
 }

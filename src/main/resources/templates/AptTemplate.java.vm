@@ -5,6 +5,7 @@ import com.easy.query.core.proxy.AbstractProxyEntity;
 import com.easy.query.core.proxy.SQLColumn;
 import com.easy.query.core.proxy.SQLSelectAsExpression;
 import com.easy.query.core.proxy.fetcher.AbstractFetcher;
+import com.easy.query.core.proxy.core.EntitySQLContext;
 #foreach($imp in ${aptFileCompiler.getImports()})
 ${imp}    
 #end
@@ -24,7 +25,7 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
     */
     #if(${property.isValueObject()})
     public ${property.getEntityName()}Proxy ${property.getPropertyName()}(){
-        return getValueObject(new ${property.getEntityName()}Proxy(getTable(), getValueProperty("${property.getPropertyName()}")));
+        return getValueObject(new ${property.getEntityName()}Proxy(getEntitySQLContext(),getTable(), getValueProperty("${property.getPropertyName()}")));
     }
     #else
     public ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getPropertyName()}(){
@@ -54,8 +55,8 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
 
     public static class ${valueObject.getEntityName()}Proxy extends AbstractValueObjectProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${valueObject.getEntityName()}> {
 
-        private ${valueObject.getEntityName()}Proxy(TableAvailable table, String propertyName) {
-            super(table, propertyName);
+        private ${valueObject.getEntityName()}Proxy(EntitySQLContext entitySQLContext,TableAvailable table, String propertyName) {
+            super(entitySQLContext,table, propertyName);
         }
 
         #renderPropertyUI($valueObject)

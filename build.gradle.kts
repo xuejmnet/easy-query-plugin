@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.14"
+version = "0.0.15"
 
 repositories {
     maven {
@@ -17,9 +17,9 @@ repositories {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2023.2.5")
+//    version.set("2023.2.5")
 //    version.set("2022.2.5")
-//    version.set("2023.3")
+    version.set("2023.3")
     type.set("IU") // Target
     // IDE Platform
 
