@@ -18,7 +18,7 @@
     <a href="https://xuejmnet.github.io/easy-query-doc/">document</a>
     <h3>Features:</h3>
     <ul>
-    <li>support 1.8.2+</li>
+    <li>support 1.8.4+</li>
     <li>The resulting APT file supports hints</li>
     <li>APT automatic compilation SHIFT+P Shortcut keys</li>
     <li>format sql with params SHIFT+M</li>

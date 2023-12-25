@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.entity;
 
 import com.easy.query.plugin.core.util.StrUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * create time 2023/9/16 12:12
@@ -13,6 +14,7 @@ public class AptPropertyInfo {
      * 属性名
      */
     private final String propertyName;
+    private final PropertyColumn propertyColumn;
     /**
      * 注释内容
      */
@@ -20,7 +22,6 @@ public class AptPropertyInfo {
     /**
      * 属性类型
      */
-    private final String propertyType;
     /**
      * 对象名
      */
@@ -29,20 +30,28 @@ public class AptPropertyInfo {
     private final String owner;
     private final String sqlColumn;
     private final String sqlColumnMethod;
+    private final String proxyPropertyName;
 
-    public AptPropertyInfo(String propertyName, String propertyType, String comment, String entityName,boolean valueObject,String owner,boolean includeProperty){
+    public AptPropertyInfo(String propertyName, PropertyColumn propertyColumn, String comment, String entityName,boolean valueObject,String owner,boolean includeProperty,String proxyPropertyName){
 
         this.propertyName = propertyName;
-        this.propertyType = propertyType;
+        this.propertyColumn = propertyColumn;
         this.comment = comment;
         this.entityName = entityName;
         this.valueObject = valueObject;
         this.owner = owner;
-        this.sqlColumn = includeProperty?"SQLNavigateColumn":"SQLColumn";
-        this.sqlColumnMethod = includeProperty?"getNavigate":"get";
+        this.sqlColumn = includeProperty?"SQLNavigateColumn":propertyColumn.getSqlColumnName();
+        this.sqlColumnMethod = includeProperty?"getNavigate":propertyColumn.getSQLColumnMethod();
+        this.proxyPropertyName = proxyPropertyName;
     }
 
     public String getPropertyName() {
+        return propertyName;
+    }
+    public String getProxyPropertyName() {
+        if(StringUtils.isNotBlank(proxyPropertyName)){
+            return proxyPropertyName;
+        }
         return propertyName;
     }
     public String getPropertyNameGetMethodName() {
@@ -54,7 +63,7 @@ public class AptPropertyInfo {
     }
 
     public String getPropertyType() {
-        return propertyType;
+        return propertyColumn.getPropertyType();
     }
 
     public String getEntityName() {

@@ -24,11 +24,11 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
     * {@link ${property.getOwner()}#${property.getPropertyNameGetMethodName()}}
     */
     #if(${property.isValueObject()})
-    public ${property.getEntityName()}Proxy ${property.getPropertyName()}(){
+    public ${property.getEntityName()}Proxy ${property.getProxyPropertyName()}(){
         return getValueObject(new ${property.getEntityName()}Proxy(getEntitySQLContext(),getTable(), getValueProperty("${property.getPropertyName()}")));
     }
     #else
-    public ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getPropertyName()}(){
+    public ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getProxyPropertyName()}(){
         return ${property.getSqlColumnMethod()}("${property.getPropertyName()}",${property.getPropertyType()}.class);
     }
     #end
@@ -87,8 +87,8 @@ public static class ${aptFileCompiler.getSelectorInfo().getName()} extends Abstr
     ${property.getComment()}
     * {@link ${aptFileCompiler.getEntityClassName()}#${property.getPropertyNameGetMethodName()}}
     */
-    public ${aptFileCompiler.getSelectorInfo().getName()} ${property.getPropertyName()}() {
-        return add(getProxy().${property.getPropertyName()}());
+    public ${aptFileCompiler.getSelectorInfo().getName()} ${property.getProxyPropertyName()}() {
+        return add(getProxy().${property.getProxyPropertyName()}());
         }
 
 #end
