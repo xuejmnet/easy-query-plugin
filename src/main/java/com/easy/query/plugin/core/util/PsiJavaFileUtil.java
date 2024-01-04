@@ -63,7 +63,11 @@ public class PsiJavaFileUtil {
     }
 
     public static Collection<PsiClass> getAnnotationPsiClass(String qualifiedName) {
-        return AnnotationTargetsSearch.search(PsiJavaFileUtil.getPsiClass(qualifiedName)).findAll()
+        PsiClass psiClass = PsiJavaFileUtil.getPsiClass(qualifiedName);
+        if(psiClass==null){
+            return Collections.emptyList();
+        }
+        return AnnotationTargetsSearch.search(psiClass).findAll()
                 .stream()
                 .filter(el -> el instanceof PsiClass)
                 .map(el -> (PsiClass) el)

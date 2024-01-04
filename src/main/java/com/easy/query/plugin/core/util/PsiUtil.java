@@ -113,14 +113,20 @@ public class PsiUtil {
         }
         return def;
     }
-    public static String getPsiFieldPropertyType(PsiField field){
+    public static String getPsiFieldPropertyType(PsiField field,boolean isInclude){
         // 获取属性类型
         PsiType fieldType = field.getType();
         if(((PsiClassType)fieldType).resolve() instanceof PsiTypeParameter){
             return "java.lang.Object";
         }
-
-        return parseGenericType(fieldType.getCanonicalText());
+        String canonicalText = fieldType.getCanonicalText();
+        if(isInclude){
+            return parseGenericType(canonicalText);
+        }
+        if (canonicalText.contains("<") && canonicalText.contains(">")){
+            return "java.lang.Object";
+        }
+        return canonicalText;
     }
     public static String parseGenericType(String genericTypeString) {
         if(genericTypeString.contains(",")){

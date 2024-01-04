@@ -44,13 +44,11 @@
                 icon="/icons/eq.svg">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="shift P"/>
         </action>
         <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"
                 text="SQLFormatPreview" icon="/icons/eq.svg">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <add-to-group group-id="ConsoleEditorPopupMenu" anchor="before" relative-to-action="ConsoleView.ClearAll"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="shift M"/>
         </action>
         <action id="com.easy.query.plugin.action.CompileCurrentFileAction"
                 class="com.easy.query.plugin.action.CompileCurrentFileAction"

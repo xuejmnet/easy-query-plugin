@@ -87,28 +87,28 @@ import java.util.stream.Collectors;
 public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorFactoryListener, Disposable, FileEditorManagerListener {
     private static final Logger log = Logger.getInstance(EasyQueryDocumentChangeHandler.class);
     private static final Map<String, PropertyColumn> TYPE_COLUMN_MAPPING = new HashMap<>();
-    public static final Key<Boolean> CHANGE = Key.create("change" );
-    private static final Key<Boolean> LISTENER = Key.create("listener" );
+    public static final Key<Boolean> CHANGE = Key.create("change");
+    private static final Key<Boolean> LISTENER = Key.create("listener");
 
     static {
 
-        TYPE_COLUMN_MAPPING.put("java.lang.Float" , new PropertyColumn("SQLNumberColumn" , "java.lang.Float" ));
-        TYPE_COLUMN_MAPPING.put("java.lang.Double" , new PropertyColumn("SQLNumberColumn" , "java.lang.Double" ));
-        TYPE_COLUMN_MAPPING.put("java.lang.Short" , new PropertyColumn("SQLNumberColumn" , "java.lang.Short" ));
-        TYPE_COLUMN_MAPPING.put("java.lang.Integer" , new PropertyColumn("SQLNumberColumn" , "java.lang.Integer" ));
-        TYPE_COLUMN_MAPPING.put("java.lang.Long" , new PropertyColumn("SQLNumberColumn" , "java.lang.Long" ));
-        TYPE_COLUMN_MAPPING.put("java.lang.Byte" , new PropertyColumn("SQLNumberColumn" , "java.lang.Byte" ));
-        TYPE_COLUMN_MAPPING.put("java.math.BigDecimal" , new PropertyColumn("SQLNumberColumn" , "java.math.BigDecimal" ));
-        TYPE_COLUMN_MAPPING.put("java.lang.Boolean" , new PropertyColumn("SQLBooleanColumn" , "java.lang.Boolean" ));
-        TYPE_COLUMN_MAPPING.put("java.lang.String" , new PropertyColumn("SQLStringColumn" , "java.lang.String" ));
-        TYPE_COLUMN_MAPPING.put("java.util.UUID" , new PropertyColumn("SQLStringColumn" , "java.util.UUID" ));
-        TYPE_COLUMN_MAPPING.put("java.sql.Timestamp" , new PropertyColumn("SQLDateTimeColumn" , "java.sql.Timestamp" ));
-        TYPE_COLUMN_MAPPING.put("java.sql.Time" , new PropertyColumn("SQLDateTimeColumn" , "java.sql.Time" ));
-        TYPE_COLUMN_MAPPING.put("java.sql.Date" , new PropertyColumn("SQLDateTimeColumn" , "java.sql.Date" ));
-        TYPE_COLUMN_MAPPING.put("java.util.Date" , new PropertyColumn("SQLDateTimeColumn" , "java.util.Date" ));
-        TYPE_COLUMN_MAPPING.put("java.time.LocalDate" , new PropertyColumn("SQLDateTimeColumn" , "java.time.LocalDate" ));
-        TYPE_COLUMN_MAPPING.put("java.time.LocalDateTime" , new PropertyColumn("SQLDateTimeColumn" , "java.time.LocalDateTime" ));
-        TYPE_COLUMN_MAPPING.put("java.time.LocalTime" , new PropertyColumn("SQLDateTimeColumn" , "java.time.LocalTime" ));
+        TYPE_COLUMN_MAPPING.put("java.lang.Float", new PropertyColumn("SQLNumberColumn", "java.lang.Float"));
+        TYPE_COLUMN_MAPPING.put("java.lang.Double", new PropertyColumn("SQLNumberColumn", "java.lang.Double"));
+        TYPE_COLUMN_MAPPING.put("java.lang.Short", new PropertyColumn("SQLNumberColumn", "java.lang.Short"));
+        TYPE_COLUMN_MAPPING.put("java.lang.Integer", new PropertyColumn("SQLNumberColumn", "java.lang.Integer"));
+        TYPE_COLUMN_MAPPING.put("java.lang.Long", new PropertyColumn("SQLNumberColumn", "java.lang.Long"));
+        TYPE_COLUMN_MAPPING.put("java.lang.Byte", new PropertyColumn("SQLNumberColumn", "java.lang.Byte"));
+        TYPE_COLUMN_MAPPING.put("java.math.BigDecimal", new PropertyColumn("SQLNumberColumn", "java.math.BigDecimal"));
+        TYPE_COLUMN_MAPPING.put("java.lang.Boolean", new PropertyColumn("SQLBooleanColumn", "java.lang.Boolean"));
+        TYPE_COLUMN_MAPPING.put("java.lang.String", new PropertyColumn("SQLStringColumn", "java.lang.String"));
+        TYPE_COLUMN_MAPPING.put("java.util.UUID", new PropertyColumn("SQLStringColumn", "java.util.UUID"));
+        TYPE_COLUMN_MAPPING.put("java.sql.Timestamp", new PropertyColumn("SQLDateTimeColumn", "java.sql.Timestamp"));
+        TYPE_COLUMN_MAPPING.put("java.sql.Time", new PropertyColumn("SQLDateTimeColumn", "java.sql.Time"));
+        TYPE_COLUMN_MAPPING.put("java.sql.Date", new PropertyColumn("SQLDateTimeColumn", "java.sql.Date"));
+        TYPE_COLUMN_MAPPING.put("java.util.Date", new PropertyColumn("SQLDateTimeColumn", "java.util.Date"));
+        TYPE_COLUMN_MAPPING.put("java.time.LocalDate", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalDate"));
+        TYPE_COLUMN_MAPPING.put("java.time.LocalDateTime", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalDateTime"));
+        TYPE_COLUMN_MAPPING.put("java.time.LocalTime", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalTime"));
     }
 //    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -124,7 +124,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         return false;
                     }
                     Boolean userData = oldFile.getUserData(CHANGE);
-                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java" ) && !oldFile.getName().endsWith(".kt" )) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
+                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
                 }).collect(Collectors.toList());
         Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap = new HashMap<>();
         try {
@@ -144,19 +144,19 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                 PsiClassOwner psiFile = (PsiClassOwner) VirtualFileUtils.getPsiFile(project, oldFile);
                 PsiClass[] classes = psiFile.getClasses();
                 if (classes.length == 0) {
-                    log.warn("psiJavaFile.getText():[" + psiFile.getText() + "],psiJavaFile.getClasses() is empty" );
+                    log.warn("psiJavaFile.getText():[" + psiFile.getText() + "],psiJavaFile.getClasses() is empty");
                     continue;
                 }
                 PsiClass psiClass = psiFile.getClasses()[0];
-                PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy" );
+                PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
 
-                PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy" );
+                PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
                 if (entityProxy == null && entityFileProxy == null) {
-                    log.warn("annotation [EntityProxy] is null and [EntityFileProxy] is null" );
+                    log.warn("annotation [EntityProxy] is null and [EntityFileProxy] is null");
                     return;
                 }
                 //com.easy.query.core.enums.FileGenerateEnum.GENERATE_CURRENT_COMPILE_OVERRIDE
-                String strategy = entityFileProxy == null ? null : PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "strategy" , "GENERATE_CURRENT_COMPILE_OVERRIDE" );
+                String strategy = entityFileProxy == null ? null : PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "strategy", "GENERATE_CURRENT_COMPILE_OVERRIDE");
 //                if(entityFileProxy!=null){
 //                    // todo写文件而不是写到类里面
 //                    continue;
@@ -166,7 +166,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                 FileTypeEnum fileType = PsiUtil.getFileType(psiFile);
                 String path = moduleDirPath + CustomConfig.getConfig(config.getGenPath(),
                         fileType, Modules.isManvenProject(moduleForFile), entityFileProxy != null)
-                        + psiFile.getPackageName().replace("." , "/" ) + "/proxy";
+                        + psiFile.getPackageName().replace(".", "/") + "/proxy";
 
                 PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);
                 // 等待索引准备好
@@ -209,22 +209,22 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     String entityName = psiClass.getName();
                     String entityFullName = psiClass.getQualifiedName();
                     //获取对应的代理对象名称
-                    String proxyEntityName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value" , psiClass.getName() + "Proxy" );
+                    String proxyEntityName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value", psiClass.getName() + "Proxy");
                     //代理对象属性忽略
-                    Set<String> proxyIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityProxy, "ignoreProperties" , new HashSet<>());
+                    Set<String> proxyIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityProxy, "ignoreProperties", new HashSet<>());
                     //是否是数据库对象
-                    PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table" );
+                    PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
                     //获取对应的忽略属性
-                    Set<String> tableAndProxyIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityTable, "ignoreProperties" , proxyIgnoreProperties);
+                    Set<String> tableAndProxyIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityTable, "ignoreProperties", proxyIgnoreProperties);
 
                     PsiField[] fields = psiClass.getAllFields();
 
                     AptValueObjectInfo aptValueObjectInfo = new AptValueObjectInfo(entityName);
-                    String packageName = psiFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy" );
-                    AptFileCompiler aptFileCompiler = new AptFileCompiler(packageName, entityName, proxyEntityName, new AptSelectorInfo(proxyEntityName + "Fetcher" ), psiFile instanceof KtFile);
+                    String packageName = psiFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy");
+                    AptFileCompiler aptFileCompiler = new AptFileCompiler(packageName, entityName, proxyEntityName, new AptSelectorInfo(proxyEntityName + "Fetcher"), psiFile instanceof KtFile);
                     aptFileCompiler.addImports(entityFullName);
                     for (PsiField field : fields) {
-                        PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore" );
+                        PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
                         if (columnIgnore != null) {
                             continue;
                         }
@@ -237,15 +237,15 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         if (!isBeanProperty) {
                             continue;
                         }
-                        String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field);
+                        PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
+                        String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
                         String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
-                        PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject" );
+                        PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
                         boolean isValueObject = valueObject != null;
-                        PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate" );
-                        String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf("." ) + 1) : entityName;
+                        String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
 
-                        PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty" );
-                        String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value" , null);
+                        PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty");
+                        String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
 
                         PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
 
@@ -254,16 +254,16 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         if (navigate == null) {
                             aptFileCompiler.getSelectorInfo().getProperties().add(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName));
                         } else {
-                            aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn" );
+                            aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                         }
 
                         if (isValueObject) {
-                            aptFileCompiler.addImports("com.easy.query.core.proxy.AbstractValueObjectProxyEntity" );
+                            aptFileCompiler.addImports("com.easy.query.core.proxy.AbstractValueObjectProxyEntity");
                             aptFileCompiler.addImports(psiFieldPropertyType);
                             PsiType fieldType = field.getType();
                             PsiClass fieldClass = ((PsiClassType) fieldType).resolve();
                             if (fieldClass == null) {
-                                log.warn("field [" + name + "] is value object,cant resolve PsiClass" );
+                                log.warn("field [" + name + "] is value object,cant resolve PsiClass");
                                 continue;
                             }
                             AptValueObjectInfo fieldAptValueObjectInfo = new AptValueObjectInfo(fieldClass.getName());
@@ -274,8 +274,8 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     }
 
                     VelocityContext context = new VelocityContext();
-                    context.put("aptValueObjectInfo" , aptValueObjectInfo);
-                    context.put("aptFileCompiler" , aptFileCompiler);
+                    context.put("aptValueObjectInfo", aptValueObjectInfo);
+                    context.put("aptFileCompiler", aptFileCompiler);
                     String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
                     PsiFile psiProxyFile = VelocityUtils.render(context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
                     CodeStyleManager.getInstance(project).reformat(psiProxyFile);
@@ -315,7 +315,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     }
 
     public static PropertyColumn getPropertyColumn(String fieldGenericType) {
-        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn("SQLAnyColumn" , fieldGenericType));
+        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn("SQLAnyColumn", fieldGenericType));
     }
 
     private static void addValueObjectClass(String parentProperty, AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
@@ -324,7 +324,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         String entityName = fieldValueObjectClass.getName();
         aptFileCompiler.addImports(fieldValueObjectClass.getQualifiedName());
         for (PsiField field : allFields) {
-            PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore" );
+            PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
             if (columnIgnore != null) {
                 continue;
             }
@@ -337,28 +337,29 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             if (!isBeanProperty) {
                 continue;
             }
-            String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field);
+            PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
+            String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
             String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
-            PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject" );
+            PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
             boolean isValueObject = valueObject != null;
-            String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf("." ) + 1) : entityName;
-            PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate" );
+            String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
 
-            PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty" );
-            String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value" , null);
+
+            PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty");
+            String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
 
             PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
             aptFileCompiler.addImports(propertyColumn.getImport());
             aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, navigate != null, proxyPropertyName));
             if (navigate != null) {
-                aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn" );
+                aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
             }
             if (valueObject != null) {
                 aptFileCompiler.addImports(psiFieldPropertyType);
                 PsiType fieldType = field.getType();
                 PsiClass fieldClass = ((PsiClassType) fieldType).resolve();
                 if (fieldClass == null) {
-                    log.warn("field [" + name + "] is value object,cant resolve PsiClass" );
+                    log.warn("field [" + name + "] is value object,cant resolve PsiClass");
                     continue;
                 }
                 AptValueObjectInfo innerValueObject = new AptValueObjectInfo(fieldClass.getName());
@@ -455,7 +456,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
             importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
         }
-        return importSet.contains("com.easy.query.core.annotation.EntityProxy" ) || importSet.contains("com.easy.query.core.annotation.*" ) || importSet.contains("com.easy.query.core.annotation.EntityFileProxy" );
+        return importSet.contains("com.easy.query.core.annotation.EntityProxy") || importSet.contains("com.easy.query.core.annotation.*") || importSet.contains("com.easy.query.core.annotation.EntityFileProxy");
     }
 
     @Override
