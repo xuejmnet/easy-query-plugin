@@ -316,7 +316,7 @@ public class RenderEasyQueryTemplate {
                                 Messages.showErrorDialog(" 操作错误：" + e.getMessage(), "错误");
                             }
                         } catch (Exception e) {
-                            Messages.showErrorDialog("索引未更新", "错误");
+                            Messages.showErrorDialog("索引未更新:"+e.getMessage(), "错误");
                         }
                     }
                 }

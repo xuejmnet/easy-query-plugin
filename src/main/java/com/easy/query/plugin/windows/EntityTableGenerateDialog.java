@@ -100,7 +100,7 @@ public class EntityTableGenerateDialog extends JDialog {
     private JButton confDelBtn;
     private JTextField ignoreColumnsText;
     private JTextField superClassText;
-
+    private JButton previewBtn;
 
     Map<String, Module> moduleMap;
     Map<String, Map<String, String>> modulePackageMap;
@@ -125,6 +125,12 @@ public class EntityTableGenerateDialog extends JDialog {
         DialogUtil.centerShow(this);
         confDelBtn.setIcon(PlatformIcons.DELETE_ICON);
         buttonOK.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onOK();
+            }
+        });
+
+        previewBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onOK();
             }
@@ -517,18 +523,6 @@ public class EntityTableGenerateDialog extends JDialog {
         for (String tableName : selectedTabeList) {
             selectedTableInfo.add(tableInfoMap.get(tableName));
         }
-        // boolean flag = checkTableInfo(selectedTableInfo);
-        // if (flag) {
-//        String since = sinceComBox.getSelectedItem().toString();
-//        EasyQueryConfig configData = getConfigData();
-//
-//
-//        if (!SINCE_CONFIG.equals(since)) {
-//            MybatisFlexPluginConfigData.removeSinceConfig(since);
-//            MybatisFlexPluginConfigData.configSince(since, configData);
-//        }
-//        EasyQueryQueryPluginConfigData.setCurrentEasyQueryConfig(configData, project);
-
         startGenCode(selectedTableInfo);
         return true;
     }
