@@ -53,6 +53,7 @@ public class EasyQueryConfig {
     private boolean swagger;
 
     private boolean swagger3;
+    private boolean easyAssertMessage;
     /**
      * 实体模板
      */
@@ -236,6 +237,13 @@ public class EasyQueryConfig {
         this.swagger3 = swagger3;
     }
 
+    public boolean isEasyAssertMessage() {
+        return easyAssertMessage;
+    }
+
+    public void setEasyAssertMessage(boolean easyAssertMessage) {
+        this.easyAssertMessage = easyAssertMessage;
+    }
 
     public boolean isEntityProxy() {
         return entityProxy;

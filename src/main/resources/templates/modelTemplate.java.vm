@@ -37,6 +37,9 @@ import com.easy.query.core.annotation.EntityProxy;
 #if($config.entityFileProxy)
 import com.easy.query.core.annotation.EntityFileProxy;
 #end
+#if($config.easyAssertMessage)
+import com.easy.query.core.annotation.EasyAssertMessage;
+#end
 #foreach($classImport in $importClassList)
 import $classImport;
 #end
@@ -77,6 +80,9 @@ import $classImport;
 #end
 #if($config.entityFileProxy)
 @EntityFileProxy
+#end
+#if($config.easyAssertMessage)
+@EasyAssertMessage("未找到对应的xxxxx信息")
 #end
 public class ${modelName} #if(${config.modelSuperClass}) extends ${table.superClass}  #end {
 

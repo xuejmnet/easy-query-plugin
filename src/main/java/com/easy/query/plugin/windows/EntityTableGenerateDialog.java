@@ -95,6 +95,7 @@ public class EntityTableGenerateDialog extends JDialog {
     private JTextField modelSuffixText;
     private JCheckBox swaggerCheckBox;
     private JCheckBox swagger3CheckBox;
+    private JCheckBox easyAssertMessageCheckBox;
     private JButton importBtn;
     private JButton exportBtn;
     private JButton confDelBtn;
@@ -333,6 +334,7 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setModelTemplate(modelTemplate);
         config.setSwagger(swaggerCheckBox.isSelected());
         config.setSwagger3(swagger3CheckBox.isSelected());
+        config.setEasyAssertMessage(easyAssertMessageCheckBox.isSelected());
         config.setTypeMapping(typeMapping);
         config.setIgnoreColumns(ignoreColumnsText.getText());
         String superClass = superClassText.getText();
@@ -486,6 +488,7 @@ public class EntityTableGenerateDialog extends JDialog {
         entityProxyCheck.setSelected(config.isEntityProxy());
         entityFileProxyCheck.setSelected(config.isEntityFileProxy());
         swaggerCheckBox.setSelected(config.isSwagger());
+        easyAssertMessageCheckBox.setSelected(config.isEasyAssertMessage());
         swagger3CheckBox.setSelected(config.isSwagger3());
         modelTemplate = config.getModelTemplate();
         typeMapping = config.getTypeMapping();
