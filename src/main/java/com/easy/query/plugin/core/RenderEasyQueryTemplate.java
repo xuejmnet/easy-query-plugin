@@ -299,16 +299,22 @@ public class RenderEasyQueryTemplate {
                         for (PsiElement psiFile : list) {
                             if (psiFile instanceof PsiFile) {
                                 PsiFile file = (PsiFile) psiFile;
+                                VirtualFile virtualFile = file.getVirtualFile();
+                                if(virtualFile!=null){
 
-                                PsiClassOwner newFile = (PsiClassOwner) VirtualFileUtils.getPsiFile(project, file.getVirtualFile());
-                                PsiClass[] classes = newFile.getClasses();
-                                if (classes.length == 0) {
-                                    continue;
-                                }
-                                PsiClass psiClass = classes[0];
-                                PsiAnnotation easyAnonymous = psiClass.getAnnotation("com.easy.query.core.annotation.EasyAnonymous");
-                                if(easyAnonymous==null){
-                                    continue;
+                                    PsiFile psiFile1 = VirtualFileUtils.getPsiFile(project, virtualFile);
+                                    if(psiFile1!=null){
+                                        PsiClassOwner newFile = (PsiClassOwner)psiFile1 ;
+                                        PsiClass[] classes = newFile.getClasses();
+                                        if (classes.length == 0) {
+                                            continue;
+                                        }
+                                        PsiClass psiClass = classes[0];
+                                        PsiAnnotation easyAnonymous = psiClass.getAnnotation("com.easy.query.core.annotation.EasyAnonymous");
+                                        if(easyAnonymous==null){
+                                            continue;
+                                        }
+                                    }
                                 }
                                 PsiFile directoryFile = directory.findFile(file.getName());
                                 if (ObjectUtil.isNotNull(directoryFile)) {

@@ -172,7 +172,7 @@ public class AnonymousMapAction extends AnAction {
                 }
             }
         } catch (Exception ex) {
-            Messages.showErrorDialog(e.getProject(), "请按规定：将光标移动到MapProxy或者对应的Class上", "错误提示");
+            Messages.showErrorDialog(e.getProject(), "请按规定：将光标移动到MapProxy或者对应的Class上:"+ex.getMessage(), "错误提示");
         }
 //        Project project = e.getProject();
 ////        VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
