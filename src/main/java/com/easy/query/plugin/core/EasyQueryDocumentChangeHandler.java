@@ -12,7 +12,7 @@ import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.easy.query.plugin.core.util.BooleanUtil;
 import com.easy.query.plugin.core.util.ClassUtil;
 import com.easy.query.plugin.core.util.KtFileUtil;
-import com.easy.query.plugin.core.util.Modules;
+import com.easy.query.plugin.core.util.MyModuleUtil;
 import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.ProjectUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
@@ -20,7 +20,6 @@ import com.easy.query.plugin.core.util.PsiUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.VelocityUtils;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
-import com.intellij.lang.FileASTNode;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
@@ -33,36 +32,25 @@ import com.intellij.openapi.editor.event.EditorFactoryEvent;
 import com.intellij.openapi.editor.event.EditorFactoryListener;
 import com.intellij.openapi.editor.event.EditorMouseEvent;
 import com.intellij.openapi.editor.event.EditorMouseListener;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiCodeBlock;
 import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
-import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiSubstitutor;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.codeStyle.CodeStyleManager;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.util.messages.MessageBus;
 import org.apache.commons.lang3.BooleanUtils;
@@ -131,16 +119,16 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
             // 检查索引是否已准备好
             for (VirtualFile oldFile : virtualFiles) {
-                Module moduleForFile = ModuleUtil.findModuleForFile(oldFile, project);
+                Module moduleForFile = com.intellij.openapi.module.ModuleUtil.findModuleForFile(oldFile, project);
                 if (moduleForFile == null) {
                     log.warn("moduleForFile is null," + oldFile.getName());
                     continue;
                 }
-                CustomConfig config = Modules.moduleConfig(moduleForFile);
+                CustomConfig config = MyModuleUtil.moduleConfig(moduleForFile);
                 if (!ObjectUtil.defaultIfNull(config.isEnable(), true)) {
                     continue;
                 }
-                String moduleDirPath = Modules.getPath(moduleForFile);
+                String moduleDirPath = MyModuleUtil.getPath(moduleForFile);
                 PsiClassOwner psiFile = (PsiClassOwner) VirtualFileUtils.getPsiFile(project, oldFile);
                 PsiClass[] classes = psiFile.getClasses();
                 if (classes.length == 0) {
@@ -165,7 +153,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
                 FileTypeEnum fileType = PsiUtil.getFileType(psiFile);
                 String path = moduleDirPath + CustomConfig.getConfig(config.getGenPath(),
-                        fileType, Modules.isManvenProject(moduleForFile), entityFileProxy != null)
+                        fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
                         + psiFile.getPackageName().replace(".", "/") + "/proxy";
 
                 PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);

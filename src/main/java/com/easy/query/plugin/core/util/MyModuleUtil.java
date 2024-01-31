@@ -4,13 +4,12 @@ import com.easy.query.plugin.core.config.CustomConfig;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.FileIndex;
 import com.intellij.openapi.roots.ModuleFileIndex;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.util.ArrayUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
 import javax.swing.*;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
  * @author daijunxiong
  * @date 2023/06/22
  */
-public class Modules {
+public class MyModuleUtil {
     private static Map<String, Module> moduleMap;
     private static Map<String, Map<String, String>> modulePackageMap;
     private static Boolean isManvenProject;
@@ -45,8 +44,44 @@ public class Modules {
 //        return moduleMap.getOrDefault(packageName, "");
 //    }
 
-    public static Module[] getModule(Project project) {
+    public static boolean isMavenProject(Module module) {
+        VirtualFile[] contentRoots = ModuleRootManager.getInstance(module).getContentRoots();
+        if (ArrayUtil.isEmpty(contentRoots)) {
+            return false;
+        }
+        VirtualFile contentRoot = contentRoots[0];
+        VirtualFile virtualFile = contentRoot.findChild("pom.xml");
+        isManvenProject = Objects.nonNull(virtualFile);
+        return isManvenProject;
+    }
+    public static Module[] getModules(Project project) {
         return ModuleManager.getInstance(project).getModules();
+    }
+    public static Module getModule(Project project,String moduleName) {
+        Module[] modules = getModules(project);
+        if (ArrayUtil.isEmpty(modules)) {
+            NotificationUtils.notifyError("目录层级有误!", "", project);
+            return null;
+        }
+        boolean isMavenProject = MyModuleUtil.isMavenProject(modules[0]);
+        Map<String, Module> moduleMap = Arrays.stream(modules)
+                .filter(module -> {
+                    if (isMavenProject) {
+                        @NotNull VirtualFile[] sourceRoots = ModuleRootManager.getInstance(module).getSourceRoots();
+                        return sourceRoots.length > 0;
+                    }
+                    // 非maven项目只显示main模块,只有main模块才有java目录
+                    return module.getName().contains(".main");
+                })
+                .collect(Collectors.toMap(el -> {
+                    String name = el.getName();
+                    if (name.contains(".")) {
+                        String[] strArr = name.split("\\.");
+                        return strArr[strArr.length - 2];
+                    }
+                    return name;
+                }, module -> module));
+        return moduleMap.get(moduleName);
     }
 
 
@@ -76,24 +111,9 @@ public class Modules {
 //        }
 //    }
 
-    /**
-     * 判断是否manven项目
-     *
-     * @return boolean
-     */
-    public static boolean isManvenProject(Module module) {
-        VirtualFile[] contentRoots = ModuleRootManager.getInstance(module).getContentRoots();
-        if (ArrayUtil.isEmpty(contentRoots)) {
-            return false;
-        }
-        VirtualFile contentRoot = contentRoots[0];
-        VirtualFile virtualFile = contentRoot.findChild("pom.xml");
-        isManvenProject = Objects.nonNull(virtualFile);
-        return isManvenProject;
-    }
 
     public static String getProjectTypeSuffix(Module module) {
-        return isManvenProject(module) ? ".java" : ".kt";
+        return isMavenProject(module) ? ".java" : ".kt";
     }
 
 //

@@ -10,6 +10,7 @@ import com.easy.query.plugin.core.render.ModuleComBoxRender;
 import com.easy.query.plugin.core.render.TableListCellRenderer;
 import com.easy.query.plugin.core.util.DialogUtil;
 import com.easy.query.plugin.core.util.FileChooserUtil;
+import com.easy.query.plugin.core.util.MyModuleUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.PackageUtil;
@@ -700,13 +701,13 @@ public class EntityTableGenerateDialog extends JDialog {
             return;
         }
 
-        boolean isManvenProject = isManvenProject(modules[0]);
+        boolean isMavenProject = MyModuleUtil.isMavenProject(modules[0]);
         for (JComboBox<String> modulesCombox : modulesComboxs) {
             modulesCombox.setRenderer(new ModuleComBoxRender());
 
             moduleMap = Arrays.stream(modules)
                     .filter(module -> {
-                        if (isManvenProject) {
+                        if (isMavenProject) {
                             @NotNull VirtualFile[] sourceRoots = ModuleRootManager.getInstance(module).getSourceRoots();
                             return sourceRoots.length > 0;
                         }
@@ -754,21 +755,5 @@ public class EntityTableGenerateDialog extends JDialog {
             modulePackageMap.put(name, moduleMap);
         }
         initModuleIndexText(modulePackageMap.keySet());
-    }
-
-    /**
-     * 判断是否manven项目
-     *
-     * @return boolean
-     */
-    public boolean isManvenProject(Module module) {
-        VirtualFile[] contentRoots = ModuleRootManager.getInstance(module).getContentRoots();
-        if (ArrayUtil.isEmpty(contentRoots)) {
-            return false;
-        }
-        VirtualFile contentRoot = contentRoots[0];
-        VirtualFile virtualFile = contentRoot.findChild("pom.xml");
-        isManvenProject = Objects.nonNull(virtualFile);
-        return isManvenProject;
     }
 }

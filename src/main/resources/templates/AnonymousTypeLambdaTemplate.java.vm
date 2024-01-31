@@ -1,0 +1,6 @@
+new ${className}Proxy().adapter(r->{
+#foreach($property in $properties)
+        r.${property.propertyName}().set(${property.targetInvokeName});
+#end
+        })
+

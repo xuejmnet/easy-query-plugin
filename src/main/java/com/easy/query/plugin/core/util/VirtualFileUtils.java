@@ -13,7 +13,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,9 +27,9 @@ public class VirtualFileUtils {
         return psiManager.findFile(virtualFile);
     }
 
-    public static PsiFile getPsiFile(Document document) {
+    public static PsiFile getPsiFile(Project project,Document document) {
 
-        return PsiDocumentManager.getInstance(ProjectUtils.getCurrentProject()).getPsiFile(document);
+        return PsiDocumentManager.getInstance(project).getPsiFile(document);
     }
 
     public static VirtualFile getVirtualFile(Document document) {
@@ -116,7 +115,7 @@ public class VirtualFileUtils {
     }
 
     public static PsiDirectory createSubDirectory(Module module, Set javaResourceRootTypes, String packageName) {
-        PsiDirectory targetDirectory = Modules.getModuleDirectory(module, javaResourceRootTypes);
+        PsiDirectory targetDirectory = MyModuleUtil.getModuleDirectory(module, javaResourceRootTypes);
         if (targetDirectory != null) {
             String[] directories = packageName.split("\\.");
             for (String directoryName : directories) {
@@ -135,7 +134,7 @@ public class VirtualFileUtils {
         if (ObjectUtil.isNotNull(targetDirectory)) {
             return targetDirectory;
         }
-        String path = Modules.getPath(module);
+        String path = MyModuleUtil.getPath(module);
         targetDirectory = getPsiDirectory(module.getProject(), path);
         if (targetDirectory != null) {
             String[] directories = StrUtil.subAfter(packageName, path, false).split("/");

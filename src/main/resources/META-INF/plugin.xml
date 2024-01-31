@@ -37,8 +37,20 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler" id="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"/>
+
+<!--        <completion.contributor language="any"-->
+<!--                                id="com.easy.query.plugin.core.contributor.EasyQueryAnonymousTypeCompletionContributor"-->
+<!--                                implementationClass="com.easy.query.plugin.core.contributor.EasyQueryAnonymousTypeCompletionContributor"/>-->
+
     </extensions>
     <actions>
+        <action id="com.easy.query.plugin.action.AnonymousMapAction"
+                icon="/icons/eq.svg"
+                class="com.easy.query.plugin.action.AnonymousMapAction"
+                text="AnonymousMap" >
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="GenerateGroup" anchor="last"/>
+        </action>
         <action id="com.easy.query.plugin.action.AutoCompileAction"
                 class="com.easy.query.plugin.action.AutoCompileAction" text="AutoCompile"
                 icon="/icons/eq.svg">
