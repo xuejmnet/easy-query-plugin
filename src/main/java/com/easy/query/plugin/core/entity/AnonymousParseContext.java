@@ -34,9 +34,6 @@ public class AnonymousParseContext {
     private int start;
     private int end;
     private String anonymousName;
-    private String packageWithClassName;
-    private String packageWithSimpleClassName;
-
     private boolean entityProxy=true;
     private boolean entityFileProxy=false;
     private Set<String> importClassList;
@@ -76,23 +73,6 @@ public class AnonymousParseContext {
     public void setAnonymousName(String anonymousName) {
         this.anonymousName = anonymousName;
     }
-
-    public String getPackageWithClassName() {
-        return packageWithClassName;
-    }
-
-    public void setPackageWithClassName(String packageWithClassName) {
-        this.packageWithClassName = packageWithClassName;
-    }
-
-    public String getPackageWithSimpleClassName() {
-        return packageWithSimpleClassName;
-    }
-
-    public void setPackageWithSimpleClassName(String packageWithSimpleClassName) {
-        this.packageWithSimpleClassName = packageWithSimpleClassName;
-    }
-
     public boolean isEntityProxy() {
         return entityProxy;
     }

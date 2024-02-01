@@ -242,7 +242,6 @@ public class RenderEasyQueryTemplate {
         for (AnonymousParseResult value : values) {
             importClassList.add(value.getPropertyFullType());
         }
-        importClassList.add(anonymousParseContext.getPackageWithClassName());
         Map<PsiDirectory, List<PsiElement>> templateMap = new HashMap<>();
         VelocityEngine velocityEngine = new VelocityEngine();
         VelocityContext context = new VelocityContext();

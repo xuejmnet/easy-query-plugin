@@ -35,11 +35,11 @@ import com.easy.query.core.annotation.EasyAnonymous;
 #end
 #if($config.entityProxy)
 @EntityProxy
-@EasyAnonymous(packageWith=${config.packageWithSimpleClassName}.class)
+@EasyAnonymous(moduleName="${config.moduleName}",packageName="${config.modelPackage}")
 #end
 #if($config.entityFileProxy)
 @EntityFileProxy
-@EasyAnonymous(packageWith=${config.packageWithSimpleClassName}.class,entityFileProxy=true)
+@EasyAnonymous(moduleName="${config.moduleName}",packageName="${config.modelPackage}",entityFileProxy=true)
 #end
 public class ${className} {
 
