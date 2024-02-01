@@ -1,21 +1,15 @@
 package com.easy.query.plugin.core.persistent;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
-import com.easy.query.plugin.core.entity.MatchTypeMapping;
-import com.easy.query.plugin.core.util.ProjectUtils;
-import com.easy.query.plugin.core.util.TableUtils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,8 +17,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * create time 2023/11/30 11:19
@@ -72,6 +64,14 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
 //        });
 //        return eqConfigMap.getOrDefault(project.getName(), new EasyQueryConfig());
 //    }
+    private static final String QUICK_TIP_SETTING_KEY="QUICK_TIP_SETTING_KEY";
+
+    public static EasyQueryConfig getAllEnvQuickSetting(EasyQueryConfig def){
+        return getProjectSinceMap().getOrDefault(QUICK_TIP_SETTING_KEY,def);
+    }
+    public static void saveAllEnvProjectQuickSetting(EasyQueryConfig config){
+        saveConfigSince(QUICK_TIP_SETTING_KEY,config);
+    }
 
     public static LinkedHashMap<String, EasyQueryConfig> getProjectSinceMap() {
         EasyQueryQueryPluginConfigData instance = getInstance();

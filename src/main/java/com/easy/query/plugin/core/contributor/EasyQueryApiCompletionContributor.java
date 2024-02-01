@@ -2,9 +2,10 @@ package com.easy.query.plugin.core.contributor;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.easy.query.plugin.core.entity.AnonymousParseContext;
+import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.QueryType;
 import com.easy.query.plugin.core.icons.Icons;
+import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.MyCollectionUtil;
 import com.easy.query.plugin.core.util.MyStringUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
@@ -23,6 +24,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.patterns.PsiJavaPatterns;
 import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementFactory;
@@ -38,10 +40,13 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -176,10 +181,10 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
     }
 
     private boolean matchApi(PsiElement psiElement, String inputText) {
-        if(StrUtil.isBlank(inputText)){
+        if (StrUtil.isBlank(inputText)) {
             return true;
         }
-        boolean match =  API_MATCH_TREE.fstMatch(inputText);
+        boolean match = API_MATCH_TREE.fstMatch(inputText);
         if (!match) {
             return false;
         }
@@ -309,7 +314,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                     return;
                                 }
                                 String canonicalText = returnType.getCanonicalText();
-                                List<QueryType> queryTypes = parseQueryable(canonicalText);
+                                List<QueryType> queryTypes = parseQueryable(project,canonicalText);
                                 if (CollUtil.isEmpty(queryTypes)) {
                                     return;
                                 }
@@ -324,7 +329,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                         }).withIcon(Icons.EQ);
                 completionResultSet.addElement(elementBuilder);
             }
-        }catch (Exception e){}
+        } catch (Exception e) {
+        }
     }
 
     private void addAnonymousCodeTip(@NotNull CompletionResultSet result, Project project, PsiFile psiFile, int offset) {
@@ -343,7 +349,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                         }).withIcon(Icons.EQ);
                 completionResultSet.addElement(elementBuilder);
             }
-        }catch (Exception ex){
+        } catch (Exception ex) {
 
         }
     }
@@ -391,19 +397,19 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                     return;
                                 }
                                 String canonicalText = returnType.getCanonicalText();
-                                List<QueryType> queryTypes = parseQueryable(canonicalText);
+                                List<QueryType> queryTypes = parseQueryable(project,canonicalText);
                                 if (CollUtil.isEmpty(queryTypes)) {
                                     return;
                                 }
                                 easyContributor.insertString(context, queryTypes, true);
 
-                                if(easyContributor instanceof  EasyGroupContributor){
+                                if (easyContributor instanceof EasyGroupContributor) {
 
-                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.projectScope(project));
-                                    if(newClass!=null){
+                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
+                                    if (newClass != null) {
                                         WriteCommandAction.runWriteCommandAction(project, () -> {
-                                            if(psiFile instanceof PsiJavaFile){
-                                                javaImport(project,(PsiJavaFile)psiFile,newClass);
+                                            if (psiFile instanceof PsiJavaFile) {
+                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
                                             }
                                         });
                                     }
@@ -420,6 +426,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             System.out.println(ex);
         }
     }
+
     public void javaImport(Project project, PsiJavaFile psiJavaFile, PsiClass psiClass) {
         Set<String> importSet = PsiJavaFileUtil.getImportSet(psiJavaFile);
         PsiImportStatement importStatement = PsiElementFactory.getInstance(project).createImportStatement(psiClass);
@@ -436,7 +443,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
     private static final String QUERYABLE_ENTITY = "com.easy.query.api.proxy.entity.select.EntityQueryable";
     private static final String QUERYABLE_END = ">";
 
-    private List<QueryType> parseQueryable(String queryable) {
+    //获取注解没有就返回单一对象o有就用他的
+    private List<QueryType> parseQueryable(Project project, String queryable) {
 
         if (queryable.startsWith(QUERYABLE_ENTITY)) {
 
@@ -444,39 +452,97 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             if (queryable.contains("<") && queryable.endsWith(">")) {
                 String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
                 String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
-                if(typeString.startsWith("com.easy.query.core.proxy.grouping.proxy.Grouping")){
-                    return Collections.singletonList(new QueryType("group",true));
+                if (typeString.startsWith("com.easy.query.core.proxy.grouping.proxy.Grouping")) {
+                    return Collections.singletonList(new QueryType("group", true));
                 }
-                return MyCollectionUtil.partition(StrUtil.split(typeString, ","), 2).stream().map(o -> {
-                    if (o.size() < 2) {
-                        return null;
-                    } else {
-                        String classFullName = o.get(1);
-                        String className = StrUtil.subAfter(classFullName, ".", true);
+                List<List<String>> types = MyCollectionUtil.partition(StrUtil.split(typeString, ","), 2);
 
-                        return new QueryType(MyStringUtil.lambdaShortName(className));
+                Map<Integer, List<String>> matchNames = getMatchNames(project);
+
+                List<QueryType> shortNames = new ArrayList<>(types.size());
+                for (int i = 0; i < types.size(); i++) {
+                    List<String> typeList = types.get(i);
+                    if(typeList.size()<2){
+                        shortNames.add(new QueryType("unknown" + (i + 1)));
                     }
-                }).collect(Collectors.toList());
-
+                    String classFullName = typeList.get(1);
+                    if (StrUtil.isBlank(classFullName)) {
+                        shortNames.add(new QueryType("unknown" + (i + 1)));
+                    } else {
+                        shortNames.add(new QueryType(getShortName(project, i,types.size(), classFullName,matchNames)));
+                    }
+                }
+                return shortNames;
             }
         }
-        if(queryable.startsWith(QUERYABLE_CLIENT) || queryable.startsWith(QUERYABLE_4J) || queryable.startsWith(QUERYABLE_4KT)){
+        if (queryable.startsWith(QUERYABLE_CLIENT) || queryable.startsWith(QUERYABLE_4J) || queryable.startsWith(QUERYABLE_4KT)) {
             if (queryable.contains("<") && queryable.endsWith(">")) {
                 String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
                 String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
-                return StrUtil.split(typeString, ",").stream().map(o -> {
-                    if (StrUtil.isBlank(o)) {
-                        return null;
+                List<String> types = StrUtil.split(typeString, ",");
+
+                Map<Integer, List<String>> matchNames = getMatchNames(project);
+                List<QueryType> shortNames = new ArrayList<>(types.size());
+                for (int i = 0; i < types.size(); i++) {
+                    String classFullName = types.get(i);
+                    if (StrUtil.isBlank(classFullName)) {
+                        shortNames.add(new QueryType("unknown" + (i + 1)));
                     } else {
-                        String classFullName = o;
-                        String className = StrUtil.subAfter(classFullName, ".", true);
-
-                        return new QueryType(MyStringUtil.lambdaShortName(className));
+                        shortNames.add(new QueryType(getShortName(project, i,types.size(), classFullName,matchNames)));
                     }
-                }).collect(Collectors.toList());
-
+                }
+                return shortNames;
             }
         }
         return Collections.emptyList();
+    }
+
+    private String getShortName(Project project, int index,int total, String fullClassName,Map<Integer, List<String>> matchNames) {
+        //com.easy.query.core.annotation
+        PsiClass newClass = findClass(project, fullClassName);
+        if (newClass != null) {
+            PsiAnnotation easyAlias = newClass.getAnnotation("com.easy.query.core.annotation.EasyAlias");
+            if (easyAlias != null) {
+                String easyAliasName = PsiUtil.getPsiAnnotationValueIfEmpty(easyAlias, "value", "");
+                if (StrUtil.isNotBlank(easyAliasName)) {
+                    return easyAliasName;
+                }
+            }
+        }
+        if(CollUtil.isNotEmpty(matchNames)){
+            List<String> names = matchNames.get(total);
+            if(CollUtil.isNotEmpty(names)&&names.size()>index){
+                return names.get(index);
+            }
+        }
+
+        String className = StrUtil.subAfter(fullClassName, ".", true);
+        return MyStringUtil.lambdaShortName(className);
+    }
+
+    private Map<Integer, List<String>> getMatchNames(Project project){
+
+        EasyQueryConfig allEnvQuickSetting = EasyQueryQueryPluginConfigData.getAllEnvQuickSetting(null);
+        if (allEnvQuickSetting != null) {
+            Map<String, String> config = allEnvQuickSetting.getConfig();
+            if (config != null) {
+                String settingVal = config.get(project.getName());
+                if (StrUtil.isNotBlank(settingVal)) {
+                    String[] shortNames = settingVal.split(",");
+                    return Arrays.stream(shortNames).collect(Collectors.toMap(o -> o.split(":").length, o -> StrUtil.split(o, ":")));
+
+                }
+            }
+        }
+        return new HashMap<>(0);
+    }
+
+    private PsiClass findClass(Project project, String fullClassName) {
+        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
+        PsiClass newClass = javaPsiFacade.findClass(fullClassName, GlobalSearchScope.projectScope(project));
+        if (newClass == null) {
+            newClass = javaPsiFacade.findClass(fullClassName, GlobalSearchScope.allScope(project));
+        }
+        return newClass;
     }
 }

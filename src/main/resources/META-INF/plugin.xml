@@ -51,6 +51,12 @@
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="last"/>
         </action>
+        <action id="com.easy.query.plugin.action.QuickTipSettingAction"
+                icon="/icons/eq.svg"
+                class="com.easy.query.plugin.action.QuickTipSettingAction"
+                text="QuickTipSetting" >
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
         <action id="com.easy.query.plugin.action.AutoCompileAction"
                 class="com.easy.query.plugin.action.AutoCompileAction" text="AutoCompile"
                 icon="/icons/eq.svg">

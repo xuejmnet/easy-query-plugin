@@ -15,7 +15,7 @@ import java.util.Set;
  *
  * @author xuejiaming
  */
-public class EasyQueryConfig {
+public class EasyQueryConfig extends EasyQueryBasicConfig{
     /**
      * 作者
      */
@@ -276,4 +276,5 @@ public class EasyQueryConfig {
     public void setIgnoreColumns(String ignoreColumns) {
         this.ignoreColumns = ignoreColumns;
     }
+
 }
