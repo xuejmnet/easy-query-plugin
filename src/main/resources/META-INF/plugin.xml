@@ -39,8 +39,8 @@
         <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler" id="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"/>
 
         <completion.contributor language="any"
-                                id="com.easy.query.plugin.core.contributor.EasyQueryAnonymousTypeCompletionContributor"
-                                implementationClass="com.easy.query.plugin.core.contributor.EasyQueryAnonymousTypeCompletionContributor"/>
+                                id="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"
+                                implementationClass="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"/>
 
     </extensions>
     <actions>

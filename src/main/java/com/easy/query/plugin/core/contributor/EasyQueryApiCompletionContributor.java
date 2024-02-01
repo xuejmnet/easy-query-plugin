@@ -2,10 +2,12 @@ package com.easy.query.plugin.core.contributor;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.entity.AnonymousParseContext;
 import com.easy.query.plugin.core.entity.QueryType;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.util.MyCollectionUtil;
 import com.easy.query.plugin.core.util.MyStringUtil;
+import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.easy.query.plugin.core.util.TrieTree;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
@@ -13,24 +15,30 @@ import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.patterns.PsiJavaPatterns;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiExpressionList;
 import com.intellij.psi.PsiExpressionStatement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiImportStatement;
+import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -43,7 +51,7 @@ import java.util.stream.Collectors;
  *
  * @author xuejiaming
  */
-public class EasyQueryAnonymousTypeCompletionContributor extends CompletionContributor {
+public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
     private static final Set<EasyContributor> API_METHODS = new HashSet<>(Arrays.asList(
             new EasyContributor("select", "select", false),
@@ -168,21 +176,23 @@ public class EasyQueryAnonymousTypeCompletionContributor extends CompletionContr
     }
 
     private boolean matchApi(PsiElement psiElement, String inputText) {
-        boolean match = StrUtil.isBlank(inputText) || API_MATCH_TREE.fstMatch(inputText);
+        if(StrUtil.isBlank(inputText)){
+            return true;
+        }
+        boolean match =  API_MATCH_TREE.fstMatch(inputText);
         if (!match) {
             return false;
         }
         try {
-            return PsiJavaPatterns.psiElement().withParent(PsiExpressionStatement.class).accepts(psiElement)
-                    ||
-                    PsiJavaPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class).accepts(psiElement);
+
+            return PsiJavaPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class).accepts(psiElement);
         } catch (Exception ex) {
         }
         return true;
     }
 
     private boolean matchJoin(PsiElement psiElement, String inputText) {
-        boolean match = ANONYMOUS_MATCH_TREE.fstMatch(inputText);
+        boolean match = ON_MATCH_TREE.fstMatch(inputText);
         if (!match) {
             return false;
         }
@@ -386,6 +396,19 @@ public class EasyQueryAnonymousTypeCompletionContributor extends CompletionContr
                                     return;
                                 }
                                 easyContributor.insertString(context, queryTypes, true);
+
+                                if(easyContributor instanceof  EasyGroupContributor){
+
+                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.projectScope(project));
+                                    if(newClass!=null){
+                                        WriteCommandAction.runWriteCommandAction(project, () -> {
+                                            if(psiFile instanceof PsiJavaFile){
+                                                javaImport(project,(PsiJavaFile)psiFile,newClass);
+                                            }
+                                        });
+                                    }
+
+                                }
                             } catch (Exception e) {
                             }
                         })
@@ -394,7 +417,17 @@ public class EasyQueryAnonymousTypeCompletionContributor extends CompletionContr
 
             }
         } catch (Exception ex) {
+            System.out.println(ex);
         }
+    }
+    public void javaImport(Project project, PsiJavaFile psiJavaFile, PsiClass psiClass) {
+        Set<String> importSet = PsiJavaFileUtil.getImportSet(psiJavaFile);
+        PsiImportStatement importStatement = PsiElementFactory.getInstance(project).createImportStatement(psiClass);
+        // 如果已经导入了，就不再导入
+        if (importSet.contains(importStatement.getText())) {
+            return;
+        }
+        psiJavaFile.getImportList().add(importStatement);
     }
 
     private static final String QUERYABLE_CLIENT = "com.easy.query.core.basic.api.select.ClientQueryable";
@@ -404,17 +437,38 @@ public class EasyQueryAnonymousTypeCompletionContributor extends CompletionContr
     private static final String QUERYABLE_END = ">";
 
     private List<QueryType> parseQueryable(String queryable) {
-        if (queryable.startsWith(QUERYABLE_CLIENT) || queryable.startsWith(QUERYABLE_4J) || queryable.startsWith(QUERYABLE_4KT) || queryable.startsWith(QUERYABLE_ENTITY)) {
+
+        if (queryable.startsWith(QUERYABLE_ENTITY)) {
 
             //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
             if (queryable.contains("<") && queryable.endsWith(">")) {
                 String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
                 String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
+                if(typeString.startsWith("com.easy.query.core.proxy.grouping.proxy.Grouping")){
+                    return Collections.singletonList(new QueryType("group",true));
+                }
                 return MyCollectionUtil.partition(StrUtil.split(typeString, ","), 2).stream().map(o -> {
                     if (o.size() < 2) {
                         return null;
                     } else {
                         String classFullName = o.get(1);
+                        String className = StrUtil.subAfter(classFullName, ".", true);
+
+                        return new QueryType(MyStringUtil.lambdaShortName(className));
+                    }
+                }).collect(Collectors.toList());
+
+            }
+        }
+        if(queryable.startsWith(QUERYABLE_CLIENT) || queryable.startsWith(QUERYABLE_4J) || queryable.startsWith(QUERYABLE_4KT)){
+            if (queryable.contains("<") && queryable.endsWith(">")) {
+                String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
+                String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
+                return StrUtil.split(typeString, ",").stream().map(o -> {
+                    if (StrUtil.isBlank(o)) {
+                        return null;
+                    } else {
+                        String classFullName = o;
                         String className = StrUtil.subAfter(classFullName, ".", true);
 
                         return new QueryType(MyStringUtil.lambdaShortName(className));

@@ -33,6 +33,6 @@ public class EasyGroupContributor  extends EasyContributor{
 
     @Override
     protected int realBackOffset(int backOffset) {
-        return backOffset+1;
+        return backOffset-2;
     }
 }

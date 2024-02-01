@@ -38,16 +38,12 @@ public class EasyContributor {
         try {
 
             String lambdaBody = StrUtil.EMPTY;
-            int insertTipPosition = insertPosition;
-            int backOffset = wordBackOffset;
             if (blockCode) {
                 lambdaBody = "{}";
-                insertTipPosition = insertPosition - wordBackOffset;
-                backOffset = backOffset-1;
             }
             String lambdaExpression =getLambdaBodyExpression(queries,lambdaBody,true);
-            int realBackOffset = realBackOffset(backOffset);
-            document.insertString(insertTipPosition+wordBackOffset, lambdaExpression);
+            int realBackOffset = realBackOffset(wordBackOffset);
+            document.insertString(insertPosition+wordBackOffset, lambdaExpression);
             insertPosition += lambdaExpression.length();
             if (wordBackOffset!=0) {
                 document.deleteString(insertPosition + wordBackOffset, insertPosition);
@@ -66,7 +62,10 @@ public class EasyContributor {
         return lambdaBody;
     }
     protected int realBackOffset(int backOffset){
-        return backOffset;
+        if(blockCode){
+            return backOffset-2;
+        }
+        return backOffset-1;
     }
     protected String getLambdaBodyExpression(Collection<QueryType> queries,String lambdaBody,boolean outBracket){
         String leftParameterBracket = StrUtil.EMPTY;
@@ -81,7 +80,13 @@ public class EasyContributor {
             leftOutParameterBracket = "(";
             rightOutParameterBracket = ")";
         }
-        String parameters = queries.stream().map(o -> o.getShortName()).collect(Collectors.joining(", "));
-        return leftOutParameterBracket + leftParameterBracket + parameters + rightParameterBracket + " -> " + getLambdaBody(queries,lambdaBody) + rightOutParameterBracket;
+        QueryType queryType = queries.stream().findFirst().orElse(null);
+        boolean group = queryType != null && queryType.isGroup();
+        if(group){
+            return leftOutParameterBracket + leftParameterBracket + "group" + rightParameterBracket + " -> " + getLambdaBody(queries,lambdaBody) + rightOutParameterBracket;
+        }else{
+            String parameters = queries.stream().map(o -> o.getShortName()).collect(Collectors.joining(", "));
+            return leftOutParameterBracket + leftParameterBracket + parameters + rightParameterBracket + " -> " + getLambdaBody(queries,lambdaBody) + rightOutParameterBracket;
+        }
     }
 }

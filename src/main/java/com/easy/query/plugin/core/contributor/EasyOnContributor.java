@@ -22,4 +22,11 @@ public class EasyOnContributor extends EasyContributor{
     protected String getLambdaBodyExpression(Collection<QueryType> queries, String lambdaBody, boolean outBracket) {
         return super.getLambdaBodyExpression(queries, lambdaBody, false);
     }
+    @Override
+    protected int realBackOffset(int backOffset) {
+        if(blockCode){
+            return backOffset-1;
+        }
+        return backOffset;
+    }
 }
