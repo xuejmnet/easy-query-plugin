@@ -7,7 +7,7 @@ package com.easy.query.plugin.core.util;
  * @author xuejiaming
  */
 public class MyStringUtil {
-    public static String lambdaShortName(String str,int index) {
+    public static String lambdaShortName(String str,int index,int total) {
         char[] chars = str.toCharArray();
         if(chars.length==0){
             return "t";
@@ -15,7 +15,7 @@ public class MyStringUtil {
         for (int i = 0; i < chars.length; i++) {
             if (Character.isUpperCase(chars[i])) {
                 String parameter = String.valueOf(chars[i]).toLowerCase();
-                if(index>0){
+                if(total>1){
                     return parameter+(index+1);
                 }
                 return parameter;

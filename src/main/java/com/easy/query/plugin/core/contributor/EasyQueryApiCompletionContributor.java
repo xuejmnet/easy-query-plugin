@@ -577,7 +577,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         }
 
         String className = StrUtil.subAfter(fullClassName, ".", true);
-        return MyStringUtil.lambdaShortName(className,index);
+        return MyStringUtil.lambdaShortName(className,index,total);
     }
 
     private Map<Integer, List<String>> getMatchNames(Project project) {
