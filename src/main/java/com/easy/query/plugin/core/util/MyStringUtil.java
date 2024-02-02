@@ -7,6 +7,13 @@ package com.easy.query.plugin.core.util;
  * @author xuejiaming
  */
 public class MyStringUtil {
+    /**
+     * 将对象类型转成lambda入参短名称
+     * @param str Topic || SysUser
+     * @param index 在第几个参数位
+     * @param total 总共有几个参数
+     * @return
+     */
     public static String lambdaShortName(String str,int index,int total) {
         char[] chars = str.toCharArray();
         if(chars.length==0){
