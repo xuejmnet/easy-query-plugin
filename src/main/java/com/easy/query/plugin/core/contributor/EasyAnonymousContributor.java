@@ -22,7 +22,7 @@ public class EasyAnonymousContributor extends EasyContributor{
 
     }
     protected String getLambdaBodyExpression(Collection<QueryType> queries,String lambdaBody,boolean outBracket){
-        return "MapProxy(\"AnonymousTypeName\",Object.class)" +
-                ".put(\"\",null);";
+        return "new MapProxy(\"AnonymousTypeName\",Object.class)" +
+                ".put(\"\",)";
     }
 }

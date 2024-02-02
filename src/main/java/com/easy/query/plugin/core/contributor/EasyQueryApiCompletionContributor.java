@@ -14,7 +14,9 @@ import com.easy.query.plugin.core.util.TrieTree;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
+import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
@@ -89,21 +91,29 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             Document document = editor.getDocument();
             PsiFile psiFile = VirtualFileUtils.getPsiFile(project, document);
             int offset = editor.getCaretModel().getOffset();
+
             PsiElement originalPosition = parameters.getOriginalPosition();
             if (originalPosition == null) {
                 return;
             }
 
-            String inputText = document.getText(TextRange.create(originalPosition.getTextOffset(), offset));
+            String inputText = result.getPrefixMatcher().getPrefix();
+            String inputDTO = document.getText(TextRange.create(originalPosition.getTextOffset() - 1, originalPosition.getTextOffset()));
 
 
-            boolean matchApi = matchApi(parameters.getOriginalPosition(), inputText);
-            if (matchApi) {
-                addApiCodeTip(result, project, psiFile, offset);
+            if (".".equals(inputDTO)) {
+                boolean matchApi = matchApi(parameters.getOriginalPosition(), inputText);
+                if (matchApi) {
+                    addApiCodeTip(result, project, psiFile, offset);
+                }
             } else {
                 boolean matchJoin = matchJoin(parameters.getOriginalPosition(), inputText);
                 if (matchJoin) {
                     addJoinCodeTip(result, project, psiFile, offset);
+                }
+                boolean matchAnonymous = matchAnonymous(parameters.getOriginalPosition(), inputText);
+                if (matchAnonymous) {
+                    addAnonymousCodeTip(result, project, psiFile, offset);
                 }
             }
 //
@@ -181,17 +191,20 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
     }
 
     private boolean matchApi(PsiElement psiElement, String inputText) {
+        try {
+            boolean accepts = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class).accepts(psiElement);
+            if(!accepts){
+                return false;
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
         if (StrUtil.isBlank(inputText)) {
             return true;
         }
         boolean match = API_MATCH_TREE.fstMatch(inputText);
         if (!match) {
             return false;
-        }
-        try {
-
-            return PsiJavaPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class).accepts(psiElement);
-        } catch (Exception ex) {
         }
         return true;
     }
@@ -202,7 +215,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             return false;
         }
         try {
-            return PsiJavaPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionList.class).accepts(psiElement);
+            return PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionList.class).accepts(psiElement);
         } catch (Exception ex) {
 
         }
@@ -215,10 +228,10 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             return false;
         }
         try {
-            if (!PlatformPatterns.psiElement().afterLeaf(PlatformPatterns.psiElement().withText("new")).accepts(psiElement)) {
-                return false;
-            }
-            return PsiJavaPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionList.class).accepts(psiElement);
+//            if (!PlatformPatterns.psiElement().afterLeaf(PlatformPatterns.psiElement().withText("new")).accepts(psiElement)) {
+//                return false;
+//            }
+//            return PsiJavaPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionList.class).accepts(psiElement);
         } catch (Exception ex) {
 
         }
@@ -314,7 +327,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                     return;
                                 }
                                 String canonicalText = returnType.getCanonicalText();
-                                List<QueryType> queryTypes = parseQueryable(project,canonicalText);
+                                List<QueryType> queryTypes = parseQueryable(project, canonicalText);
                                 if (CollUtil.isEmpty(queryTypes)) {
                                     return;
                                 }
@@ -322,9 +335,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                 queryTypes.add(joinFirstParameterType);
 
                                 easyContributor.insertString(context, queryTypes, false);
-
                             } catch (Exception ex) {
-
+                                System.out.println(ex.getMessage());
                             }
                         }).withIcon(Icons.EQ);
                 completionResultSet.addElement(elementBuilder);
@@ -342,15 +354,45 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                         .withInsertHandler((context, item) -> {
 
                             try {
+
+                                PsiElement elementAt = psiFile.findElementAt(offset);
+                                if (elementAt == null) {
+                                    return;
+                                }
+                                PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
+                                if (psiMethodCallExpression == null) {
+                                    return;
+                                }
+                                PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
+                                PsiElement lastChild = methodExpression.getLastChild();
+                                if (lastChild == null) {
+                                    return;
+                                }
+                                String joinText = lastChild.getText();
+                                if (!"select".contains(joinText)) {
+                                    return;
+                                }
+                                PsiExpression qualifierExpression = methodExpression.getQualifierExpression();
+                                if (qualifierExpression == null) {
+                                    return;
+                                }
+                                PsiType returnType = qualifierExpression.getType();
+                                if (returnType == null) {
+                                    return;
+                                }
+                                String canonicalText = returnType.getCanonicalText();
+                                if (!isQueryable(canonicalText)) {
+                                    return;
+                                }
                                 easyContributor.insertString(context, Collections.emptyList(), false);
                             } catch (Exception ex) {
-
+                                System.out.println(ex.getMessage());
                             }
                         }).withIcon(Icons.EQ);
                 completionResultSet.addElement(elementBuilder);
             }
         } catch (Exception ex) {
-
+            System.out.println(ex.getMessage());
         }
     }
 
@@ -397,7 +439,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                     return;
                                 }
                                 String canonicalText = returnType.getCanonicalText();
-                                List<QueryType> queryTypes = parseQueryable(project,canonicalText);
+                                List<QueryType> queryTypes = parseQueryable(project, canonicalText);
                                 if (CollUtil.isEmpty(queryTypes)) {
                                     return;
                                 }
@@ -416,6 +458,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
                                 }
                             } catch (Exception e) {
+                                System.out.println(e.getMessage());
                             }
                         })
                         .withIcon(Icons.EQ);
@@ -423,7 +466,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
             }
         } catch (Exception ex) {
-            System.out.println(ex);
+            System.out.println(ex.getMessage());
         }
     }
 
@@ -462,14 +505,14 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                 List<QueryType> shortNames = new ArrayList<>(types.size());
                 for (int i = 0; i < types.size(); i++) {
                     List<String> typeList = types.get(i);
-                    if(typeList.size()<2){
+                    if (typeList.size() < 2) {
                         shortNames.add(new QueryType("unknown" + (i + 1)));
                     }
                     String classFullName = typeList.get(1);
                     if (StrUtil.isBlank(classFullName)) {
                         shortNames.add(new QueryType("unknown" + (i + 1)));
                     } else {
-                        shortNames.add(new QueryType(getShortName(project, i,types.size(), classFullName,matchNames)));
+                        shortNames.add(new QueryType(getShortName(project, i, types.size(), classFullName, matchNames)));
                     }
                 }
                 return shortNames;
@@ -488,7 +531,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                     if (StrUtil.isBlank(classFullName)) {
                         shortNames.add(new QueryType("unknown" + (i + 1)));
                     } else {
-                        shortNames.add(new QueryType(getShortName(project, i,types.size(), classFullName,matchNames)));
+                        shortNames.add(new QueryType(getShortName(project, i, types.size(), classFullName, matchNames)));
                     }
                 }
                 return shortNames;
@@ -497,7 +540,24 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         return Collections.emptyList();
     }
 
-    private String getShortName(Project project, int index,int total, String fullClassName,Map<Integer, List<String>> matchNames) {
+    private boolean isQueryable(String queryable) {
+
+        if (queryable.startsWith(QUERYABLE_ENTITY)) {
+
+            //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
+            if (queryable.contains("<") && queryable.endsWith(">")) {
+                return true;
+            }
+        }
+        if (queryable.startsWith(QUERYABLE_CLIENT) || queryable.startsWith(QUERYABLE_4J) || queryable.startsWith(QUERYABLE_4KT)) {
+            if (queryable.contains("<") && queryable.endsWith(">")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getShortName(Project project, int index, int total, String fullClassName, Map<Integer, List<String>> matchNames) {
         //com.easy.query.core.annotation
         PsiClass newClass = findClass(project, fullClassName);
         if (newClass != null) {
@@ -509,9 +569,9 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                 }
             }
         }
-        if(CollUtil.isNotEmpty(matchNames)){
+        if (CollUtil.isNotEmpty(matchNames)) {
             List<String> names = matchNames.get(total);
-            if(CollUtil.isNotEmpty(names)&&names.size()>index){
+            if (CollUtil.isNotEmpty(names) && names.size() > index) {
                 return names.get(index);
             }
         }
@@ -520,7 +580,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         return MyStringUtil.lambdaShortName(className);
     }
 
-    private Map<Integer, List<String>> getMatchNames(Project project){
+    private Map<Integer, List<String>> getMatchNames(Project project) {
 
         EasyQueryConfig allEnvQuickSetting = EasyQueryQueryPluginConfigData.getAllEnvQuickSetting(null);
         if (allEnvQuickSetting != null) {
