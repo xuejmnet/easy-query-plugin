@@ -331,7 +331,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                 if (CollUtil.isEmpty(queryTypes)) {
                                     return;
                                 }
-                                QueryType joinFirstParameterType = getJoinFirstParameterType(psiMethodCallExpression);
+                                QueryType joinFirstParameterType = getJoinFirstParameterType(project,queryTypes.size(),queryTypes.size()+1,psiMethodCallExpression);
                                 queryTypes.add(joinFirstParameterType);
 
                                 easyContributor.insertString(context, queryTypes, false);
@@ -396,16 +396,16 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         }
     }
 
-    private QueryType getJoinFirstParameterType(PsiMethodCallExpression psiMethodCallExpression) {
+    private QueryType getJoinFirstParameterType(Project project,int index,int total,PsiMethodCallExpression psiMethodCallExpression) {
         PsiType[] expressionTypes = psiMethodCallExpression.getArgumentList().getExpressionTypes();
         if (expressionTypes.length > 1) {
             PsiType expressionType = expressionTypes[0];
             if (expressionType != null) {
+
+                Map<Integer, List<String>> matchNames = getMatchNames(project);
                 String canonicalText = expressionType.getCanonicalText();
                 String genericType = PsiUtil.parseGenericType(canonicalText);
-                String className = StrUtil.subAfter(genericType, ".", true);
-                String shortName = MyStringUtil.lambdaShortName(className);
-                return new QueryType(shortName);
+                return new QueryType(getShortName(project,index,total,genericType,matchNames));
             }
         }
         return new QueryType("obj");
