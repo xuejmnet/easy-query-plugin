@@ -16,7 +16,9 @@ import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionSorter;
 import com.intellij.codeInsight.completion.CompletionType;
+import com.intellij.codeInsight.completion.PrefixMatcher;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
@@ -85,6 +87,17 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
         try {
+//            PrefixMatcher prefixMatcher = result.getPrefixMatcher();
+//            String prefix = prefixMatcher.getPrefix();
+//            result.restartCompletionOnAnyPrefixChange();
+//            result =
+//                    result
+//                            .withPrefixMatcher(
+//                                    new TabNinePrefixMatcher(originalMatcher.cloneWithPrefix(completions.old_prefix)))
+//                            .withRelevanceSorter(
+//                                    CompletionSorter.defaultSorter(parameters, originalMatcher)
+//                                            .weigh(new TabNineWeigher()));
+//            resultSet.restartCompletionOnAnyPrefixChange();
 //            PsiElement originalPosition = parameters.getOriginalPosition();
             Editor editor = parameters.getEditor();
             Project project = parameters.getPosition().getProject();
@@ -191,14 +204,14 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
     }
 
     private boolean matchApi(PsiElement psiElement, String inputText) {
-        try {
-            boolean accepts = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class).accepts(psiElement);
-            if(!accepts){
-                return false;
-            }
-        } catch (Exception ex) {
-            System.out.println(ex);
-        }
+//        try {
+//            boolean accepts = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class).accepts(psiElement);
+//            if(!accepts){
+//                return false;
+//            }
+//        } catch (Exception ex) {
+//            System.out.println(ex);
+//        }
         if (StrUtil.isBlank(inputText)) {
             return true;
         }

@@ -5,6 +5,7 @@ import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
+import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.easy.query.plugin.core.validator.InputValidatorImpl;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -37,11 +38,13 @@ public class QuickTipSettingAction  extends AnAction {
             setting="";
             config.getConfig().put(projectName,setting);
         }
-        Messages.InputDialog dialog = new Messages.InputDialog("请输入快速提示名称逗号分割,冒号分割组", "提示名称", Messages.getQuestionIcon(), setting, new InputValidatorImpl());
+        Messages.InputDialog dialog = new Messages.InputDialog("请输入快速提示名称逗号分割,冒号分割组", "提示名称", Messages.getQuestionIcon(), setting, new InputAnyValidatorImpl());
         dialog.show();
-        String settingVal = dialog.getInputString();
-        config.getConfig().put(projectName,settingVal);
-        EasyQueryQueryPluginConfigData.saveAllEnvProjectQuickSetting(config);
-        NotificationUtils.notifySuccess("保存成功", project);
+        if(dialog.isOK()){
+            String settingVal = dialog.getInputString();
+            config.getConfig().put(projectName,settingVal);
+            EasyQueryQueryPluginConfigData.saveAllEnvProjectQuickSetting(config);
+            NotificationUtils.notifySuccess("保存成功", project);
+        }
     }
 }
