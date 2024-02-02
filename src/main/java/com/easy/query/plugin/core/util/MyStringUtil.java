@@ -7,21 +7,20 @@ package com.easy.query.plugin.core.util;
  * @author xuejiaming
  */
 public class MyStringUtil {
-    public static String lambdaShortName(String str) {
+    public static String lambdaShortName(String str,int index) {
         char[] chars = str.toCharArray();
         if(chars.length==0){
             return "t";
         }
-        StringBuilder temp = new StringBuilder();
         for (int i = 0; i < chars.length; i++) {
             if (Character.isUpperCase(chars[i])) {
-                temp.append(chars[i]);
+                String parameter = String.valueOf(chars[i]).toLowerCase();
+                if(index>0){
+                    return parameter+(index+1);
+                }
+                return parameter;
             }
         }
-        String val = temp.toString().toLowerCase();
-        if(val.length()==1){
-            return str.toLowerCase();
-        }
-        return val;
+        return str.toLowerCase();
     }
 }

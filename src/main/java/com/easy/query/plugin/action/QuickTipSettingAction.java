@@ -27,8 +27,6 @@ public class QuickTipSettingAction  extends AnAction {
         if(project==null){
             return;
         }
-//        VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        PsiJavaFileUtil.createAptFile(project);
         EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvQuickSetting(new EasyQueryConfig());
         if(config.getConfig()==null){
             config.setConfig(new HashMap<>());

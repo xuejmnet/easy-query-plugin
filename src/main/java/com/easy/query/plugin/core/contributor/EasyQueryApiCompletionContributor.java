@@ -98,10 +98,10 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             }
 
             String inputText = result.getPrefixMatcher().getPrefix();
-            String inputDTO = document.getText(TextRange.create(originalPosition.getTextOffset() - 1, originalPosition.getTextOffset()));
+            String inputDOT = document.getText(TextRange.create(originalPosition.getTextOffset() - 1, originalPosition.getTextOffset()));
 
 
-            if (".".equals(inputDTO)) {
+            if (".".equals(inputDOT)) {
                 boolean matchApi = matchApi(parameters.getOriginalPosition(), inputText);
                 if (matchApi) {
                     addApiCodeTip(result, project, psiFile, offset);
@@ -577,7 +577,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         }
 
         String className = StrUtil.subAfter(fullClassName, ".", true);
-        return MyStringUtil.lambdaShortName(className);
+        return MyStringUtil.lambdaShortName(className,index);
     }
 
     private Map<Integer, List<String>> getMatchNames(Project project) {
