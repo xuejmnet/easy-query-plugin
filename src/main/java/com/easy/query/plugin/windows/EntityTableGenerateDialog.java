@@ -426,6 +426,11 @@ public class EntityTableGenerateDialog extends JDialog {
                     initSinceComBox(null);
                     return;
                 }
+                if(EasyQueryQueryPluginConfigData.isHiddenConfigKey(configName)){
+                    initSinceComBox(null);
+                    Messages.showWarningDialog("配置名称:["+configName+"]是系统默认的", "提示");
+                    return;
+                }
                 EasyQueryQueryPluginConfigData.saveConfigSince(configName, getConfigData());
                 NotificationUtils.notifySuccess("保存成功", project);
                 initSinceComBox(null);
