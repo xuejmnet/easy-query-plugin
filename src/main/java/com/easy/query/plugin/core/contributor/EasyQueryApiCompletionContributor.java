@@ -93,6 +93,10 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
     private static final Set<EasyContributor> COMPARE_GREATER_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", ">", ".gt()"),
             new EasyCompareContributor("", ">=", ".ge()")));
+    private static final Set<EasyContributor> COMPARE_EQUALS_METHODS = new HashSet<>(Arrays.asList(
+            new EasyCompareContributor("", "==", ".eq()")));
+    private static final Set<EasyContributor> COMPARE_NOT_EQUALS_METHODS = new HashSet<>(Arrays.asList(
+            new EasyCompareContributor("", "!=", ".ne()")));
     private static final Set<EasyContributor> COMPARE_LESS_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", "<", ".lt()"),
             new EasyCompareContributor("", "<=", ".le()")));
@@ -126,24 +130,46 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
             PrefixMatcher originalPrefixMatcher = result.getPrefixMatcher();
             String inputText = originalPrefixMatcher.getPrefix();
-            System.out.println(inputText+"----------");
             String inputTextPrefix = document.getText(TextRange.create(originalPosition.getTextOffset() - 1, originalPosition.getTextOffset()));
             if(StrUtil.isBlank(inputText)){
                 if(StrUtil.isNotBlank(inputTextPrefix)){
-                    if(Objects.equals(">",inputTextPrefix)){
-                        if(matchQueryableMethodNameByCompare(psiFile.findElementAt(offset))){
-                            result=result.withPrefixMatcher(">");
-                            addCompareCodeTip(result, project, psiFile, offset,COMPARE_GREATER_METHODS);
+                    if(Objects.equals(">",inputTextPrefix)||Objects.equals("<",inputTextPrefix)){
+                        if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
+                            result=result.withPrefixMatcher(inputTextPrefix);
+                            Set<EasyContributor> easyContributors = Objects.equals(">", inputTextPrefix) ? COMPARE_GREATER_METHODS : COMPARE_LESS_METHODS;
+                            addCompareCodeTip(result, project, psiFile, offset,easyContributors);
                             return;
                         }
-                    }
-                    if(Objects.equals("<",inputTextPrefix)){
-                        if(matchQueryableMethodNameByCompare(psiFile.findElementAt(offset))){
-                            result=result.withPrefixMatcher("<");
-                            addCompareCodeTip(result, project, psiFile, offset,COMPARE_LESS_METHODS);
-                            return;
+                    }else if(Objects.equals("=",inputTextPrefix)){
+                        inputTextPrefix = document.getText(TextRange.create(originalPosition.getTextOffset() - 2, originalPosition.getTextOffset()));
+                        if(Objects.equals(">=",inputTextPrefix)||Objects.equals("<=",inputTextPrefix)){
+                            if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
+                                result=result.withPrefixMatcher(inputTextPrefix);
+                                Set<EasyContributor> easyContributors = Objects.equals(">=", inputTextPrefix) ? COMPARE_GREATER_METHODS : COMPARE_LESS_METHODS;
+                                addCompareCodeTip(result, project, psiFile, offset,easyContributors);
+                                return;
+                            }
+                        } else  if(Objects.equals("==",inputTextPrefix)){
+                            if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
+                                result=result.withPrefixMatcher(inputTextPrefix);
+                                addCompareCodeTip(result, project, psiFile, offset,COMPARE_EQUALS_METHODS);
+                                return;
+                            }
+                        }else  if(Objects.equals("!=",inputTextPrefix)){
+                            if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
+                                result=result.withPrefixMatcher(inputTextPrefix);
+                                addCompareCodeTip(result, project, psiFile, offset,COMPARE_NOT_EQUALS_METHODS);
+                                return;
+                            }
                         }
                     }
+//                    if(){
+//                        if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
+//                            result=result.withPrefixMatcher("<");
+//                            addCompareCodeTip(result, project, psiFile, offset,COMPARE_LESS_METHODS);
+//                            return;
+//                        }
+//                    }
                 }
                 result.restartCompletionOnAnyPrefixChange();
                 return;
@@ -534,19 +560,16 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         return returnType.getCanonicalText();
     }
 
-    private boolean matchQueryableMethodNameByCompare(PsiElement psiElement){
+    private boolean matchQueryableMethodNameByCompare(Project project,PsiElement psiElement){
         if(psiElement==null){
             return false;
         }
-        PsiElement prevSibling = psiElement.getPrevSibling();
-        if(prevSibling==null){
+        //((PsiReferenceExpression)parameters.getPosition().getParent().getParent().getFirstChild()).getType().getCanonicalText()
+        PsiElement parent = psiElement.getParent();
+        if(parent==null){
             return false;
         }
-        PsiElement lastChild = prevSibling.getLastChild();
-        if(lastChild==null){
-            return false;
-        }
-        PsiElement firstChild = lastChild.getFirstChild();
+        PsiElement firstChild = parent.getParent().getFirstChild();
         if(firstChild==null){
             return false;
         }
@@ -554,23 +577,70 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             PsiMethodCallExpression methodCallExpression = (PsiMethodCallExpression) firstChild;
             PsiType type = methodCallExpression.getType();
             if(type != null){
-                if(isExtendsFromTablePropColumn(type)){
+                PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.TablePropColumn", GlobalSearchScope.allScope(project));
+                if(psiClass!=null){
+                    PsiType tablePropColumnType = JavaPsiFacade.getElementFactory(project).createType(psiClass);
+                    return tablePropColumnType.isAssignableFrom(type);
+                }
+            }else{
+                //.getParent().getParent().getParent().getText()
+                PsiElement parent1 = parent.getParent().getParent();
+                if(parent1!=null){
+                    PsiElement parent2 = parent1.getParent();
+                    if(parent2!=null){
+                        PsiElement parent3 = parent2.getParent();
+                        if(parent3!=null){
+                            String text = parent3.getText();
+                            if(text.contains(".leftJoin(")||text.contains(".rightJoin(")||text.contains(".innerJoin(")){
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else if(firstChild instanceof PsiReferenceExpression){
+            PsiReferenceExpression psiReferenceExpression = (PsiReferenceExpression) firstChild;
+            PsiType type = psiReferenceExpression.getType();
+            if(type!=null){
+                String canonicalText = type.getCanonicalText();
+                if(
+                 canonicalText.startsWith("com.easy.query.core.expression.parser.core.base.WherePredicate<") ||
+                 canonicalText.startsWith("com.easy.query.core.expression.parser.core.base.WhereAggregatePredicate<") ||
+                         canonicalText.startsWith("com.easy.query.api4j.sql.SQLWherePredicate<") ||
+                         canonicalText.startsWith("com.easy.query.api4j.sql.SQLWhereAggregatePredicate<") ||
+                         canonicalText.startsWith("com.easy.query.api4kt.sql.SQLKtWherePredicate<")||
+                         canonicalText.startsWith("com.easy.query.api4kt.sql.SQLKtWhereAggregatePredicate<")){
                     return true;
+                }else{
+                    PsiElement parent1 = parent.getParent().getParent();
+                    if(parent1!=null){
+                        PsiElement parent2 = parent1.getParent();
+                        if(parent2!=null){
+                            PsiElement parent3 = parent2.getParent();
+                            if(parent3!=null){
+                                String text = parent3.getText();
+                                if(text.contains(".leftJoin(")||text.contains(".rightJoin(")||text.contains(".innerJoin(")){
+                                    return true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
         return false;
     }
-    private boolean isExtendsFromTablePropColumn(PsiType psiClassType){
-        for (PsiType superType : psiClassType.getSuperTypes()) {
-            if(Objects.equals("com.easy.query.core.proxy.TablePropColumn",superType.getCanonicalText())){
-                return true;
-            }else{
-                return isExtendsFromTablePropColumn(superType);
-            }
-        }
-        return false;
-    }
+//    private boolean isExtendsFromTablePropColumn(PsiType psiClassType){
+//        for (PsiType superType : psiClassType.getSuperTypes()) {
+//            if(Objects.equals("com.easy.query.core.proxy.TablePropColumn",superType.getCanonicalText())){
+//                return true;
+//            }else{
+//                return isExtendsFromTablePropColumn(superType);
+//            }
+//        }
+//        return false;
+//    }
     private void addApiCodeTip(@NotNull CompletionResultSet result, Project project, PsiFile psiFile, int offset) {
         try {
 
@@ -759,6 +829,6 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
     @Override
     public boolean invokeAutoPopup(@NotNull PsiElement position, char typeChar) {
-        return typeChar == '>' || typeChar == '<';
+        return typeChar == '>' || typeChar == '<'|| typeChar == '='|| typeChar == '!';
     }
 }
