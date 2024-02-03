@@ -174,7 +174,6 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                 result.restartCompletionOnAnyPrefixChange();
                 return;
             }
-            System.out.println(inputText);
 //            result =
 //                    result
 //                            .withPrefixMatcher(originalPrefixMatcher.cloneWithPrefix(inputText));
