@@ -398,7 +398,9 @@ public class EntityTableGenerateDialog extends JDialog {
         sinceComBox.removeAllItems();
         sinceComBox.addItem(SINCE_CONFIG);
         for (String item : list) {
-            sinceComBox.insertItemAt(item, 1);
+            if(!EasyQueryQueryPluginConfigData.isHiddenConfigKey(item)){
+                sinceComBox.insertItemAt(item, 1);
+            }
         }
         sinceComBox.addItem(SINCE_CONFIG_ADD);
         if (ObjectUtil.isNull(idx)) {

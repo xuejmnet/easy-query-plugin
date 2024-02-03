@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Objects;
 
 /**
  * create time 2023/11/30 11:19
@@ -65,6 +66,10 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
 //        return eqConfigMap.getOrDefault(project.getName(), new EasyQueryConfig());
 //    }
     private static final String QUICK_TIP_SETTING_KEY="QUICK_TIP_SETTING_KEY";
+
+    public static boolean isHiddenConfigKey(String configKey){
+        return Objects.equals(QUICK_TIP_SETTING_KEY,configKey);
+    }
 
     public static EasyQueryConfig getAllEnvQuickSetting(EasyQueryConfig def){
         return getProjectSinceMap().getOrDefault(QUICK_TIP_SETTING_KEY,def);
