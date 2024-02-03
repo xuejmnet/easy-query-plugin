@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 
 /**
  * create time 2024/1/29 21:37
- * 文件说明
+ * 您可以在开源软件中使用此代码但是请标明出处
  *
  * @author xuejiaming
  */
@@ -97,6 +97,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             new EasyCompareContributor("", "==", ".eq()")));
     private static final Set<EasyContributor> COMPARE_NOT_EQUALS_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", "!=", ".ne()")));
+    private static final Set<EasyContributor> SET_VALUE_METHODS = new HashSet<>(Arrays.asList(
+            new EasyCompareContributor("", "=", ".set()")));
     private static final Set<EasyContributor> COMPARE_LESS_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", "<", ".lt()"),
             new EasyCompareContributor("", "<=", ".le()")));
@@ -161,7 +163,19 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                 addCompareCodeTip(result, project, psiFile, offset,COMPARE_NOT_EQUALS_METHODS);
                                 return;
                             }
+                        }else  if(Objects.equals(")=",inputTextPrefix)){
+                            if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
+                                result=result.withPrefixMatcher("=");
+                                addSetValueCodeTip(result, project, psiFile, offset,SET_VALUE_METHODS);
+                                return;
+                            }
                         }
+                    }else if(Objects.equals("!",inputTextPrefix)){
+                            if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
+                                result=result.withPrefixMatcher("!=");
+                                addCompareCodeTip(result, project, psiFile, offset,COMPARE_NOT_EQUALS_METHODS);
+                                return;
+                            }
                     }
 //                    if(){
 //                        if(matchQueryableMethodNameByCompare(project,parameters.getPosition())){
@@ -174,6 +188,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                 result.restartCompletionOnAnyPrefixChange();
                 return;
             }
+            System.out.println(inputText);
 //            result =
 //                    result
 //                            .withPrefixMatcher(originalPrefixMatcher.cloneWithPrefix(inputText));
@@ -450,6 +465,42 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                 }
                                 String joinText = lastChild.getText();
                                 if (!PREDICATE_METHODS.contains(joinText)) {
+                                    return;
+                                }
+                                easyContributor.insertString(context, Collections.emptyList(), false);
+                            } catch (Exception ex) {
+                                System.out.println(ex.getMessage());
+                            }
+                        }).withIcon(Icons.EQ);
+                completionResultSet.addElement(elementBuilder);
+            }
+        } catch (Exception e) {
+        }
+    }
+    private void addSetValueCodeTip(@NotNull CompletionResultSet result, Project project, PsiFile psiFile, int offset,Set<EasyContributor> compareMethods) {
+        try {
+            CompletionResultSet completionResultSet = result.caseInsensitive();
+            for (EasyContributor easyContributor : compareMethods) {
+                LookupElementBuilder elementBuilder = LookupElementBuilder.create(easyContributor.getTipWord())
+                        .withTypeText("EasyQueryPlugin", true)
+                        .withInsertHandler((context, item) -> {
+
+                            try {
+                                PsiElement elementAt = psiFile.findElementAt(offset);
+                                if (elementAt == null) {
+                                    return;
+                                }
+                                PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
+                                if (psiMethodCallExpression == null) {
+                                    return;
+                                }
+                                PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
+                                PsiElement lastChild = methodExpression.getLastChild();
+                                if (lastChild == null) {
+                                    return;
+                                }
+                                String joinText = lastChild.getText();
+                                if (!"select".contains(joinText)&&!"adapter".contains(joinText)) {
                                     return;
                                 }
                                 easyContributor.insertString(context, Collections.emptyList(), false);
@@ -824,10 +875,5 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             newClass = javaPsiFacade.findClass(fullClassName, GlobalSearchScope.allScope(project));
         }
         return newClass;
-    }
-
-    @Override
-    public boolean invokeAutoPopup(@NotNull PsiElement position, char typeChar) {
-        return typeChar == '>' || typeChar == '<'|| typeChar == '='|| typeChar == '!';
     }
 }

@@ -42,6 +42,7 @@
                                 id="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"
                                 implementationClass="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"/>
 
+        <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
     </extensions>
     <actions>
         <action id="com.easy.query.plugin.action.AnonymousMapAction"
