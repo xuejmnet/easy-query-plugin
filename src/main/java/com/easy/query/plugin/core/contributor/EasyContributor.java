@@ -45,9 +45,7 @@ public class EasyContributor {
             int realBackOffset = realBackOffset(wordBackOffset);
             document.insertString(insertPosition+wordBackOffset, lambdaExpression);
             insertPosition += lambdaExpression.length();
-            if (wordBackOffset!=0) {
-                document.deleteString(insertPosition + wordBackOffset, insertPosition);
-            }
+            deleteString(document,insertPosition,wordBackOffset);
             insertPosition = insertPosition + realBackOffset;
             context.getEditor().getCaretModel().getCurrentCaret().moveToOffset(insertPosition);
         }catch (Exception ex){
@@ -55,6 +53,12 @@ public class EasyContributor {
                 document.insertString(insertPosition, "()");
                 context.getEditor().getCaretModel().getCurrentCaret().moveToOffset(insertPosition - wordBackOffset);
             }
+        }
+    }
+
+    protected void deleteString(Document document,int insertPosition,int wordBackOffset){
+        if(wordBackOffset<0){
+            document.deleteString(insertPosition + wordBackOffset, insertPosition);
         }
     }
 
