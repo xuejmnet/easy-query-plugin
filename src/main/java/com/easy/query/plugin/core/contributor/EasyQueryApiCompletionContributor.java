@@ -80,6 +80,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             new EasyGroupContributor("groupBy", "groupBy", false),
             new EasyContributor("having", "having", false),
             new EasyContributor("having", "having_code_block", true),
+            new EasyContributor("selectColumn", "selectColumn", false),
+            new EasyContributor("fetchBy", "fetchBy", false),//支持弹窗选择
             new EasyContributor("setColumns", "setColumns", false),
             new EasyContributor("setColumns", "setColumns_code_block", true),
             new EasyContributor("setIgnoreColumns", "setIgnoreColumns", false),
