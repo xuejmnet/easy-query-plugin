@@ -769,7 +769,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             "com.easy.query.api.proxy.entity.select.EntityQueryable",
             "com.easy.query.api.proxy.entity.select.EntityQueryable",
             "com.easy.query.api.proxy.entity.update.ExpressionUpdatable",
-            "com.easy.query.api.proxy.entity.update.EntityUpdatable"
+            "com.easy.query.api.proxy.entity.update.EntityUpdatable",
+            "com.easy.query.api.proxy.entity.delete.ExpressionDeletable"
     );
     private static final List<String> EASY_QUERY_RETURN_TYPE_MATCH=Arrays.asList(
             "com.easy.query.core.basic.api.select.ClientQueryable",
