@@ -310,7 +310,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         if (StrUtil.isBlank(queryableMethodName)) {
             return false;
         }
-        return queryableMethodName.startsWith(QUERYABLE_ENTITY) || queryableMethodName.startsWith(QUERYABLE_CLIENT) || queryableMethodName.startsWith(QUERYABLE_4J) || queryableMethodName.startsWith(QUERYABLE_4KT);
+        return ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryableMethodName.startsWith(o))
+                || EASY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryableMethodName.startsWith(o));
     }
 
     private boolean matchJoin(PsiElement psiElement, String inputText) {
@@ -589,16 +590,16 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         return new QueryType("obj");
     }
 
-    private boolean matchQueryableMethodName(PsiElement psiElement) {
-        if (psiElement == null) {
-            return false;
-        }
-        String queryableMethodName = getQueryableMethodName(psiElement);
-        if (StrUtil.isBlank(queryableMethodName)) {
-            return false;
-        }
-        return queryableMethodName.startsWith(QUERYABLE_ENTITY) || queryableMethodName.startsWith(QUERYABLE_CLIENT) || queryableMethodName.startsWith(QUERYABLE_4J) || queryableMethodName.startsWith(QUERYABLE_4KT);
-    }
+//    private boolean matchQueryableMethodName(PsiElement psiElement) {
+//        if (psiElement == null) {
+//            return false;
+//        }
+//        String queryableMethodName = getQueryableMethodName(psiElement);
+//        if (StrUtil.isBlank(queryableMethodName)) {
+//            return false;
+//        }
+//        return queryableMethodName.startsWith(QUERYABLE_ENTITY) || queryableMethodName.startsWith(QUERYABLE_CLIENT) || queryableMethodName.startsWith(QUERYABLE_4J) || queryableMethodName.startsWith(QUERYABLE_4KT);
+//    }
 
     private String getQueryableMethodName(PsiElement psiElement) {
         if (psiElement == null) {
@@ -760,9 +761,9 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
         psiJavaFile.getImportList().add(importStatement);
     }
 
-    private static final String QUERYABLE_CLIENT = "com.easy.query.core.basic.api.select.ClientQueryable";
-    private static final String QUERYABLE_4J = "com.easy.query.api4j.select.Queryable";
-    private static final String QUERYABLE_4KT = "com.easy.query.api4kt.select.KtQueryable";
+//    private static final String QUERYABLE_CLIENT = "com.easy.query.core.basic.api.select.ClientQueryable";
+//    private static final String QUERYABLE_4J = "com.easy.query.api4j.select.Queryable";
+//    private static final String QUERYABLE_4KT = "com.easy.query.api4kt.select.KtQueryable";
 
     private static final List<String> ENTITY_QUERY_RETURN_TYPE_MATCH=Arrays.asList(
             "com.easy.query.api.proxy.entity.select.EntityQueryable",
@@ -839,14 +840,14 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
     private boolean isQueryable(String queryable) {
 
-        if (queryable.startsWith(QUERYABLE_ENTITY)) {
-
-            //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
-            if (queryable.contains("<") && queryable.endsWith(">")) {
-                return true;
-            }
-        }
-        if (queryable.startsWith(QUERYABLE_CLIENT) || queryable.startsWith(QUERYABLE_4J) || queryable.startsWith(QUERYABLE_4KT)) {
+//        if (queryable.startsWith(QUERYABLE_ENTITY)) {
+//
+//            //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
+//            if (queryable.contains("<") && queryable.endsWith(">")) {
+//                return true;
+//            }
+//        }
+        if (ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryable.startsWith(o))||EASY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryable.startsWith(o))) {
             if (queryable.contains("<") && queryable.endsWith(">")) {
                 return true;
             }
