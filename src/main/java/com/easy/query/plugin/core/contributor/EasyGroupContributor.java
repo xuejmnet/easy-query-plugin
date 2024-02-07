@@ -35,4 +35,12 @@ public class EasyGroupContributor  extends EasyContributor{
     protected int realBackOffset(int backOffset) {
         return backOffset-2;
     }
+
+    @Override
+    public boolean accept(String beforeMethodReturnTypeName) {
+        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable")||
+                beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.select.ClientQueryable") ||
+                beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.select.Queryable") ||
+                beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.select.KtQueryable");
+    }
 }

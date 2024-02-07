@@ -93,4 +93,8 @@ public class EasyContributor {
             return leftOutParameterBracket + leftParameterBracket + parameters + rightParameterBracket + " -> " + getLambdaBody(queries,lambdaBody) + rightOutParameterBracket;
         }
     }
+
+    public boolean accept(String beforeMethodReturnTypeName){
+        return true;
+    }
 }

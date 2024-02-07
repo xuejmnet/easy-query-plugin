@@ -12,13 +12,9 @@ import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.easy.query.plugin.core.util.TrieTree;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
-import com.intellij.codeInsight.AutoPopupController;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
-import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
-import com.intellij.codeInsight.completion.CompletionSorter;
-import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.completion.PrefixMatcher;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
@@ -26,15 +22,12 @@ import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Condition;
-import com.intellij.openapi.util.Conditions;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.patterns.PlatformPatterns;
-import com.intellij.patterns.PsiJavaPatterns;
+import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiExpression;
@@ -72,22 +65,22 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
     private static final Map<String,Map<String,PsiType>> PROJECT_TYPE_MAP=new ConcurrentHashMap<>();
 
     private static final Set<EasyContributor> API_METHODS = new HashSet<>(Arrays.asList(
-            new EasyContributor("select", "select", false),
+            new EasySelectContributor("select", "select", false),
             new EasyContributor("where", "where", false),
             new EasyContributor("where", "where_code_block", true),
-            new EasyContributor("orderBy", "orderBy", false),
-            new EasyContributor("orderBy", "orderBy_code_block", true),
+            new EasyOrderContributor("orderBy", "orderBy", false),
+            new EasyOrderContributor("orderBy", "orderBy_code_block", true),
             new EasyGroupContributor("groupBy", "groupBy", false),
-            new EasyContributor("having", "having", false),
-            new EasyContributor("having", "having_code_block", true),
-            new EasyContributor("selectColumn", "selectColumn", false),
-            new EasyContributor("fetchBy", "fetchBy", false),//支持弹窗选择
-            new EasyContributor("setColumns", "setColumns", false),
-            new EasyContributor("setColumns", "setColumns_code_block", true),
-            new EasyContributor("setIgnoreColumns", "setIgnoreColumns", false),
-            new EasyContributor("setIgnoreColumns", "setIgnoreColumns_code_block", true),
-            new EasyContributor("whereColumns", "whereColumns", false),
-            new EasyContributor("whereColumns", "whereColumns_code_block", true)));
+            new EasySelectContributor("having", "having", false),
+            new EasySelectContributor("having", "having_code_block", true),
+            new EasySelectContributor("selectColumn", "selectColumn", false),
+            new EasyFetchByContributor("fetchBy", "fetchBy", false),//支持弹窗选择
+            new EasySetColumnsContributor("setColumns", "setColumns", false),
+            new EasySetColumnsContributor("setColumns", "setColumns_code_block", true),
+            new EasySetIgnoreColumnsContributor("setIgnoreColumns", "setIgnoreColumns", false),
+            new EasySetIgnoreColumnsContributor("setIgnoreColumns", "setIgnoreColumns_code_block", true),
+            new EasyWhereColumnsContributor("whereColumns", "whereColumns", false),
+            new EasyWhereColumnsContributor("whereColumns", "whereColumns_code_block", true)));
     private static final TrieTree API_MATCH_TREE = new TrieTree(API_METHODS.stream().map(o -> o.getTipWord()).collect(Collectors.toList()));
     private static final Set<EasyContributor> ON_METHODS = new HashSet<>(Arrays.asList(
             new EasyOnContributor("", "on", false),
@@ -202,9 +195,9 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 //            result = result.withRelevanceSorter(CompletionSorter.defaultSorter(parameters, result.getPrefixMatcher()).weigh());
 
             if (".".equals(inputTextPrefix)) {
-                boolean matchApi = matchApi(parameters.getPosition(), inputText);
-                if (matchApi) {
-                    addApiCodeTip(result, project, psiFile, offset);
+                String matchApiMethodReturnTypeName = matchApi(parameters.getPosition(), inputText);
+                if (matchApiMethodReturnTypeName!=null) {
+                    addApiCodeTip(result, project, psiFile, offset,matchApiMethodReturnTypeName);
                 }
                 //匹配匿名对象
             } else {
@@ -294,10 +287,12 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             super.fillCompletionVariants(parameters, result);
         }
     }
+    private static final PsiElementPattern.Capture<PsiElement> AFTER_EASY_QUERY_METHOD = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class);
 
-    private boolean matchApi(PsiElement psiElement, String inputText) {
+    private String matchApi(PsiElement psiElement, String inputText) {
+
 //        try {
-//            boolean accepts = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class).accepts(psiElement);
+//            boolean accepts = ;
 //            if(!accepts){
 //                return false;
 //            }
@@ -306,27 +301,30 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 //        }
         boolean match = API_MATCH_TREE.fstMatch(inputText);
         if (!match) {
-            return false;
+            return null;
+        }
+        boolean accepts = AFTER_EASY_QUERY_METHOD.accepts(psiElement);
+        if (!accepts){
+            return null;
         }
         String queryableMethodName = getQueryableMethodName(psiElement);
         if (StrUtil.isBlank(queryableMethodName)) {
-            return false;
+            return null;
         }
-        return ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryableMethodName.startsWith(o))
-                || EASY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryableMethodName.startsWith(o));
+         if(ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryableMethodName.startsWith(o))
+                || EASY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o->queryableMethodName.startsWith(o))){
+             return queryableMethodName;
+         }
+         return null;
     }
 
+    private static final PsiElementPattern.Capture<PsiElement> AFTER_EASY_QUERY_JOIN=PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionList.class);
     private boolean matchJoin(PsiElement psiElement, String inputText) {
         boolean match = ON_MATCH_TREE.fstMatch(inputText);
         if (!match) {
             return false;
         }
-        try {
-            return PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionList.class).accepts(psiElement);
-        } catch (Exception ex) {
-
-        }
-        return true;
+        return AFTER_EASY_QUERY_JOIN.accepts(psiElement);
     }
 
     private boolean matchAnonymous(PsiElement psiElement, String inputText) {
@@ -703,6 +701,58 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 //        }
 //        return false;
 //    }
+    private void addApiCodeTip(@NotNull CompletionResultSet result, Project project, PsiFile psiFile, int offset,String beforeMethodReturnTypeName){
+        try {
+
+            // 获取忽略大小写的结果集
+            CompletionResultSet completionResultSet = result.caseInsensitive();
+            for (EasyContributor easyContributor : API_METHODS) {
+                if(!easyContributor.accept(beforeMethodReturnTypeName)){
+                    continue;
+                }
+                LookupElementBuilder apiPlugin = LookupElementBuilder.create(easyContributor.getTipWord())
+                        .withTypeText("EasyQueryPlugin", true)
+                        .withInsertHandler((context, item) -> {
+
+                            try {
+
+                                PsiElement elementAt = psiFile.findElementAt(offset);
+                                if (elementAt == null) {
+                                    return;
+                                }
+
+                                String queryableMethodName = getQueryableMethodName(elementAt);
+                                List<QueryType> queryTypes = parseQueryable(project, queryableMethodName);
+                                if (CollUtil.isEmpty(queryTypes)) {
+                                    return;
+                                }
+                                easyContributor.insertString(context, queryTypes, true);
+
+                                if (easyContributor instanceof EasyGroupContributor) {
+
+                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
+                                    if (newClass != null) {
+                                        WriteCommandAction.runWriteCommandAction(project, () -> {
+                                            if (psiFile instanceof PsiJavaFile) {
+                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
+                                            }
+                                        });
+                                    }
+
+                                }
+                            } catch (Exception e) {
+                                System.out.println(e.getMessage());
+                            }
+                        })
+                        .withIcon(Icons.EQ);
+
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, 100 - 1));
+
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
     private void addApiCodeTip(@NotNull CompletionResultSet result, Project project, PsiFile psiFile, int offset) {
         try {
 
@@ -768,7 +818,6 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 //    private static final String QUERYABLE_4KT = "com.easy.query.api4kt.select.KtQueryable";
 
     private static final List<String> ENTITY_QUERY_RETURN_TYPE_MATCH=Arrays.asList(
-            "com.easy.query.api.proxy.entity.select.EntityQueryable",
             "com.easy.query.api.proxy.entity.select.EntityQueryable",
             "com.easy.query.api.proxy.entity.update.ExpressionUpdatable",
             "com.easy.query.api.proxy.entity.update.EntityUpdatable",
