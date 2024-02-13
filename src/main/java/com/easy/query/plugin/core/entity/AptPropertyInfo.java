@@ -28,11 +28,13 @@ public class AptPropertyInfo {
     private final String entityName;
     private final boolean valueObject;
     private final String owner;
+    private final boolean includeProperty;
+    private final boolean includeManyProperty;
     private final String sqlColumn;
     private final String sqlColumnMethod;
     private final String proxyPropertyName;
 
-    public AptPropertyInfo(String propertyName, PropertyColumn propertyColumn, String comment, String entityName,boolean valueObject,String owner,boolean includeProperty,String proxyPropertyName){
+    public AptPropertyInfo(String propertyName, PropertyColumn propertyColumn, String comment, String entityName,boolean valueObject,String owner,boolean includeProperty,boolean includeManyProperty,String proxyPropertyName){
 
         this.propertyName = propertyName;
         this.propertyColumn = propertyColumn;
@@ -40,6 +42,8 @@ public class AptPropertyInfo {
         this.entityName = entityName;
         this.valueObject = valueObject;
         this.owner = owner;
+        this.includeProperty = includeProperty;
+        this.includeManyProperty = includeManyProperty;
         this.sqlColumn = includeProperty?"SQLNavigateColumn":propertyColumn.getSqlColumnName();
         this.sqlColumnMethod = includeProperty?"getNavigate":propertyColumn.getSQLColumnMethod();
         this.proxyPropertyName = proxyPropertyName;
@@ -83,7 +87,23 @@ public class AptPropertyInfo {
         return sqlColumn;
     }
 
+    public boolean isIncludeAndHasNavgateProxyName(){
+        return includeProperty&&getNavigateProxyName()!=null;
+    }
+
     public String getSqlColumnMethod() {
         return sqlColumnMethod;
     }
+
+    public boolean isIncludeProperty() {
+        return includeProperty;
+    }
+
+    public boolean isIncludeManyProperty() {
+        return includeManyProperty;
+    }
+    public String getNavigateProxyName(){
+        return propertyColumn.getNavigateProxyName();
+    }
+
 }

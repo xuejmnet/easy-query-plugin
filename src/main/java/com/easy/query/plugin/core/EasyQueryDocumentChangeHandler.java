@@ -40,6 +40,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
@@ -51,6 +52,7 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.util.messages.MessageBus;
 import org.apache.commons.lang3.BooleanUtils;
@@ -58,6 +60,7 @@ import org.apache.velocity.VelocityContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtFile;
 
+import javax.lang.model.element.TypeElement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -237,13 +240,25 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
                         PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
 
-                        aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, navigate != null, proxyPropertyName));
-                        aptFileCompiler.addImports(propertyColumn.getImport());
-                        if (navigate == null) {
+                        boolean includeProperty = navigate != null;
+                        boolean includeManyProperty = false;
+                        if (!includeProperty) {
                             aptFileCompiler.getSelectorInfo().getProperties().add(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName));
                         } else {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
+                            String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyColumn.getPropertyType());
+                            if (navigatePropertyProxyFullName != null) {
+                                propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
+                            }
+                            String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
+                            if (psiAnnotationValue.endsWith("ToMany")) {
+                                includeManyProperty = true;
+                                aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
+                            }
                         }
+                        aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
+                        aptFileCompiler.addImports(propertyColumn.getImport());
+
 
                         if (isValueObject) {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.AbstractValueObjectProxyEntity");
@@ -256,7 +271,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                             }
                             AptValueObjectInfo fieldAptValueObjectInfo = new AptValueObjectInfo(fieldClass.getName());
                             aptValueObjectInfo.getChildren().add(fieldAptValueObjectInfo);
-                            addValueObjectClass(name, fieldAptValueObjectInfo, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
+                            addValueObjectClass(project,name, fieldAptValueObjectInfo, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
                         }
 
                     }
@@ -301,12 +316,50 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             e.printStackTrace();
         }
     }
+    private static PsiClass getNavigatePropertyProxyClass(Project project,String fullClassName) {
+        PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.projectScope(project));
+        if(psiClass!=null){
+            return psiClass;
+        }
+        return JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.allScope(project));
+    }
+
+    private static String getNavigatePropertyProxyFullName(Project project,String fullClassName) {
+//        if(propertyColumn.getPropertyType().equals("com.easy.query.test.entity.school.MySchoolClass1")){
+        if(!fullClassName.contains(".")){
+            return null;
+        }
+        PsiClass psiClass = getNavigatePropertyProxyClass(project,fullClassName);
+
+        if (psiClass != null) {
+
+
+            PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
+            if(entityProxy!=null){
+                String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(entityProxy, "value", "");
+                if(StrUtil.isBlank(psiAnnotationValue)){
+                    return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
+                }
+                return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + psiAnnotationValue;
+            }
+            PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
+            if(entityFileProxy!=null){
+                String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(entityFileProxy, "value", "");
+                if(StrUtil.isBlank(psiAnnotationValue)){
+                    return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
+                }
+                return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + psiAnnotationValue;
+            }
+        }
+//        }
+        return null;
+    }
 
     public static PropertyColumn getPropertyColumn(String fieldGenericType) {
         return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn("SQLAnyColumn", fieldGenericType));
     }
 
-    private static void addValueObjectClass(String parentProperty, AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
+    private static void addValueObjectClass(Project project,String parentProperty, AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
         PsiField[] allFields = fieldValueObjectClass.getAllFields();
 
         String entityName = fieldValueObjectClass.getName();
@@ -338,10 +391,23 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
             PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
             aptFileCompiler.addImports(propertyColumn.getImport());
-            aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, navigate != null, proxyPropertyName));
-            if (navigate != null) {
+
+            boolean includeProperty = navigate != null;
+            boolean includeManyProperty = false;
+            if (includeProperty) {
                 aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
+                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyColumn.getPropertyType());
+                if (navigatePropertyProxyFullName != null) {
+                    propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
+                }
+                String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
+                if (psiAnnotationValue.endsWith("ToMany")) {
+                    includeManyProperty = true;
+                    aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
+                }
             }
+            aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
+
             if (valueObject != null) {
                 aptFileCompiler.addImports(psiFieldPropertyType);
                 PsiType fieldType = field.getType();
@@ -352,7 +418,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                 }
                 AptValueObjectInfo innerValueObject = new AptValueObjectInfo(fieldClass.getName());
                 aptValueObjectInfo.getChildren().add(innerValueObject);
-                addValueObjectClass(parentProperty + "." + name, innerValueObject, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
+                addValueObjectClass(project,parentProperty + "." + name, innerValueObject, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
             }
         }
     }

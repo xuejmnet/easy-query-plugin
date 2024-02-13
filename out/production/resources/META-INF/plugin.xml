@@ -18,8 +18,7 @@
     <a href="https://xuejmnet.github.io/easy-query-doc/">document</a>
     <h3>Features:</h3>
     <ul>
-    <li>support 1.9.37+</li>
-    <li>support relation filter</li>
+    <li>support 1.8.4+</li>
     <li>The resulting APT file supports hints</li>
     <li>APT automatic compilation SHIFT+P Shortcut keys</li>
     <li>format sql with params SHIFT+M</li>
@@ -40,10 +39,9 @@
         <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler" id="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"/>
 
         <completion.contributor language="any"
-                                id="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"
-                                implementationClass="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"/>
+                                id="com.easy.query.plugin.core.contributor.EasyQueryAnonymousTypeCompletionContributor"
+                                implementationClass="com.easy.query.plugin.core.contributor.EasyQueryAnonymousTypeCompletionContributor"/>
 
-        <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
     </extensions>
     <actions>
         <action id="com.easy.query.plugin.action.AnonymousMapAction"
@@ -52,12 +50,6 @@
                 text="AnonymousMap" >
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="last"/>
-        </action>
-        <action id="com.easy.query.plugin.action.QuickTipSettingAction"
-                icon="/icons/eq.svg"
-                class="com.easy.query.plugin.action.QuickTipSettingAction"
-                text="QuickTipSetting" >
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
         <action id="com.easy.query.plugin.action.AutoCompileAction"
                 class="com.easy.query.plugin.action.AutoCompileAction" text="AutoCompile"
