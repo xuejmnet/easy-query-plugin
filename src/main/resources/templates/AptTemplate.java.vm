@@ -25,24 +25,24 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
             *{@link ${property.getOwner()}#${property.getPropertyNameGetMethodName()}}
             */
         #if(${property.isValueObject()})
-        public ${property.getEntityName()}Proxy ${property.getProxyPropertyName()}(){
-                return getValueObject(new ${property.getEntityName()}Proxy(getEntitySQLContext(),getTable(),getValueProperty("${property.getPropertyName()}")));
-                }
+public ${property.getEntityName()}Proxy ${property.getProxyPropertyName()}(){
+        return getValueObject(new ${property.getEntityName()}Proxy(getEntitySQLContext(),getTable(),getValueProperty("${property.getPropertyName()}")));
+        }
         #else
             #if(${property.isIncludeAndHasNavgateProxyName()})
                 #if(${property.isIncludeManyProperty()})
-                public SQLQueryable<${property.getNavigateProxyName()},${property.getPropertyType()}> ${property.getProxyPropertyName()}(){
-                        return getNavigates("${property.getPropertyName()}",new ${property.getNavigateProxyName()}());
-                        }
+public SQLQueryable<${property.getNavigateProxyName()},${property.getPropertyType()}> ${property.getProxyPropertyName()}(){
+        return getNavigates("${property.getPropertyName()}",new ${property.getNavigateProxyName()}());
+        }
                 #else
-                public ${property.getNavigateProxyName()} ${property.getProxyPropertyName()}(){
-                        return getNavigate("${property.getPropertyName()}",new ${property.getNavigateProxyName()}());
-                        }
+public ${property.getNavigateProxyName()} ${property.getProxyPropertyName()}(){
+        return getNavigate("${property.getPropertyName()}",new ${property.getNavigateProxyName()}());
+        }
                 #end
             #else
-            public ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getProxyPropertyName()}(){
-                    return ${property.getSqlColumnMethod()}("${property.getPropertyName()}",${property.getPropertyType()}.class);
-                    }
+public ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getProxyPropertyName()}(){
+        return ${property.getSqlColumnMethod()}("${property.getPropertyName()}",${property.getPropertyType()}.class);
+        }
             #end
         #end
 

@@ -1,5 +1,7 @@
 package com.easy.query.plugin.core.util;
 
+import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import org.apache.velocity.VelocityContext;
@@ -15,7 +17,8 @@ public class VelocityUtils {
         PsiFileFactory factory = PsiFileFactory.getInstance(ProjectUtils.getCurrentProject());
         StringWriter sw = new StringWriter();
         VELOCITY_ENGINE.evaluate(context, sw, "easy-query", template);
-        return factory.createFileFromText(fileName, KotlinFileType.INSTANCE, sw.toString());
+        LanguageFileType languageFileType = (fileName == null || fileName.endsWith(".java")) ? JavaFileType.INSTANCE : KotlinFileType.INSTANCE;
+        return factory.createFileFromText(fileName,languageFileType , sw.toString());
 
     }
 }
