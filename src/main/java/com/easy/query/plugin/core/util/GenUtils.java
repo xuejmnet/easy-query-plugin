@@ -59,9 +59,9 @@ public class GenUtils {
     }
 
     /**
-     * 列名转换成Java属性名
+     * 表名转成Java类名
      */
-    public static String columnToJava(String columnName) {
+    public static String nameToJava(String columnName) {
         return capitalizeFully(columnName, new char[]{'_'}).replace("_", "");
     }
 
@@ -76,6 +76,6 @@ public class GenUtils {
                 }
             }
         }
-        return columnToJava(tableName);
+        return nameToJava(tableName);
     }
 }

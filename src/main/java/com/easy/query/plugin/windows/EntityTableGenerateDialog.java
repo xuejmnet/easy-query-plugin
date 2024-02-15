@@ -357,7 +357,7 @@ public class EntityTableGenerateDialog extends JDialog {
         for (String tableName : tableNames) {
             for (int i = 0; i < tableName.length(); i++) {
                 char word = tableName.charAt(i);
-                INVERTED_TABLE_INDEX.computeIfAbsent((word + "").toLowerCase(), k -> new HashSet<>()).add(tableName);
+                INVERTED_TABLE_INDEX.computeIfAbsent((word + ""), k -> new HashSet<>()).add(tableName);
             }
         }
     }
@@ -366,7 +366,7 @@ public class EntityTableGenerateDialog extends JDialog {
         for (String tableName : tableNames) {
             for (int i = 0; i < tableName.length(); i++) {
                 char word = tableName.charAt(i);
-                INVERTED_MODULE_INDEX.computeIfAbsent((word + "").toLowerCase(), k -> new HashSet<>()).add(tableName);
+                INVERTED_MODULE_INDEX.computeIfAbsent((word + ""), k -> new HashSet<>()).add(tableName);
             }
         }
     }
@@ -633,17 +633,15 @@ public class EntityTableGenerateDialog extends JDialog {
                     .flatMap(el -> el.stream())
                     .collect(Collectors.toSet());
         }
-        keyword = keyword.toLowerCase();
         Set<String> result = new HashSet<>();
         for (int i = 0; i < keyword.length(); i++) {
             char key = keyword.charAt(i);
             result.addAll(INVERTED_TABLE_INDEX.getOrDefault(key + "", Collections.emptySet()));
         }
-        String finalKeyword = keyword;
         result = result.stream()
                 .filter(el -> {
-                    for (int i = 0; i < finalKeyword.length(); i++) {
-                        String key = finalKeyword.charAt(i) + "";
+                    for (int i = 0; i < keyword.length(); i++) {
+                        String key = keyword.charAt(i) + "";
                         if (StringUtils.containsIgnoreCase(el, key)) {
                             el = el.replaceFirst(key, "");
                         } else {

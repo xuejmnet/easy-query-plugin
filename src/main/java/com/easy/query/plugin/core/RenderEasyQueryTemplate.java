@@ -99,7 +99,7 @@ public class RenderEasyQueryTemplate {
             }
             ColumnInfo columnInfo = new ColumnInfo();
             columnInfo.setName(column.getName());
-            columnInfo.setFieldName(StrUtil.toCamelCase(column.getName()));
+            columnInfo.setFieldName(StrUtil.toCamelCase(column.getName().toLowerCase()));
             String fieldType = getFieldType(column.getJdbcType(), tableInfo, column.getJdbcTypeName(), column.getSize(), column.getJdbcTypeStr().toLowerCase(), typeMapping);
             columnInfo.setFieldType(fieldType);
             columnInfo.setNotNull(column.isNotNull());
