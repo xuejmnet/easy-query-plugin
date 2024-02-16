@@ -68,6 +68,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             new EasySelectContributor("select", "select", false),
             new EasyContributor("where", "where", false),
             new EasyContributor("where", "where_code_block", true),
+            new EasyIncludeContributor("include", "include", false),
+            new EasyIncludesContributor("includes", "includes", false),
             new EasyOrderContributor("orderBy", "orderBy", false),
             new EasyOrderContributor("orderBy", "orderBy_code_block", true),
             new EasyGroupContributor("groupBy", "groupBy", false),

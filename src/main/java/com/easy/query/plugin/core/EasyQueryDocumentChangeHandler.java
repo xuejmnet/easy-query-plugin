@@ -246,9 +246,12 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                             aptFileCompiler.getSelectorInfo().getProperties().add(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName));
                         } else {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
-                            String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyColumn.getPropertyType());
+                            String propertyType = propertyColumn.getPropertyType();
+                            String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType);
                             if (navigatePropertyProxyFullName != null) {
                                 propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
+                            }else{
+                                psiFieldComment+="插件提示无法获取导航属性代理:"+propertyType;
                             }
                             String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
                             if (psiAnnotationValue.endsWith("ToMany")) {
@@ -396,9 +399,12 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             boolean includeManyProperty = false;
             if (includeProperty) {
                 aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
-                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyColumn.getPropertyType());
+                String propertyType = propertyColumn.getPropertyType();
+                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType);
                 if (navigatePropertyProxyFullName != null) {
                     propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
+                }else{
+                    psiFieldComment+="插件提示无法获取导航属性代理:"+propertyType;
                 }
                 String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
                 if (psiAnnotationValue.endsWith("ToMany")) {
