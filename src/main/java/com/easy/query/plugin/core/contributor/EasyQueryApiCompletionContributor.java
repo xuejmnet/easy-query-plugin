@@ -289,7 +289,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             super.fillCompletionVariants(parameters, result);
         }
     }
-    private static final PsiElementPattern.Capture<PsiElement> AFTER_EASY_QUERY_METHOD = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionStatement.class);
+    private static final PsiElementPattern.Capture<PsiElement> AFTER_EASY_QUERY_METHOD = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class);
 
     private String matchApi(PsiElement psiElement, String inputText) {
 
@@ -511,8 +511,8 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
                                 if (lastChild == null) {
                                     return;
                                 }
-                                String joinText = lastChild.getText();
-                                if (!"select".contains(joinText) && !"adapter".contains(joinText)) {
+                                String childText = lastChild.getText();
+                                if (!"select".contains(childText) && !"setColumns".contains(childText) && !"adapter".contains(childText)) {
                                     return;
                                 }
                                 easyContributor.insertString(context, Collections.emptyList(), false);

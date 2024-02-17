@@ -285,7 +285,7 @@ public class TableUtils {
         list.add(new MatchTypeMapping("ORDINARY" , "java.lang.Long" , "int8" ));
         list.add(new MatchTypeMapping("ORDINARY" , "java.time.LocalDate" , "date" ));
         list.add(new MatchTypeMapping("ORDINARY" , "java.time.LocalDateTime" , "datetime" ));
-        list.add(new MatchTypeMapping("ORDINARY" , "java.util.DateTime" , "timestamp" ));
+        list.add(new MatchTypeMapping("ORDINARY" , "java.util.Date" , "timestamp" ));
         list.add(new MatchTypeMapping("ORDINARY" , "java.time.LocalTime" , "time" ));
         list.add(new MatchTypeMapping("ORDINARY" , "java.lang.Boolean" , "boolean" ));
         return list;
