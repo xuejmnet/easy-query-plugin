@@ -251,7 +251,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                             if (navigatePropertyProxyFullName != null) {
                                 propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
                             }else{
-                                psiFieldComment+="插件提示无法获取导航属性代理:"+propertyType;
+                                psiFieldComment+="\n//插件提示无法获取导航属性代理:"+propertyType;
                             }
                             String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
                             if (psiAnnotationValue.endsWith("ToMany")) {
@@ -404,7 +404,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                 if (navigatePropertyProxyFullName != null) {
                     propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
                 }else{
-                    psiFieldComment+="插件提示无法获取导航属性代理:"+propertyType;
+                    psiFieldComment+="\n//插件提示无法获取导航属性代理:"+propertyType;
                 }
                 String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
                 if (psiAnnotationValue.endsWith("ToMany")) {
