@@ -33,6 +33,9 @@ public class EasyWhereColumnsContributor extends EasyContributor{
 
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
-        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.update.EntityUpdatable") ;
+        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.update.EntityUpdatable") ||
+                beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.update.EntityUpdatable") ||
+                beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.update.KtEntityUpdatable") ||
+                beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.update.ClientEntityUpdatable") ;
     }
 }

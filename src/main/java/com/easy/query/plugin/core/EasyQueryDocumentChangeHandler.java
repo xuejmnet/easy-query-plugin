@@ -247,7 +247,9 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         } else {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                             String propertyType = propertyColumn.getPropertyType();
-                            String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType);
+
+                            String propIsProxy = PsiUtil.getPsiAnnotationValue(navigate, "propIsProxy", "true");
+                            String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType,!Objects.equals("false",propIsProxy));
                             if (navigatePropertyProxyFullName != null) {
                                 propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
                             }else{
@@ -327,7 +329,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         return JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.allScope(project));
     }
 
-    private static String getNavigatePropertyProxyFullName(Project project,String fullClassName) {
+    private static String getNavigatePropertyProxyFullName(Project project,String fullClassName,boolean propIsProxy) {
 //        if(propertyColumn.getPropertyType().equals("com.easy.query.test.entity.school.MySchoolClass1")){
         if(!fullClassName.contains(".")){
             return null;
@@ -349,13 +351,20 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             if(entityFileProxy!=null){
                 String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(entityFileProxy, "value", "");
                 if(StrUtil.isBlank(psiAnnotationValue)){
-                    return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
+                    return getDefaultClassProxyName(fullClassName);
                 }
                 return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + psiAnnotationValue;
             }
         }
+        //todo 后续直接不支持别名强制转成classNameProxy
+        if(propIsProxy){
+            return getDefaultClassProxyName(fullClassName);
+        }
 //        }
         return null;
+    }
+    private static String getDefaultClassProxyName(String fullClassName){
+        return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
     }
 
     public static PropertyColumn getPropertyColumn(String fieldGenericType) {
@@ -400,7 +409,8 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             if (includeProperty) {
                 aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                 String propertyType = propertyColumn.getPropertyType();
-                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType);
+                String propIsProxy = PsiUtil.getPsiAnnotationValue(navigate, "propIsProxy", "true");
+                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType,!Objects.equals("false",propIsProxy));
                 if (navigatePropertyProxyFullName != null) {
                     propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
                 }else{
