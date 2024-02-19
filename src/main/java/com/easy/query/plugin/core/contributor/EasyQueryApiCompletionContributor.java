@@ -32,7 +32,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiExpressionList;
-import com.intellij.psi.PsiExpressionStatement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiImportStatement;
 import com.intellij.psi.PsiJavaFile;
@@ -77,8 +76,9 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
             new EasySelectContributor("having", "having_code_block", true),
             new EasySelectContributor("selectColumn", "selectColumn", false),
             new EasyFetchByContributor("fetchBy", "fetchBy", false),//支持弹窗选择
-            new EasySetColumnsContributor("setColumns", "setColumns", false),
-            new EasySetColumnsContributor("setColumns", "setColumns_code_block", true),
+            new EasyExpressionSetColumnsContributor("setColumns", "setColumns", false),
+            new EasyExpressionSetColumnsContributor("setColumns", "setColumns_code_block", true),
+            new EasyEntitySetColumnsContributor("setColumns", "setColumns", false),
             new EasySetIgnoreColumnsContributor("setIgnoreColumns", "setIgnoreColumns", false),
             new EasySetIgnoreColumnsContributor("setIgnoreColumns", "setIgnoreColumns_code_block", true),
             new EasyWhereColumnsContributor("whereColumns", "whereColumns", false),

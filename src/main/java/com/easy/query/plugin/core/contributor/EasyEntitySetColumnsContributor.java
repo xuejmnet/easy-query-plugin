@@ -12,27 +12,23 @@ import java.util.Collection;
  *
  * @author xuejiaming
  */
-public class EasyWhereColumnsContributor extends EasyContributor{
-    public EasyWhereColumnsContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
+public class EasyEntitySetColumnsContributor extends EasyContributor{
+    public EasyEntitySetColumnsContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);
-    }
-
-    @Override
-    protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
-
-        if(CollUtil.isNotEmpty(queries)){
-            QueryType first = CollUtil.getFirst(queries);
-            if(blockCode){
-                return String.format("{return %s.FETCHER.columnKeys()}", first.getShortName());
-            }
-            return String.format("%s.FETCHER.columnKeys()", first.getShortName());
-        }else{
-            return super.getLambdaBody(queries,lambdaBody);
-        }
     }
 
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
         return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.update.EntityUpdatable") ;
+    }
+    @Override
+    protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
+
+        if(CollUtil.isNotEmpty(queries)){
+            QueryType first = CollUtil.getFirst(queries);
+            return String.format("%s.FETCHER", first.getShortName());
+        }else{
+            return super.getLambdaBody(queries,lambdaBody);
+        }
     }
 }
