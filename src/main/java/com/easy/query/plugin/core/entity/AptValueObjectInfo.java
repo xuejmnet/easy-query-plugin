@@ -1,7 +1,10 @@
 package com.easy.query.plugin.core.entity;
 
+
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -12,13 +15,13 @@ import java.util.Objects;
  */
 public class AptValueObjectInfo {
     private final String entityName;
-    private final List<AptPropertyInfo> properties;
+    private final Map<String,AptPropertyInfo> propertieMap;
     private final List<AptValueObjectInfo> children;
 
     public AptValueObjectInfo(String entityName){
 
         this.entityName = entityName;
-        this.properties = new ArrayList<>();
+        this.propertieMap = new LinkedHashMap<>();
         this.children = new ArrayList<>();
     }
 
@@ -27,7 +30,10 @@ public class AptValueObjectInfo {
     }
 
     public List<AptPropertyInfo> getProperties() {
-        return properties;
+        return new ArrayList<>(propertieMap.values());
+    }
+    public void addProperties(AptPropertyInfo aptPropertyInfo){
+        propertieMap.putIfAbsent(aptPropertyInfo.getPropertyName(),aptPropertyInfo);
     }
 
     public List<AptValueObjectInfo> getChildren() {

@@ -1,7 +1,9 @@
 package com.easy.query.plugin.core.entity;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * create time 2023/12/6 10:00
@@ -11,12 +13,12 @@ import java.util.List;
  */
 public class AptSelectorInfo {
     private final String name;
-    private final List<AptSelectPropertyInfo> properties;
+    private final Map<String,AptSelectPropertyInfo> propertieMap;
 
     public AptSelectorInfo(String name){
 
         this.name = name;
-        this.properties=new ArrayList<>();
+        this.propertieMap=new LinkedHashMap<>();
     }
 
     public String getName() {
@@ -24,6 +26,9 @@ public class AptSelectorInfo {
     }
 
     public List<AptSelectPropertyInfo> getProperties() {
-        return properties;
+        return new ArrayList<>(propertieMap.values());
+    }
+    public void addProperties(AptSelectPropertyInfo aptSelectPropertyInfo){
+        this.propertieMap.putIfAbsent(aptSelectPropertyInfo.getPropertyName(),aptSelectPropertyInfo);
     }
 }

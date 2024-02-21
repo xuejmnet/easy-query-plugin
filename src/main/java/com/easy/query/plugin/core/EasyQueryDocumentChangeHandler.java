@@ -243,7 +243,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         boolean includeProperty = navigate != null;
                         boolean includeManyProperty = false;
                         if (!includeProperty) {
-                            aptFileCompiler.getSelectorInfo().getProperties().add(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName));
+                            aptFileCompiler.getSelectorInfo().addProperties(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName));
                         } else {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                             String propertyType = propertyColumn.getPropertyType();
@@ -261,7 +261,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                                 aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
                             }
                         }
-                        aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
+                        aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
                         aptFileCompiler.addImports(propertyColumn.getImport());
 
 
@@ -422,7 +422,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
                 }
             }
-            aptValueObjectInfo.getProperties().add(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
+            aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
 
             if (valueObject != null) {
                 aptFileCompiler.addImports(psiFieldPropertyType);
