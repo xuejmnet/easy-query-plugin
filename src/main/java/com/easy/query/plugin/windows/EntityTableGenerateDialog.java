@@ -122,7 +122,7 @@ public class EntityTableGenerateDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-        setSize(900, 800);
+        setSize(1000, 900);
         setTitle("Entity Generate");
         DialogUtil.centerShow(this);
         confDelBtn.setIcon(PlatformIcons.DELETE_ICON);
