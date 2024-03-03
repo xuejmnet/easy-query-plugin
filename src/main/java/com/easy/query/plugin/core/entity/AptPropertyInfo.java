@@ -70,6 +70,10 @@ public class AptPropertyInfo {
         return propertyColumn.getPropertyType();
     }
 
+    public String getPropertyTypeClass() {
+        return propertyColumn.getPropertyTypeClass(includeProperty);
+    }
+
     public String getEntityName() {
         return entityName;
     }

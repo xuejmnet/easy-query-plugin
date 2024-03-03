@@ -41,7 +41,7 @@ public class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyE
                 #end
             #else
             public ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> ${property.getProxyPropertyName()}(){
-                    return ${property.getSqlColumnMethod()}("${property.getPropertyName()}",${property.getPropertyType()}.class);
+                    return ${property.getSqlColumnMethod()}("${property.getPropertyName()}",${property.getPropertyTypeClass()});
                     }
             #end
         #end

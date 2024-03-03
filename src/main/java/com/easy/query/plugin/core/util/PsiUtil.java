@@ -3,6 +3,7 @@ package com.easy.query.plugin.core.util;
 import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiArrayType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiClassType;
@@ -116,17 +117,30 @@ public class PsiUtil {
     public static String getPsiFieldPropertyType(PsiField field,boolean isInclude){
         // 获取属性类型
         PsiType fieldType = field.getType();
-        if(((PsiClassType)fieldType).resolve() instanceof PsiTypeParameter){
+//        if(fieldType instanceof PsiArrayType){
+//            return getPsiArrayFieldPropertyType((PsiArrayType) fieldType,isInclude);
+//        }else
+            if(fieldType instanceof  PsiClassType){
+            return getPsiClassFieldPropertyType((PsiClassType)fieldType,isInclude);
+        }
+        return fieldType.getCanonicalText();
+    }
+    public static String getPsiClassFieldPropertyType(PsiClassType fieldType,boolean isInclude){
+        if(fieldType.resolve() instanceof PsiTypeParameter){
             return "java.lang.Object";
         }
         String canonicalText = fieldType.getCanonicalText();
         if(isInclude){
             return parseGenericType(canonicalText);
         }
-        if (canonicalText.contains("<") && canonicalText.contains(">")){
-            return "java.lang.Object";
-        }
+//        if (canonicalText.contains("<") && canonicalText.contains(">")){
+//            return "java.lang.Object";
+//        }
         return canonicalText;
+    }
+    public static String getPsiArrayFieldPropertyType(PsiArrayType fieldType,boolean isInclude){
+        System.out.println("1");
+        return "java.lang.Object";
     }
     public static String parseGenericType(String genericTypeString) {
         if(genericTypeString.contains(",")){

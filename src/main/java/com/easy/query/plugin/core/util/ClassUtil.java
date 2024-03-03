@@ -1,8 +1,12 @@
 package com.easy.query.plugin.core.util;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
+import com.intellij.psi.search.GlobalSearchScope;
+import org.jetbrains.annotations.Nullable;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -45,5 +49,15 @@ public class ClassUtil {
             return s;
         }
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+    public static @Nullable PsiClass findClass(Project project, String fullClassName, boolean seachAllScope) {
+        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
+        PsiClass newClass = javaPsiFacade.findClass(fullClassName, GlobalSearchScope.projectScope(project));
+        if(seachAllScope){
+            if (newClass == null) {
+                newClass = javaPsiFacade.findClass(fullClassName, GlobalSearchScope.allScope(project));
+            }
+        }
+        return newClass;
     }
 }
