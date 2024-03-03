@@ -65,6 +65,7 @@ public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
     private static final Set<EasyContributor> API_METHODS = new HashSet<>(Arrays.asList(
             new EasySelectContributor("select", "select", false),
+            new EasySelectEntityVOContributor("select", "selectv", false),
             new EasyContributor("where", "where", false),
             new EasyContributor("where", "where_code_block", true),
             new EasyIncludeContributor("include", "include", false),
