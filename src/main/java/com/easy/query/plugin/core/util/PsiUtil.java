@@ -92,6 +92,14 @@ public class PsiUtil {
         return "/**\n" +
                "     * "+removeStarsAndTrim(psiFieldComment);
     }
+    public static String getPsiFieldOnlyComment(PsiField field){
+
+        String psiFieldComment = getPsiFieldComment(field, null);
+        if(Objects.isNull(psiFieldComment)){
+            return "";
+        }
+        return removeStarsAndTrim(psiFieldComment);
+    }
 
     public static String getPsiFieldComment(PsiField field, String def){
         // 获取该字段的注释

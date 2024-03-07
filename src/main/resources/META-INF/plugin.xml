@@ -47,12 +47,12 @@
         <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
     </extensions>
     <actions>
-<!--        <action id="com.easy.query.plugin.action.CreateStructDTOAction"-->
-<!--                icon="/icons/eq.svg"-->
-<!--                class="com.easy.query.plugin.action.CreateStructDTOAction"-->
-<!--                text="CreateStructDTO" >-->
-<!--            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>-->
-<!--        </action>-->
+        <action id="com.easy.query.plugin.action.CreateStructDTOAction"
+                icon="/icons/eq.svg"
+                class="com.easy.query.plugin.action.CreateStructDTOAction"
+                text="CreateStructDTO" >
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
         <action id="com.easy.query.plugin.action.AnonymousMapAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.AnonymousMapAction"

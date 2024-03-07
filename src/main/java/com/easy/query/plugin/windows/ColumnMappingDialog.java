@@ -9,6 +9,7 @@ import com.easy.query.plugin.core.util.TableUtils;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.util.TreeClassChooser;
 import com.intellij.ide.util.TreeClassChooserFactory;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
 import com.intellij.ui.components.fields.ExtendableTextComponent;
@@ -32,6 +33,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ColumnMappingDialog extends JDialog {
+    private final Project project;
     private final Consumer<Map<String, List<MatchTypeMapping>>> saveMapping;
     private JPanel contentPane;
     private JButton buttonOK;
@@ -46,7 +48,8 @@ public class ColumnMappingDialog extends JDialog {
     };
     Map<String, List<MatchTypeMapping>> typeMapping;
 
-    public ColumnMappingDialog(Map<String, List<MatchTypeMapping>> oldTypeMapping, Consumer<Map<String, List<MatchTypeMapping>>> saveMapping) {
+    public ColumnMappingDialog(Project project, Map<String, List<MatchTypeMapping>> oldTypeMapping, Consumer<Map<String, List<MatchTypeMapping>>> saveMapping) {
+        this.project = project;
         this.saveMapping = saveMapping;
         setContentPane(contentPane);
         setModal(true);
@@ -111,9 +114,9 @@ public class ColumnMappingDialog extends JDialog {
         initTableData();
 
         reset.addActionListener(e -> {
-            int flag = Messages.showYesNoDialog("确定重置吗？", "提示", AllIcons.General.QuestionDialog);
+            int flag = Messages.showYesNoDialog(project,"确定重置吗？", "提示", AllIcons.General.QuestionDialog);
             if (flag == 0) {
-                NotificationUtils.notifySuccess("重置成功");
+                NotificationUtils.notifySuccess(project,"重置成功");
                 typeMapping = TableUtils.getDefaultTypeMappingMap();
                 initTableData();
             }
@@ -173,7 +176,7 @@ public class ColumnMappingDialog extends JDialog {
         ExtendableTextComponent.Extension browseExtension =
                 ExtendableTextComponent.Extension.create(AllIcons.Actions.Find, AllIcons.Actions.Find,
                         "选择java类型", () -> {
-                            TreeClassChooserFactory chooserFactory = TreeClassChooserFactory.getInstance(ProjectUtils.getCurrentProject());
+                            TreeClassChooserFactory chooserFactory = TreeClassChooserFactory.getInstance(project);
                             TreeClassChooser chooser = chooserFactory.createAllProjectScopeChooser("选择类");
                             chooser.showDialog();
                             PsiClass selected = chooser.getSelected();

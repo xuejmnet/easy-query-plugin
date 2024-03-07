@@ -22,7 +22,6 @@ public class TableGenerateAction extends AnAction {
      */
     @Override
     public void update(AnActionEvent e) {
-        ProjectUtils.setCurrentProject(e.getProject());
         Object selectedElement = e.getData(CommonDataKeys.PSI_ELEMENT);
         boolean isSelectedTable = selectedElement instanceof DasTable;
         e.getPresentation().setVisible(isSelectedTable);

@@ -54,16 +54,16 @@ public class PsiJavaFileUtil {
      * @param searchScope   搜索范围
      * @return {@code Collection<PsiClass>}
      */
-    public static Collection<PsiClass> getSonPsiClass(String qualifiedName, SearchScope searchScope) {
-        PsiClass clazz = getPsiClass(qualifiedName);
+    public static Collection<PsiClass> getSonPsiClass(Project project,String qualifiedName, SearchScope searchScope) {
+        PsiClass clazz = getPsiClass(project,qualifiedName);
         if(clazz==null){
             return Collections.emptyList();
         }
         return ClassInheritorsSearch.search(clazz, searchScope, true).findAll();
     }
 
-    public static Collection<PsiClass> getAnnotationPsiClass(String qualifiedName) {
-        PsiClass psiClass = PsiJavaFileUtil.getPsiClass(qualifiedName);
+    public static Collection<PsiClass> getAnnotationPsiClass(Project project,String qualifiedName) {
+        PsiClass psiClass = PsiJavaFileUtil.getPsiClass(project,qualifiedName);
         if(psiClass==null){
             return Collections.emptyList();
         }
@@ -75,30 +75,28 @@ public class PsiJavaFileUtil {
                 );
     }
 
-    public static Collection<PsiClass> getAllSonPsiClass(String qualifiedName) {
-        PsiClass clazz = getPsiClass(qualifiedName);
-        return ClassInheritorsSearch.search(clazz, GlobalSearchScope.allScope(ProjectUtils.getCurrentProject()), true).findAll();
+    public static Collection<PsiClass> getAllSonPsiClass(Project project,String qualifiedName) {
+        PsiClass clazz = getPsiClass(project,qualifiedName);
+        return ClassInheritorsSearch.search(clazz, GlobalSearchScope.allScope(project), true).findAll();
     }
 
-    public static Collection<PsiClass> getProjectSonPsiClass(String qualifiedName) {
-        PsiClass clazz = getPsiClass(qualifiedName);
-        return ClassInheritorsSearch.search(clazz, GlobalSearchScope.projectScope(ProjectUtils.getCurrentProject()), true).findAll();
+    public static Collection<PsiClass> getProjectSonPsiClass(Project project,String qualifiedName) {
+        PsiClass clazz = getPsiClass(project,qualifiedName);
+        return ClassInheritorsSearch.search(clazz, GlobalSearchScope.projectScope(project), true).findAll();
     }
 
-    public static PsiClass getPsiClass(String qualifiedName) {
-        Project project = ProjectUtils.getCurrentProject();
+    public static PsiClass getPsiClass(Project project,String qualifiedName) {
         JavaPsiFacade psiFacade = JavaPsiFacade.getInstance(project);
         return psiFacade.findClass(qualifiedName, GlobalSearchScope.allScope(project));
     }
 
-    public static PsiClass getPsiClass(String qualifiedName, GlobalSearchScope scope) {
-        Project project = ProjectUtils.getCurrentProject();
+    public static PsiClass getPsiClass(Project project,String qualifiedName, GlobalSearchScope scope) {
         JavaPsiFacade psiFacade = JavaPsiFacade.getInstance(project);
         return psiFacade.findClass(qualifiedName, scope);
     }
 
-    public static PsiImportStatement createImportStatement(PsiClass psiClass) {
-        PsiElementFactory instance = PsiElementFactory.getInstance(ProjectUtils.getCurrentProject());
+    public static PsiImportStatement createImportStatement(Project project,PsiClass psiClass) {
+        PsiElementFactory instance = PsiElementFactory.getInstance(project);
         return instance.createImportStatement(psiClass);
     }
 
@@ -126,8 +124,8 @@ public class PsiJavaFileUtil {
      * 生成 apt 文件
      */
     public static void createAptFile(Project project) {
-        Collection<PsiClass> annotationPsiProxyClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityProxy" );
-        Collection<PsiClass> annotationPsiFileProxyClass = PsiJavaFileUtil.getAnnotationPsiClass("com.easy.query.core.annotation.EntityFileProxy" );
+        Collection<PsiClass> annotationPsiProxyClass = PsiJavaFileUtil.getAnnotationPsiClass(project,"com.easy.query.core.annotation.EntityProxy" );
+        Collection<PsiClass> annotationPsiFileProxyClass = PsiJavaFileUtil.getAnnotationPsiClass(project,"com.easy.query.core.annotation.EntityFileProxy" );
         ArrayList<PsiClass> annotationPsiClass = new ArrayList<>();
         annotationPsiClass.addAll(annotationPsiProxyClass);
         annotationPsiClass.addAll(annotationPsiFileProxyClass);

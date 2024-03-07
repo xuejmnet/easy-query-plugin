@@ -44,7 +44,7 @@ public class NotificationUtils {
         Notifications.Bus.notify(notification, project);
     }
 
-    public static void notifySuccess(String content, String title) {
+    public static void notifySuccess(Project project,String content, String title) {
         Notification notification = new Notification(
                 EasyQueryConstant.NOTICE_GROUP_ID,
                 title,
@@ -52,7 +52,7 @@ public class NotificationUtils {
                 NotificationType.INFORMATION
         );
         // 在屏幕右下角显示通知
-        Notifications.Bus.notify(notification, ProjectUtils.getCurrentProject());
+        Notifications.Bus.notify(notification, project);
     }
 
     /**
@@ -60,8 +60,8 @@ public class NotificationUtils {
      *
      * @param content 内容
      */
-    public static void notifySuccess(String content) {
-        notifySuccess(content, "提示", ProjectUtils.getCurrentProject());
+    public static void notifySuccess(Project project,String content) {
+        notifySuccess(content, "提示", project);
     }
 
     public static void notifySuccess(String content, Project project) {
@@ -104,7 +104,7 @@ public class NotificationUtils {
         Notifications.Bus.notify(notification, project);
     }
 
-    public static void notifyError(String content, String title) {
+    public static void notifyError(Project project,String content, String title) {
         Notification notification = new Notification(
                 EasyQueryConstant.NOTICE_GROUP_ID,
                 title,
@@ -112,7 +112,7 @@ public class NotificationUtils {
                 NotificationType.ERROR
         );
         // 在屏幕右下角显示通知
-        Notifications.Bus.notify(notification, ProjectUtils.getCurrentProject());
+        Notifications.Bus.notify(notification, project);
     }
 
 //    public static void start() {

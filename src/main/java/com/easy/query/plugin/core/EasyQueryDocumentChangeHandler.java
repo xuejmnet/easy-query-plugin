@@ -285,7 +285,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     context.put("aptValueObjectInfo", aptValueObjectInfo);
                     context.put("aptFileCompiler", aptFileCompiler);
                     String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
-                    PsiFile psiProxyFile = VelocityUtils.render(context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
+                    PsiFile psiProxyFile = VelocityUtils.render(project,context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
                     CodeStyleManager.getInstance(project).reformat(psiProxyFile);
                     psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
                 });
@@ -449,19 +449,18 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             //获取已打开的编辑器
             Editor[] allEditors = EditorFactory.getInstance().getAllEditors();
             for (Editor editor : allEditors) {
-                ProjectUtils.setCurrentProject(editor.getProject());
                 addEditorListener(editor);
             }
-            Project project = ProjectUtils.getCurrentProject();
-            if (Objects.isNull(project)) {
-                return;
-            }
-//            Deprecated
-//            Use com.intellij.util.messages.MessageBus instead: see FileEditorManagerListener.FILE_EDITOR_MANAGER
-
-//            FileEditorManager.getInstance(project).addFileEditorManagerListener(this);
-            MessageBus messageBus = project.getMessageBus();
-            messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+//            Project project = ProjectUtils.getCurrentProject();
+//            if (Objects.isNull(project)) {
+//                return;
+//            }
+////            Deprecated
+////            Use com.intellij.util.messages.MessageBus instead: see FileEditorManagerListener.FILE_EDITOR_MANAGER
+//
+////            FileEditorManager.getInstance(project).addFileEditorManagerListener(this);
+//            MessageBus messageBus = project.getMessageBus();
+//            messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
         } catch (Exception e) {
             log.error("初始化EasyQueryDocumentChangeHandler出错:" + e.getMessage(), e);
         }
@@ -497,7 +496,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         EditorFactoryListener.super.editorCreated(event);
         Editor editor = event.getEditor();
         addEditorListener(editor);
-        ProjectUtils.setCurrentProject(editor.getProject());
+//        ProjectUtils.setCurrentProject(editor.getProject());
     }
 
     @Override

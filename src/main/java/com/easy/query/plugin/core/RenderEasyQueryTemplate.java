@@ -10,6 +10,7 @@ import com.easy.query.plugin.core.entity.ColumnMetadata;
 import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.entity.TableInfo;
 import com.easy.query.plugin.core.entity.TableMetadata;
+import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
 import com.easy.query.plugin.core.util.CodeReformatUtil;
 import com.easy.query.plugin.core.util.GenUtils;
 import com.easy.query.plugin.core.util.MyModuleUtil;
@@ -234,7 +235,22 @@ public class RenderEasyQueryTemplate {
             default:
                 return Object.class;
         }
+
     }
+
+
+    public static void renderStructDTOType(RenderStructDTOContext renderStructDTOContext) {
+        Map<PsiDirectory, List<PsiElement>> templateMap = new HashMap<>();
+        VelocityEngine velocityEngine = new VelocityEngine();
+        VelocityContext context = new VelocityContext();
+        context.put("appContext", renderStructDTOContext);
+        Project project = renderStructDTOContext.getProject();
+        Module module = renderStructDTOContext.getModule();
+        PsiFileFactory factory = PsiFileFactory.getInstance(project);
+        renderTemplate(Template.getTemplateContent("StructDTOTemplate.java"), context, renderStructDTOContext.getDtoName(), velocityEngine, templateMap, renderStructDTOContext.getPackageName(), "", factory, project, module);
+        flush(project, templateMap,true);
+    }
+
 
     public static void renderAnonymousType(AnonymousParseContext anonymousParseContext) {
         Collection<AnonymousParseResult> values = anonymousParseContext.getAnonymousParseResultMap().values();

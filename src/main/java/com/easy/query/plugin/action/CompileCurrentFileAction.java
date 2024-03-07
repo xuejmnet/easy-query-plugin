@@ -15,7 +15,6 @@ public class CompileCurrentFileAction extends AnAction {
         // TODO: insert action logic here
         Project project = e.getProject();
         VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        ProjectUtils.setCurrentProject(project);
         PsiJavaFileUtil.createAptCurrentFile(virtualFile,project);
     }
 }

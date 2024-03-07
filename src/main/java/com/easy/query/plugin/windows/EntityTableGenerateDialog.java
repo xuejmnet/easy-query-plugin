@@ -268,7 +268,7 @@ public class EntityTableGenerateDialog extends JDialog {
         columnMappingBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ColumnMappingDialog columnMappingDialog = new ColumnMappingDialog(typeMapping, typeMap -> {
+                ColumnMappingDialog columnMappingDialog = new ColumnMappingDialog(project,typeMapping, typeMap -> {
                     typeMapping = typeMap;
                 });
                 columnMappingDialog.setVisible(true);

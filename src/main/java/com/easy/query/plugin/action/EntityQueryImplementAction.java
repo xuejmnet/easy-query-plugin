@@ -57,7 +57,6 @@ public class EntityQueryImplementAction extends AnAction {
         // TODO: insert action logic here
         Project project = e.getProject();
         VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        ProjectUtils.setCurrentProject(project);
 
         try {
             implement(project, virtualFile);
