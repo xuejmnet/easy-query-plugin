@@ -39,6 +39,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -71,10 +72,11 @@ public class CreateStructDTOAction extends AnAction {
 
                     Collection<PsiClass> entityClass = PsiJavaFileUtil.getAnnotationPsiClass(project, "com.easy.query.core.annotation.Table");
                     Map<String, PsiClass> entityWithClass = entityClass.stream().collect(Collectors.toMap(o -> o.getName(), o -> o));
+                    Map<String,Map<String,ClassNode>> entityProps=new HashMap<>();
                     List<ClassNode> classNodes = new ArrayList<>();
                     LinkedHashSet<String> imports = new LinkedHashSet<>();
                     //循环嵌套的检测
-                    parseClassList(project, entityWithClass, classNodes,imports);
+                    parseClassList(project, entityWithClass,entityProps, classNodes,imports);
                     Module[] modules = MyModuleUtil.getModules(project);
                     Module module = Arrays.stream(modules).filter(o -> {
                         String modulePath = MyModuleUtil.getModulePath(o, JavaModuleSourceRootTypes.SOURCES);
@@ -84,7 +86,7 @@ public class CreateStructDTOAction extends AnAction {
                         Messages.showErrorDialog(project, "无法找到对应模块", "错误提示");
                         return;
                     }
-                    StructDTOContext structDTOContext = new StructDTOContext(project,path, packageName, module);
+                    StructDTOContext structDTOContext = new StructDTOContext(project,path, packageName, module,entityProps);
                     structDTOContext.getImports().addAll(imports);
 //        new TestCaseConfigUI().showUI(project);
                     StructDTODialog structDTODialog = new StructDTODialog(structDTOContext,classNodes);
@@ -100,18 +102,18 @@ public class CreateStructDTOAction extends AnAction {
 //        String entityFullName = psiClass.getQualifiedName();
     }
 
-    private void parseClassList(Project project, Map<String, PsiClass> entityWithClass, List<ClassNode> classNodeList, Set<String>imports) {
+    private void parseClassList(Project project, Map<String, PsiClass> entityWithClass,Map<String,Map<String,ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String>imports) {
         for (Map.Entry<String, PsiClass> rootClassMap : entityWithClass.entrySet()) {
             String key = rootClassMap.getKey();
             PsiClass value = rootClassMap.getValue();
             ClassNode classNode = new ClassNode(key, null, 0, false,true,value.getName(),null);
             classNodeList.add(classNode);
 
-            addClassProps(project, value,null, classNode, entityWithClass, null,imports);
+            addClassProps(project, value,null, classNode, entityWithClass,entityProps, null,imports);
         }
     }
 
-    private void addClassProps(Project project, PsiClass psiClass,String ownerPropertyName, ClassNode classNode, Map<String, PsiClass> entityWithClass, ClassNodeCirculateChecker classNodeCirculateChecker,Set<String> imports) {
+    private void addClassProps(Project project, PsiClass psiClass,String ownerPropertyName, ClassNode classNode, Map<String, PsiClass> entityWithClass,Map<String,Map<String,ClassNode>> entityProps, ClassNodeCirculateChecker classNodeCirculateChecker,Set<String> imports) {
         //是否是数据库对象
         PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
         //获取对应的忽略属性
@@ -121,6 +123,8 @@ public class CreateStructDTOAction extends AnAction {
         PsiField[] fields = psiClass.getAllFields();
         String qualifiedName = psiClass.getQualifiedName();
         String entityName = psiClass.getName();
+        entityProps.putIfAbsent(entityName,new HashMap<>());
+        Map<String,ClassNode> classNodes = entityProps.get(entityName);
         for (PsiField field : fields) {
             PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
             if (columnIgnore != null) {
@@ -164,6 +168,7 @@ public class CreateStructDTOAction extends AnAction {
                 navClass.setPropText(field.getText());
                 navClass.setComment(psiFieldComment);
                 classNode.addChild(navClass);
+                classNodes.putIfAbsent(name,navClass);
             } else {
                 imports.add("com.easy.query.core.annotation.Navigate");
                 imports.add("com.easy.query.core.enums.RelationTypeEnum");
@@ -194,7 +199,8 @@ public class CreateStructDTOAction extends AnAction {
                     navClass.setComment(psiFieldComment);
 //                    String sub = StrUtil.subAfter(propertyType, ".", true);
                     classNode.addChild(navClass);
-                    addClassProps(project, propClass,name, navClass, entityWithClass, classNodeCirculateChecker,imports);
+                    classNodes.putIfAbsent(name,navClass);
+                    addClassProps(project, propClass,name, navClass, entityWithClass,entityProps, classNodeCirculateChecker,imports);
                 } else {
                     PsiClass propertyClass = findClass(project, propertyType);
                     if (propertyClass != null) {
@@ -207,7 +213,8 @@ public class CreateStructDTOAction extends AnAction {
                         navClass.setPropText(field.getText());
                         navClass.setComment(psiFieldComment);
                         classNode.addChild(navClass);
-                        addClassProps(project, propertyClass,name, navClass, entityWithClass, circulateChecker,imports);
+                        classNodes.putIfAbsent(name,navClass);
+                        addClassProps(project, propertyClass,name, navClass, entityWithClass,entityProps, circulateChecker,imports);
                     }
                 }
 

@@ -1,9 +1,12 @@
 package com.easy.query.plugin.core.entity.struct;
 
+import com.easy.query.plugin.core.entity.ClassNode;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -17,14 +20,16 @@ public class StructDTOContext {
     private final String path;
     private final String packageName;
     private final Module module;
+    private final Map<String, Map<String,ClassNode>> entityProps;
     private final Set<String> imports;
 
-    public StructDTOContext(Project project, String path, String packageName, Module module) {
+    public StructDTOContext(Project project, String path, String packageName, Module module, Map<String, Map<String,ClassNode>> entityProps) {
         this.project = project;
 
         this.path = path;
         this.packageName = packageName;
         this.module = module;
+        this.entityProps = entityProps;
         this.imports=new LinkedHashSet<>();
     }
 
@@ -46,5 +51,9 @@ public class StructDTOContext {
 
     public Set<String> getImports() {
         return imports;
+    }
+
+    public Map<String, Map<String,ClassNode>> getEntityProps() {
+        return entityProps;
     }
 }

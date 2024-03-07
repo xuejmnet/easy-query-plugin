@@ -28,9 +28,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -139,6 +141,15 @@ public class StructDTODialog extends JDialog {
                         return a.getClassNode().getSort() - b.getClassNode().getSort();
                     }
                 }).collect(Collectors.toList());
+        TreeClassNode rootNode = nodeList.get(0);
+        ClassNode rootClassNode = classNodes.stream().filter(o -> Objects.equals(o.getName(), rootNode.getClassNode().getName())).findFirst().orElse(null);
+
+        List<TreeClassNode> entityNode = nodeList.stream().filter(o -> o.getClassNode().isEntity()).collect(Collectors.toList());
+        for (TreeClassNode treeClassNode : entityNode) {
+
+        }
+
+
         Iterator<TreeClassNode> iterator = nodeList.iterator();
         TreeClassNode appNode = iterator.next();
         ClassNode app = appNode.getClassNode();
@@ -167,31 +178,30 @@ public class StructDTODialog extends JDialog {
         int i = 0;
 
 
-
         while (iterator.hasNext()) {
             TreeClassNode treeClassNode = iterator.next();
             ClassNode classNode = treeClassNode.getClassNode();
-                if(treeClassNode.getPathCount()>3){
+            if (treeClassNode.getPathCount() > 3) {
 //                    StructDTOProp structDTOProp = base.getProps().stream().filter(o -> o.isEntity() && Objects.equals(o.getSelfEntityType(), classNode.getOwner())&&Objects.equals(o.getPropName(), classNode.getOwnerPropertyName())).findFirst().orElse(null);
 //                    if (structDTOProp == null) {
 //                        break;
 //                    }
-                    PropAppendable propAppendable = renderStructDTOContext.getEntities().stream().filter(o -> (o.getPathCount() + 1) == treeClassNode.getPathCount() && Objects.equals(o.getSelfEntityType(), classNode.getOwner()) && Objects.equals(o.getPropName(), classNode.getOwnerPropertyName())).findFirst().orElse(null);
-                    if(propAppendable==null){
-                        break;
-                    }
-                    base = propAppendable;
+                PropAppendable propAppendable = renderStructDTOContext.getEntities().stream().filter(o -> (o.getPathCount() + 1) == treeClassNode.getPathCount() && Objects.equals(o.getSelfEntityType(), classNode.getOwner()) && Objects.equals(o.getPropName(), classNode.getOwnerPropertyName())).findFirst().orElse(null);
+                if (propAppendable == null) {
+                    break;
                 }
-            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(),treeClassNode.getPathCount());
+                base = propAppendable;
+            }
+            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount());
+            structDTOProp.setClassNode(classNode);
             if (structDTOProp.isEntity()) {
                 structDTOProp.setDtoName(entityDTOName + (i++));
-
-                if(StringUtils.isNotBlank(structDTOProp.getPropText())){
-                    if(structDTOProp.getPropText().contains("<")&&structDTOProp.getPropText().contains(">")){
-                        String regex = "<\\s*" + structDTOProp.getSelfEntityType()+"\\s*>";
-                        String newPropText = structDTOProp.getPropText().replaceAll(regex, "<" + structDTOProp.getDtoName()+">");
+                if (StringUtils.isNotBlank(structDTOProp.getPropText())) {
+                    if (structDTOProp.getPropText().contains("<") && structDTOProp.getPropText().contains(">")) {
+                        String regex = "<\\s*" + structDTOProp.getSelfEntityType() + "\\s*>";
+                        String newPropText = structDTOProp.getPropText().replaceAll(regex, "<" + structDTOProp.getDtoName() + ">");
                         structDTOProp.setPropText(newPropText);
-                    }else{
+                    } else {
 
                         String regex = "private\\s+" + structDTOProp.getSelfEntityType();
                         String newPropText = structDTOProp.getPropText().replaceAll(regex, "private " + structDTOProp.getDtoName());
@@ -202,11 +212,85 @@ public class StructDTODialog extends JDialog {
             }
             base.addProp(structDTOProp);
         }
+        //检查navigate属性是否也加上了
+        if (CollUtil.isNotEmpty(renderStructDTOContext.getEntities())) {
+            ArrayList<PropAppendable> propAppendables = new ArrayList<>(renderStructDTOContext.getEntities());
+            for (PropAppendable entity : propAppendables) {
+                if (entity instanceof StructDTOProp) {
+                    StructDTOProp structDTOProp = (StructDTOProp) entity;
+                    if (structDTOProp.getClassNode() != null) {
+                        appendIfNavigateMiss(structDTOProp,structDTOApp);
+                    }
 
+                }
+            }
+        }
 
         RenderEasyQueryTemplate.renderStructDTOType(renderStructDTOContext);
         NotificationUtils.notifySuccess("生成成功", structDTOContext.getProject());
         dispose();
+    }
+
+    private PropAppendable getParent(StructDTOProp structDTOProp,PropAppendable search){
+        if(CollUtil.isEmpty(search.getProps())){
+            return null;
+        }
+        for (StructDTOProp prop : search.getProps()) {
+            if(prop==structDTOProp){
+                return search;
+            }
+            return getParent(structDTOProp,prop);
+        }
+        return null;
+    }
+    private void appendIfNavigateMiss(StructDTOProp structDTOProp,StructDTOApp structDTOApp) {
+        {
+            String selfNavigateId = structDTOProp.getClassNode().getSelfNavigateId();
+            Map<String, ClassNode> propNodeMap = structDTOContext.getEntityProps().get(structDTOProp.getOwner());
+            if (propNodeMap != null) {
+                PropAppendable parent = getParent(structDTOProp, structDTOApp);
+                if(parent!=null){
+                    if (StrUtil.isNotBlank(selfNavigateId)) {
+                        ClassNode classNode = propNodeMap.get(selfNavigateId);
+                        if (classNode != null) {
+                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+
+                            parent.addProp(self);
+                        }
+                    } else {
+                        ClassNode classNode = propNodeMap.values().stream().filter(o -> o.isPrimary()).findFirst().orElse(null);
+                        if (classNode != null) {
+                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+
+                            parent.addProp(self);
+                        }
+                    }
+                }
+            }
+
+        }
+        {
+
+            String targetNavigateId = structDTOProp.getClassNode().getTargetNavigateId();
+            Map<String, ClassNode> propNodeMap = structDTOContext.getEntityProps().get(structDTOProp.getSelfEntityType());
+            if (propNodeMap != null) {
+                if (StrUtil.isNotBlank(targetNavigateId)) {
+                    ClassNode classNode = propNodeMap.get(targetNavigateId);
+                    if (classNode != null) {
+                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+                        structDTOProp.addProp(self);
+                    }
+                } else {
+                    ClassNode classNode = propNodeMap.values().stream().filter(o -> o.isPrimary()).findFirst().orElse(null);
+                    if (classNode != null) {
+                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+                        structDTOProp.addProp(self);
+                    }
+
+                }
+            }
+
+        }
     }
 
 

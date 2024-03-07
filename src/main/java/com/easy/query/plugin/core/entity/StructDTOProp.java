@@ -1,7 +1,11 @@
 package com.easy.query.plugin.core.entity;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * create time 2024/3/6 14:38
@@ -18,9 +22,10 @@ public class StructDTOProp implements PropAppendable{
     private final int sort;
     private final int pathCount;
     private  String dtoName;
+    private  ClassNode classNode;
 
 
-    private final List<StructDTOProp> props;
+    private final Map<String,StructDTOProp> props;
     public StructDTOProp(String propName, String propText,String owner,boolean entity,String selfEntityType,int sort,int pathCount){
 
         this.propName = propName;
@@ -30,16 +35,16 @@ public class StructDTOProp implements PropAppendable{
         this.selfEntityType = selfEntityType;
         this.sort = sort;
         this.pathCount = pathCount;
-        this.props = new ArrayList<>();
+        this.props = new LinkedHashMap<>();
     }
     @Override
     public void addProp(StructDTOProp prop){
-        this.props.add(prop);
+        this.props.putIfAbsent(prop.getPropName(),prop);
     }
 
     @Override
     public List<StructDTOProp> getProps() {
-        return props;
+        return props.values().stream().sorted(Comparator.comparingInt(StructDTOProp::getSort)).collect(Collectors.toList());
     }
 
     @Override
@@ -83,5 +88,13 @@ public class StructDTOProp implements PropAppendable{
     @Override
     public int getPathCount() {
         return pathCount;
+    }
+
+    public ClassNode getClassNode() {
+        return classNode;
+    }
+
+    public void setClassNode(ClassNode classNode) {
+        this.classNode = classNode;
     }
 }
