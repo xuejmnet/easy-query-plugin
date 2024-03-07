@@ -104,14 +104,14 @@ public class CreateStructDTOAction extends AnAction {
         for (Map.Entry<String, PsiClass> rootClassMap : entityWithClass.entrySet()) {
             String key = rootClassMap.getKey();
             PsiClass value = rootClassMap.getValue();
-            ClassNode classNode = new ClassNode(key, null, 0, false,true,value.getName());
+            ClassNode classNode = new ClassNode(key, null, 0, false,true,value.getName(),null);
             classNodeList.add(classNode);
 
-            addClassProps(project, value, classNode, entityWithClass, null,imports);
+            addClassProps(project, value,null, classNode, entityWithClass, null,imports);
         }
     }
 
-    private void addClassProps(Project project, PsiClass psiClass, ClassNode classNode, Map<String, PsiClass> entityWithClass, ClassNodeCirculateChecker classNodeCirculateChecker,Set<String> imports) {
+    private void addClassProps(Project project, PsiClass psiClass,String ownerPropertyName, ClassNode classNode, Map<String, PsiClass> entityWithClass, ClassNodeCirculateChecker classNodeCirculateChecker,Set<String> imports) {
         //是否是数据库对象
         PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
         //获取对应的忽略属性
@@ -160,7 +160,7 @@ public class CreateStructDTOAction extends AnAction {
 
             boolean includeProperty = navigate != null;
             if (!includeProperty) {
-                ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,false,null);
+                ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,false,null,ownerPropertyName);
                 navClass.setPropText(field.getText());
                 navClass.setComment(psiFieldComment);
                 classNode.addChild(navClass);
@@ -187,27 +187,27 @@ public class CreateStructDTOAction extends AnAction {
                     if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
                         continue;
                     }
-                    ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propClass.getName());
+                    ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propClass.getName(),ownerPropertyName);
                     navClass.setSelfNavigateId(selfNavigateId);
                     navClass.setTargetNavigateId(targetNavigateId);
                     navClass.setPropText(field.getText());
                     navClass.setComment(psiFieldComment);
 //                    String sub = StrUtil.subAfter(propertyType, ".", true);
                     classNode.addChild(navClass);
-                    addClassProps(project, propClass, navClass, entityWithClass, classNodeCirculateChecker,imports);
+                    addClassProps(project, propClass,name, navClass, entityWithClass, classNodeCirculateChecker,imports);
                 } else {
                     PsiClass propertyClass = findClass(project, propertyType);
                     if (propertyClass != null) {
                         if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
                             continue;
                         }
-                        ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propertyClass.getName());
+                        ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propertyClass.getName(),ownerPropertyName);
                         navClass.setSelfNavigateId(selfProperty);
                         navClass.setTargetNavigateId(targetNavigateId);
                         navClass.setPropText(field.getText());
                         navClass.setComment(psiFieldComment);
                         classNode.addChild(navClass);
-                        addClassProps(project, propertyClass, navClass, entityWithClass, circulateChecker,imports);
+                        addClassProps(project, propertyClass,name, navClass, entityWithClass, circulateChecker,imports);
                     }
                 }
 

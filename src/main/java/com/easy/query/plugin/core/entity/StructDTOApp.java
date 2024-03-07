@@ -34,6 +34,16 @@ public class StructDTOApp implements PropAppendable{
     }
 
     @Override
+    public String getSelfEntityType() {
+        return null;
+    }
+
+    @Override
+    public String getPropName() {
+        return null;
+    }
+
+    @Override
     public List<StructDTOProp> getProps() {
         return props;
     }
@@ -56,5 +66,10 @@ public class StructDTOApp implements PropAppendable{
 
     public Set<String> getImports() {
         return imports;
+    }
+
+    @Override
+    public int getPathCount() {
+        return 2;
     }
 }

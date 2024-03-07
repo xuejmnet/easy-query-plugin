@@ -16,6 +16,7 @@ import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.easy.query.plugin.windows.ui.dto2ui.JCheckBoxTree;
 import com.intellij.openapi.ui.Messages;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -65,7 +66,7 @@ public class StructDTODialog extends JDialog {
         }
     }
 
-    public StructDTODialog(StructDTOContext structDTOContext , List<ClassNode> classNodes) {
+    public StructDTODialog(StructDTOContext structDTOContext, List<ClassNode> classNodes) {
         this.structDTOContext = structDTOContext;
         this.classNodes = classNodes;
 
@@ -126,32 +127,36 @@ public class StructDTODialog extends JDialog {
         }
 
 
-
         List<TreeClassNode> nodeList = Arrays.stream(checkedPaths).filter(o -> o.getPathCount() > 1)
                 .map(o -> {
                     int pathCount = o.getPathCount();
                     ClassNode classNode = (ClassNode) ((DefaultMutableTreeNode) o.getLastPathComponent()).getUserObject();
                     return new TreeClassNode(pathCount, classNode);
-                }).sorted((a, b) -> a.getClassNode().getSort() - b.getClassNode().getSort()).collect(Collectors.toList());
+                }).sorted((a, b) -> {
+                    if (a.getPathCount() != b.getPathCount()) {
+                        return a.getPathCount() - b.getPathCount();
+                    } else {
+                        return a.getClassNode().getSort() - b.getClassNode().getSort();
+                    }
+                }).collect(Collectors.toList());
         Iterator<TreeClassNode> iterator = nodeList.iterator();
         TreeClassNode appNode = iterator.next();
         ClassNode app = appNode.getClassNode();
         StructDTOApp structDTOApp = new StructDTOApp(app.getName(), app.getOwner(), structDTOContext.getPackageName(), app.getSort());
 
-        String entityDTOName="InitDTOName";
-        Messages.InputDialog dialog = new Messages.InputDialog("请输入DTO名称", "提示名称", Messages.getQuestionIcon(), structDTOApp.getEntityName()+"DTO", new InputAnyValidatorImpl());
+        String entityDTOName = "InitDTOName";
+        Messages.InputDialog dialog = new Messages.InputDialog("请输入DTO名称", "提示名称", Messages.getQuestionIcon(), structDTOApp.getEntityName() + "DTO", new InputAnyValidatorImpl());
         dialog.show();
-        if(dialog.isOK()){
+        if (dialog.isOK()) {
             String dtoName = dialog.getInputString();
-            if(StrUtil.isBlank(dtoName)){
+            if (StrUtil.isBlank(dtoName)) {
                 Messages.showErrorDialog(structDTOContext.getProject(), "输入的dto名称为空", "错误提示");
                 return;
             }
-            entityDTOName=dtoName;
-        }else{
+            entityDTOName = dtoName;
+        } else {
             return;
         }
-
 
 
         RenderStructDTOContext renderStructDTOContext = new RenderStructDTOContext(structDTOContext.getProject(), structDTOContext.getPath(), structDTOContext.getPackageName(), entityDTOName, structDTOApp, structDTOContext.getModule());
@@ -159,26 +164,40 @@ public class StructDTODialog extends JDialog {
         renderStructDTOContext.getImports().addAll(structDTOContext.getImports());
         PropAppendable base = structDTOApp;
         int pathCount = appNode.getPathCount();
-        int i=0;
+        int i = 0;
+
+
+
         while (iterator.hasNext()) {
             TreeClassNode treeClassNode = iterator.next();
             ClassNode classNode = treeClassNode.getClassNode();
-            if (pathCount != treeClassNode.getPathCount()) {
-                if(treeClassNode.getPathCount()!=3){
-                    StructDTOProp structDTOProp = base.getProps().stream().filter(o -> o.isEntity() && Objects.equals(o.getSelfEntityType(), classNode.getOwner())).findFirst().orElse(null);
-                    if (structDTOProp == null) {
+                if(treeClassNode.getPathCount()>3){
+//                    StructDTOProp structDTOProp = base.getProps().stream().filter(o -> o.isEntity() && Objects.equals(o.getSelfEntityType(), classNode.getOwner())&&Objects.equals(o.getPropName(), classNode.getOwnerPropertyName())).findFirst().orElse(null);
+//                    if (structDTOProp == null) {
+//                        break;
+//                    }
+                    PropAppendable propAppendable = renderStructDTOContext.getEntities().stream().filter(o -> (o.getPathCount() + 1) == treeClassNode.getPathCount() && Objects.equals(o.getSelfEntityType(), classNode.getOwner()) && Objects.equals(o.getPropName(), classNode.getOwnerPropertyName())).findFirst().orElse(null);
+                    if(propAppendable==null){
                         break;
                     }
-                    base = structDTOProp;
-                    pathCount = treeClassNode.getPathCount();
+                    base = propAppendable;
                 }
-            }
-            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort());
-            if(structDTOProp.isEntity()){
-                structDTOProp.setDtoName(entityDTOName+(i++));
-                String regex = "private\\s+"+structDTOProp.getSelfEntityType();
-                String newPropText = structDTOProp.getPropText().replaceAll(regex, "private " + structDTOProp.getDtoName());
-                structDTOProp.setPropText(newPropText);
+            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(),treeClassNode.getPathCount());
+            if (structDTOProp.isEntity()) {
+                structDTOProp.setDtoName(entityDTOName + (i++));
+
+                if(StringUtils.isNotBlank(structDTOProp.getPropText())){
+                    if(structDTOProp.getPropText().contains("<")&&structDTOProp.getPropText().contains(">")){
+                        String regex = "<\\s*" + structDTOProp.getSelfEntityType()+"\\s*>";
+                        String newPropText = structDTOProp.getPropText().replaceAll(regex, "<" + structDTOProp.getDtoName()+">");
+                        structDTOProp.setPropText(newPropText);
+                    }else{
+
+                        String regex = "private\\s+" + structDTOProp.getSelfEntityType();
+                        String newPropText = structDTOProp.getPropText().replaceAll(regex, "private " + structDTOProp.getDtoName());
+                        structDTOProp.setPropText(newPropText);
+                    }
+                }
                 renderStructDTOContext.getEntities().add(structDTOProp);
             }
             base.addProp(structDTOProp);

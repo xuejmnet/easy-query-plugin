@@ -24,6 +24,7 @@ public class ClassNode {
      */
     private final boolean entity;
     private final String selfEntityType;
+    private final String ownerPropertyName;
     private final List<ClassNode> children;
     private final Set<String> requireProps;
     /**
@@ -34,7 +35,7 @@ public class ClassNode {
     private String dtoName;
     private String comment;
 
-    public ClassNode(String name, String owner, int sort,boolean primary,boolean entity,String selfEntityType) {
+    public ClassNode(String name, String owner, int sort,boolean primary,boolean entity,String selfEntityType,String ownerPropertyName) {
 
         this.name = name;
         this.owner = owner;
@@ -42,6 +43,7 @@ public class ClassNode {
         this.primary = primary;
         this.entity = entity;
         this.selfEntityType = selfEntityType;
+        this.ownerPropertyName = ownerPropertyName;
         this.children = new ArrayList<>();
         this.requireProps = new HashSet<>();
     }
@@ -135,5 +137,9 @@ public class ClassNode {
         }else{
             this.comment = comment;
         }
+    }
+
+    public String getOwnerPropertyName() {
+        return ownerPropertyName;
     }
 }

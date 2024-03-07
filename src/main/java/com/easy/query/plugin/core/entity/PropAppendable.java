@@ -11,4 +11,7 @@ import java.util.List;
 public interface PropAppendable {
     void addProp(StructDTOProp prop);
     List<StructDTOProp> getProps();
+    int getPathCount();
+    String getSelfEntityType();
+    String getPropName();
 }

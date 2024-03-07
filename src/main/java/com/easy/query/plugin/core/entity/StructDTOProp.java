@@ -16,11 +16,12 @@ public class StructDTOProp implements PropAppendable{
     private final boolean entity;
     private final String selfEntityType;
     private final int sort;
+    private final int pathCount;
     private  String dtoName;
 
 
     private final List<StructDTOProp> props;
-    public StructDTOProp(String propName, String propText,String owner,boolean entity,String selfEntityType,int sort){
+    public StructDTOProp(String propName, String propText,String owner,boolean entity,String selfEntityType,int sort,int pathCount){
 
         this.propName = propName;
         this.propText = propText;
@@ -28,6 +29,7 @@ public class StructDTOProp implements PropAppendable{
         this.entity = entity;
         this.selfEntityType = selfEntityType;
         this.sort = sort;
+        this.pathCount = pathCount;
         this.props = new ArrayList<>();
     }
     @Override
@@ -40,6 +42,7 @@ public class StructDTOProp implements PropAppendable{
         return props;
     }
 
+    @Override
     public String getPropName() {
         return propName;
     }
@@ -60,6 +63,7 @@ public class StructDTOProp implements PropAppendable{
         return entity;
     }
 
+    @Override
     public String getSelfEntityType() {
         return selfEntityType;
     }
@@ -74,5 +78,10 @@ public class StructDTOProp implements PropAppendable{
 
     public void setDtoName(String dtoName) {
         this.dtoName = dtoName;
+    }
+
+    @Override
+    public int getPathCount() {
+        return pathCount;
     }
 }
