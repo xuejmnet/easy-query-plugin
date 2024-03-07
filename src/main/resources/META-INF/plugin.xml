@@ -26,6 +26,15 @@
     <li>support property type array,list...</li>
     </ul>
     ]]></description>
+    <change-notes><![CDATA[
+    <h3>0.0.41</h3>
+    <ul>
+    <li>支持结构化dto,struct DTO快速生成支持selectAutoInclude</li>
+    <h3>0.0.40</h3>
+    <li>添加selectv提示</li>
+    <li>支持1.10.30版本的easy-query支持proxy生成list和array的属性而不是object</li>
+    </ul>
+    ]]></change-notes>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
