@@ -78,7 +78,7 @@ public class CreateStructDTOAction extends AnAction {
                     Module[] modules = MyModuleUtil.getModules(project);
                     Module module = Arrays.stream(modules).filter(o -> {
                         String modulePath = MyModuleUtil.getModulePath(o, JavaModuleSourceRootTypes.SOURCES);
-                        return path.startsWith(modulePath);
+                        return StringUtils.isNotBlank(modulePath)&&path.startsWith(modulePath);
                     }).findFirst().orElse(null);
                     if(module==null){
                         Messages.showErrorDialog(project, "无法找到对应模块", "错误提示");
