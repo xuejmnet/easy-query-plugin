@@ -88,9 +88,9 @@ public class CreateStructDTOAction extends AnAction {
                     structDTOContext.getImports().addAll(imports);
 //        new TestCaseConfigUI().showUI(project);
                     StructDTODialog structDTODialog = new StructDTODialog(structDTOContext,classNodes);
-                    try (AccessToken accessToken = ThreadContext.resetThreadContext()) {
+//                    try (AccessToken accessToken = ThreadContext.resetThreadContext()) {
                         structDTODialog.setVisible(true);
-                    }
+//                    }
                 }
             }
         }
