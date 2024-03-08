@@ -1,10 +1,13 @@
 package com.easy.query.plugin.windows;
 
+import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.ClassNode;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
 import com.easy.query.plugin.core.entity.struct.StructDTOEntityContext;
+import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.render.EntityListCellRenderer;
 import com.easy.query.plugin.core.util.DialogUtil;
+import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.StructDTOUtil;
 import com.intellij.openapi.project.Project;
@@ -23,6 +26,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +44,8 @@ public class EntitySelectDialog extends JDialog {
     private JButton buttonCancel;
     private JList<String> entityList;
     private JTextField searchEntity;
+    private JTextField ignoreProps;
+    private JButton ignoreBtn;
     Map<String, Set<String>> INVERTED_ENTITY_INDEX = new HashMap<>();
 
     public EntitySelectDialog(StructDTOEntityContext structDTOEntityContext) {
@@ -56,12 +62,18 @@ public class EntitySelectDialog extends JDialog {
                 onOK();
             }
         });
+        ignoreBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                saveConfig();
+            }
+        });
 
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
         });
+
 
         // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -191,6 +203,24 @@ public class EntitySelectDialog extends JDialog {
         }
     }
 
+    private void saveConfig(){
+        String text = ignoreProps.getText();
+        Project project = structDTOEntityContext.getProject();
+
+        EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(new EasyQueryConfig());
+        if(config.getConfig()==null){
+            config.setConfig(new HashMap<>());
+        }
+        String projectName = project.getName();
+        String setting = config.getConfig().get(projectName);
+        if(StrUtil.isBlank(setting)){
+            setting="";
+            config.getConfig().put(projectName,setting);
+        }
+        config.getConfig().put(projectName,text);
+        EasyQueryQueryPluginConfigData.saveAllEnvEnvStructDTOIgnore(config);
+        NotificationUtils.notifySuccess("保存成功", project);
+    }
     private void onOK() {
         // add your code here
 
@@ -212,10 +242,13 @@ public class EntitySelectDialog extends JDialog {
             Messages.showWarningDialog("无法找到对象的类型:" + entityName, "提示");
             return;
         }
+        Set<String> ignoreColumns = getIgnoreColumns(project);
+
+
         Map<String, Map<String, ClassNode>> entityProps = new HashMap<>();
         List<ClassNode> classNodes = new ArrayList<>();
         LinkedHashSet<String> imports = new LinkedHashSet<>();
-        StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports);
+        StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports,ignoreColumns);
         StructDTOContext structDTOContext = new StructDTOContext(project, structDTOEntityContext.getPath(), structDTOEntityContext.getPackageName(), structDTOEntityContext.getModule(), entityProps);
         structDTOContext.getImports().addAll(imports);
         StructDTODialog structDTODialog = new StructDTODialog(structDTOContext,classNodes);
@@ -224,6 +257,24 @@ public class EntitySelectDialog extends JDialog {
             return;
         }
         dispose();
+    }
+
+
+    private Set<String> getIgnoreColumns(Project project) {
+
+        EasyQueryConfig allEnvStructDTOIgnore = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(null);
+        if (allEnvStructDTOIgnore != null) {
+            Map<String, String> config = allEnvStructDTOIgnore.getConfig();
+            if (config != null) {
+                String settingVal = config.get(project.getName());
+                if (cn.hutool.core.util.StrUtil.isNotBlank(settingVal)) {
+                    String[] shortNames = settingVal.split(",");
+                    return Arrays.stream(shortNames).collect(Collectors.toSet());
+
+                }
+            }
+        }
+        return new HashSet<>(0);
     }
 
     private void onCancel() {

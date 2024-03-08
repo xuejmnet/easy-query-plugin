@@ -26,19 +26,20 @@ import java.util.Set;
  */
 public class StructDTOUtil {
 
-    public static void parseClassList(Project project, String entityName,PsiClass entityClass,Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String> imports) {
+    public static void parseClassList(Project project, String entityName,PsiClass entityClass,Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String> imports,Set<String> ignoreColumns) {
 
         ClassNode classNode = new ClassNode(entityName, null, 0, false,true, entityClass.getName(), null);
         classNodeList.add(classNode);
 
-        addClassProps(project, entityClass,null, classNode, entityWithClass,entityProps, null,imports);
+        addClassProps(project, entityClass,null, classNode, entityWithClass,entityProps, null,imports,ignoreColumns);
     }
 
-    private static void addClassProps(Project project, PsiClass psiClass, String ownerPropertyName, ClassNode classNode, Map<String, PsiClass> entityWithClass, Map<String,Map<String,ClassNode>> entityProps, ClassNodeCirculateChecker classNodeCirculateChecker, Set<String> imports) {
+    private static void addClassProps(Project project, PsiClass psiClass, String ownerPropertyName, ClassNode classNode, Map<String, PsiClass> entityWithClass, Map<String,Map<String,ClassNode>> entityProps, ClassNodeCirculateChecker classNodeCirculateChecker, Set<String> imports,Set<String> ignoreColumns) {
         //是否是数据库对象
         PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
         //获取对应的忽略属性
         Set<String> tableIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityTable, "ignoreProperties", new HashSet<>());
+        tableIgnoreProperties.addAll(ignoreColumns);
         int sort = classNode.getSort()+1;
 
         PsiField[] fields = psiClass.getAllFields();
@@ -130,7 +131,7 @@ public class StructDTOUtil {
 //                    String sub = StrUtil.subAfter(propertyType, ".", true);
                     classNode.addChild(navClass);
                     classNodes.putIfAbsent(name,navClass);
-                    addClassProps(project, propClass,name, navClass, entityWithClass,entityProps, circulateChecker,imports);
+                    addClassProps(project, propClass,name, navClass, entityWithClass,entityProps, circulateChecker,imports,ignoreColumns);
                 } else {
                     PsiClass propertyClass = findClass(project, propertyType);
                     if (propertyClass != null) {
@@ -146,7 +147,7 @@ public class StructDTOUtil {
                         navClass.setRelationType(relationType);
                         classNode.addChild(navClass);
                         classNodes.putIfAbsent(name,navClass);
-                        addClassProps(project, propertyClass,name, navClass, entityWithClass,entityProps, circulateChecker,imports);
+                        addClassProps(project, propertyClass,name, navClass, entityWithClass,entityProps, circulateChecker,imports,ignoreColumns);
                     }
                 }
 

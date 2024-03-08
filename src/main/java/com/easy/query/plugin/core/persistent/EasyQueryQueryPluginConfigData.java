@@ -66,9 +66,10 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
 //        return eqConfigMap.getOrDefault(project.getName(), new EasyQueryConfig());
 //    }
     private static final String QUICK_TIP_SETTING_KEY="QUICK_TIP_SETTING_KEY";
+    private static final String STRUCT_DTO_IGNORE_COLUMNS_KEY="STRUCT_DTO_IGNORE_COLUMNS_KEY";
 
     public static boolean isHiddenConfigKey(String configKey){
-        return Objects.equals(QUICK_TIP_SETTING_KEY,configKey);
+        return Objects.equals(QUICK_TIP_SETTING_KEY,configKey)||Objects.equals(STRUCT_DTO_IGNORE_COLUMNS_KEY,configKey);
     }
 
     public static EasyQueryConfig getAllEnvQuickSetting(EasyQueryConfig def){
@@ -76,6 +77,12 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
     }
     public static void saveAllEnvProjectQuickSetting(EasyQueryConfig config){
         saveConfigSince(QUICK_TIP_SETTING_KEY,config);
+    }
+    public static EasyQueryConfig getAllEnvStructDTOIgnore(EasyQueryConfig def){
+        return getProjectSinceMap().getOrDefault(STRUCT_DTO_IGNORE_COLUMNS_KEY,def);
+    }
+    public static void saveAllEnvEnvStructDTOIgnore(EasyQueryConfig config){
+        saveConfigSince(STRUCT_DTO_IGNORE_COLUMNS_KEY,config);
     }
 
     public static LinkedHashMap<String, EasyQueryConfig> getProjectSinceMap() {
