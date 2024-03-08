@@ -76,7 +76,7 @@ public class StructDTOUtil {
                 isPrimary = Objects.equals("true", primary);
                 imports.add("com.easy.query.core.annotation.Column");
                 conversion = PsiUtil.getPsiAnnotationValue(column, "conversion", "");
-                if(Objects.equals("com.easy.query.core.basic.extension.conversion.DefaultValueConverter.class",conversion)){
+                if(conversion!=null&&conversion.endsWith("DefaultValueConverter.class")){
                     conversion=null;
                 }
             }

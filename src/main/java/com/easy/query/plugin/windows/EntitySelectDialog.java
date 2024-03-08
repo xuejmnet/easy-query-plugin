@@ -198,7 +198,7 @@ public class EntitySelectDialog extends JDialog {
         for (String tableName : entityNameList) {
             for (int i = 0; i < tableName.length(); i++) {
                 char word = tableName.charAt(i);
-                INVERTED_ENTITY_INDEX.computeIfAbsent((word + "").toLowerCase(), k -> new HashSet<>()).add(tableName);
+                INVERTED_ENTITY_INDEX.computeIfAbsent((word + ""), k -> new HashSet<>()).add(tableName);
             }
         }
     }

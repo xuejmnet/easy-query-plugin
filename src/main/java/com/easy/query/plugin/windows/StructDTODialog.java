@@ -33,6 +33,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class StructDTODialog extends JDialog {
@@ -200,8 +202,18 @@ public class StructDTODialog extends JDialog {
                     }
                     if (structDTOProp.getPropText().contains("@Navigate(") && StringUtils.isNotBlank(classNode.getRelationType())) {
                         String regex = "@Navigate\\(.*?\\)";
-                        String newPropText = structDTOProp.getPropText().replaceAll(regex, "@Navigate(value = " + classNode.getRelationType() + ")");
-                        structDTOProp.setPropText(newPropText);
+
+                        Pattern pattern = Pattern.compile(regex, Pattern.DOTALL);
+                        Matcher matcher = pattern.matcher(structDTOProp.getPropText());
+
+                        if (matcher.find()) {
+                            String replacement = "@Navigate(value = " + classNode.getRelationType() + ")";
+                            String newPropText = matcher.replaceAll(replacement);
+//                            String newPropText = structDTOProp.getPropText().replaceAll(regex, "@Navigate(value = " + classNode.getRelationType() + ")");
+                            structDTOProp.setPropText(newPropText);
+                        }
+//                        String newPropText = structDTOProp.getPropText().replaceAll(regex, "@Navigate(value = " + classNode.getRelationType() + ")");
+//                        structDTOProp.setPropText(newPropText);
                     }
                 }
                 renderStructDTOContext.getEntities().add(structDTOProp);
