@@ -27,9 +27,15 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.42</h3>
+    <ul>
+    <li>优化结构化dto的生成方式,支持重名class,添加可忽略的属性名</li>
+    </ul>
     <h3>0.0.41</h3>
     <ul>
     <li>支持结构化dto,struct DTO快速生成支持selectAutoInclude</li>
+    </ul>
+    <ul>
     <h3>0.0.40</h3>
     <li>添加selectv提示</li>
     <li>支持1.10.30版本的easy-query支持proxy生成list和array的属性而不是object</li>
@@ -47,7 +53,8 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler" id="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"/>
+        <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"
+                               id="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"/>
 
         <completion.contributor language="any"
                                 id="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"
@@ -59,20 +66,20 @@
         <action id="com.easy.query.plugin.action.CreateStructDTOAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.CreateStructDTOAction"
-                text="CreateStructDTO" >
+                text="CreateStructDTO">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
         <action id="com.easy.query.plugin.action.AnonymousMapAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.AnonymousMapAction"
-                text="AnonymousMap" >
+                text="AnonymousMap">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="last"/>
         </action>
         <action id="com.easy.query.plugin.action.QuickTipSettingAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.QuickTipSettingAction"
-                text="QuickTipSetting" >
+                text="QuickTipSetting">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
         <action id="com.easy.query.plugin.action.AutoCompileAction"
