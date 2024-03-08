@@ -27,7 +27,7 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
-    <h3>0.0.42</h3>
+    <h3>0.0.43</h3>
     <ul>
     <li>优化结构化dto的生成方式,支持重名class,添加可忽略的属性名</li>
     </ul>
