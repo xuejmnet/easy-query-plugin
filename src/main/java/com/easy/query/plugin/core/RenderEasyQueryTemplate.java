@@ -10,6 +10,7 @@ import com.easy.query.plugin.core.entity.ColumnMetadata;
 import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.entity.TableInfo;
 import com.easy.query.plugin.core.entity.TableMetadata;
+import com.easy.query.plugin.core.entity.ValueHolder;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
 import com.easy.query.plugin.core.util.CodeReformatUtil;
 import com.easy.query.plugin.core.util.GenUtils;
@@ -239,7 +240,7 @@ public class RenderEasyQueryTemplate {
     }
 
 
-    public static void renderStructDTOType(RenderStructDTOContext renderStructDTOContext) {
+    public static boolean renderStructDTOType(RenderStructDTOContext renderStructDTOContext) {
         Map<PsiDirectory, List<PsiElement>> templateMap = new HashMap<>();
         VelocityEngine velocityEngine = new VelocityEngine();
         VelocityContext context = new VelocityContext();
@@ -248,7 +249,10 @@ public class RenderEasyQueryTemplate {
         Module module = renderStructDTOContext.getModule();
         PsiFileFactory factory = PsiFileFactory.getInstance(project);
         renderTemplate(Template.getTemplateContent("StructDTOTemplate.java"), context, renderStructDTOContext.getDtoName(), velocityEngine, templateMap, renderStructDTOContext.getPackageName(), "", factory, project, module);
-        flush(project, templateMap,true);
+        ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
+        booleanValueHolder.setValue(true);
+        flush(project, templateMap,false,booleanValueHolder);
+        return booleanValueHolder.getValue();
     }
 
 
@@ -275,8 +279,9 @@ public class RenderEasyQueryTemplate {
         }
         PsiFileFactory factory = PsiFileFactory.getInstance(project);
         renderTemplate(Template.getTemplateContent("AnonymousTypeTemplate.java"), context, anonymousName, velocityEngine, templateMap, anonymousParseContext.getModelPackage(), "", factory, project, module);
-
-        flush(project, templateMap,true);
+        ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
+        booleanValueHolder.setValue(true);
+        flush(project, templateMap,true,booleanValueHolder);
         for (Map.Entry<PsiDirectory, List<PsiElement>> entry : templateMap.entrySet()) {
             PsiDirectory psiDirectory = entry.getKey();
             List<PsiElement> value = entry.getValue();
@@ -302,7 +307,7 @@ public class RenderEasyQueryTemplate {
         return sw.toString();
     }
 
-    private static void flush(Project project, Map<PsiDirectory, List<PsiElement>> templateMap,boolean deleteIfExists) {
+    private static void flush(Project project, Map<PsiDirectory, List<PsiElement>> templateMap,boolean deleteIfExists,ValueHolder<Boolean> valueHolder) {
 
         DumbService.getInstance(project).runWhenSmart(() -> {
             WriteCommandAction.runWriteCommandAction(project, () -> {
@@ -346,11 +351,14 @@ public class RenderEasyQueryTemplate {
                             if (e.getMessage().contains("already exists")) {
                                 PsiFile file = (PsiFile) psiFile;
                                 Messages.showErrorDialog("文件已存在：" + file.getName(), "错误");
+                                valueHolder.setValue(false);
                             } else {
                                 Messages.showErrorDialog(" 操作错误：" + e.getMessage(), "错误");
+                                valueHolder.setValue(false);
                             }
                         } catch (Exception e) {
                             Messages.showErrorDialog("索引未更新:" + e.getMessage(), "错误");
+                            valueHolder.setValue(false);
                         }
                     }
                 }
@@ -409,7 +417,9 @@ public class RenderEasyQueryTemplate {
 //                }
 //            }
         }
-        flush(project, templateMap,false);
+        ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
+        booleanValueHolder.setValue(true);
+        flush(project, templateMap,false,booleanValueHolder);
         //
         // // 生成代码之后，重新构建
         // CompilerManagerUtil.make(Modules.getModule(config.getModelModule()));

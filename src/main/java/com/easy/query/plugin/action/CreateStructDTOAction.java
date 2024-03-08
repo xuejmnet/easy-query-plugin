@@ -6,11 +6,13 @@ import com.easy.query.plugin.core.entity.ClassNode;
 import com.easy.query.plugin.core.entity.ClassNodeCirculateChecker;
 import com.easy.query.plugin.core.entity.ClassNodePropPath;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
+import com.easy.query.plugin.core.entity.struct.StructDTOEntityContext;
 import com.easy.query.plugin.core.util.ClassUtil;
 import com.easy.query.plugin.core.util.MyModuleUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
+import com.easy.query.plugin.windows.EntitySelectDialog;
 import com.easy.query.plugin.windows.StructDTODialog;
 import com.intellij.concurrency.ThreadContext;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -71,12 +73,12 @@ public class CreateStructDTOAction extends AnAction {
                     String packageName = comPath.replaceAll("/", ".");
 
                     Collection<PsiClass> entityClass = PsiJavaFileUtil.getAnnotationPsiClass(project, "com.easy.query.core.annotation.Table");
-                    Map<String, PsiClass> entityWithClass = entityClass.stream().collect(Collectors.toMap(o -> o.getName(), o -> o));
-                    Map<String,Map<String,ClassNode>> entityProps=new HashMap<>();
-                    List<ClassNode> classNodes = new ArrayList<>();
-                    LinkedHashSet<String> imports = new LinkedHashSet<>();
-                    //循环嵌套的检测
-                    parseClassList(project, entityWithClass,entityProps, classNodes,imports);
+                    Map<String, PsiClass> entityWithClass = entityClass.stream().collect(Collectors.toMap(o -> o.getQualifiedName(), o -> o));
+//                    Map<String,Map<String,ClassNode>> entityProps=new HashMap<>();
+//                    List<ClassNode> classNodes = new ArrayList<>();
+//                    LinkedHashSet<String> imports = new LinkedHashSet<>();
+//                    //循环嵌套的检测
+//                    parseClassList(project, entityWithClass,entityProps, classNodes,imports);
                     Module[] modules = MyModuleUtil.getModules(project);
                     Module module = Arrays.stream(modules).filter(o -> {
                         String modulePath = MyModuleUtil.getModulePath(o, JavaModuleSourceRootTypes.SOURCES);
@@ -86,12 +88,18 @@ public class CreateStructDTOAction extends AnAction {
                         Messages.showErrorDialog(project, "无法找到对应模块", "错误提示");
                         return;
                     }
-                    StructDTOContext structDTOContext = new StructDTOContext(project,path, packageName, module,entityProps);
-                    structDTOContext.getImports().addAll(imports);
-//        new TestCaseConfigUI().showUI(project);
-                    StructDTODialog structDTODialog = new StructDTODialog(structDTOContext,classNodes);
-//                    try (AccessToken accessToken = ThreadContext.resetThreadContext()) {
-                        structDTODialog.setVisible(true);
+
+
+                    StructDTOEntityContext structDTOEntityContext = new StructDTOEntityContext(project, path, packageName, module, entityWithClass);
+                    EntitySelectDialog entitySelectDialog = new EntitySelectDialog(structDTOEntityContext);
+                    entitySelectDialog.setVisible(true);
+
+//                    StructDTOContext structDTOContext = new StructDTOContext(project,path, packageName, module,entityProps);
+//                    structDTOContext.getImports().addAll(imports);
+////        new TestCaseConfigUI().showUI(project);
+//                    StructDTODialog structDTODialog = new StructDTODialog(structDTOContext,classNodes);
+////                    try (AccessToken accessToken = ThreadContext.resetThreadContext()) {
+//                        structDTODialog.setVisible(true);
 //                    }
                 }
             }
@@ -102,134 +110,4 @@ public class CreateStructDTOAction extends AnAction {
 //        String entityFullName = psiClass.getQualifiedName();
     }
 
-    private void parseClassList(Project project, Map<String, PsiClass> entityWithClass,Map<String,Map<String,ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String>imports) {
-        for (Map.Entry<String, PsiClass> rootClassMap : entityWithClass.entrySet()) {
-            String key = rootClassMap.getKey();
-            PsiClass value = rootClassMap.getValue();
-            ClassNode classNode = new ClassNode(key, null, 0, false,true,value.getName(),null);
-            classNodeList.add(classNode);
-
-            addClassProps(project, value,null, classNode, entityWithClass,entityProps, null,imports);
-        }
-    }
-
-    private void addClassProps(Project project, PsiClass psiClass,String ownerPropertyName, ClassNode classNode, Map<String, PsiClass> entityWithClass,Map<String,Map<String,ClassNode>> entityProps, ClassNodeCirculateChecker classNodeCirculateChecker,Set<String> imports) {
-        //是否是数据库对象
-        PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
-        //获取对应的忽略属性
-        Set<String> tableIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityTable, "ignoreProperties", new HashSet<>());
-        int sort = classNode.getSort()+1;
-
-        PsiField[] fields = psiClass.getAllFields();
-        String qualifiedName = psiClass.getQualifiedName();
-        String entityName = psiClass.getName();
-        entityProps.putIfAbsent(entityName,new HashMap<>());
-        Map<String,ClassNode> classNodes = entityProps.get(entityName);
-        for (PsiField field : fields) {
-            PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
-            if (columnIgnore != null) {
-                continue;
-            }
-            String name = field.getName();
-            //是否存在忽略属性
-            if (!tableIgnoreProperties.isEmpty() && tableIgnoreProperties.contains(name)) {
-                continue;
-            }
-            boolean isBeanProperty = ClassUtil.hasGetterAndSetter(psiClass, name);
-            if (!isBeanProperty) {
-                continue;
-            }
-//            for (PsiAnnotation annotation : field.getAnnotations()) {
-//                String string = annotation.toString();
-//                //((PsiAnnotationStubImpl)((PsiAnnotationImpl) annotation).mySubstrateRef.getStub()).getText()
-//                System.out.println(string);
-//            }
-            String psiFieldComment = PsiUtil.getPsiFieldOnlyComment(field);
-
-            PsiAnnotation column = field.getAnnotation("com.easy.query.core.annotation.Column");
-            boolean isPrimary = false;
-            if (column != null) {
-                String primary = PsiUtil.getPsiAnnotationValue(column, "primary", "");
-                isPrimary = Objects.equals("true", primary);
-                imports.add("com.easy.query.core.annotation.Column");
-            }
-
-
-            PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
-            PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
-            boolean isValueObject = valueObject != null;
-            if (isValueObject) {
-                continue;
-            }
-
-            boolean includeProperty = navigate != null;
-            if (!includeProperty) {
-                ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,false,null,ownerPropertyName);
-                navClass.setPropText(field.getText());
-                navClass.setComment(psiFieldComment);
-                classNode.addChild(navClass);
-                classNodes.putIfAbsent(name,navClass);
-            } else {
-                imports.add("com.easy.query.core.annotation.Navigate");
-                imports.add("com.easy.query.core.enums.RelationTypeEnum");
-                ClassNodeCirculateChecker circulateChecker = classNodeCirculateChecker == null ? new ClassNodeCirculateChecker(qualifiedName) : classNodeCirculateChecker;
-
-                String selfProperty = PsiUtil.getPsiAnnotationValue(navigate, "selfProperty", "");
-                String selfNavigateId=null;
-                if(StrUtil.isNotBlank(selfProperty)){
-                    selfNavigateId=selfProperty;
-                }
-
-                String targetNavigateId=null;
-                String targetProperty = PsiUtil.getPsiAnnotationValue(navigate, "targetProperty", "");
-                if(StrUtil.isNotBlank(targetProperty)){
-                    targetNavigateId=targetProperty;
-                }
-
-                String propertyType = PsiUtil.getPsiFieldPropertyType(field, true);
-                PsiClass propClass = entityWithClass.get(propertyType);
-                if (propClass != null) {
-                    if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
-                        continue;
-                    }
-                    ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propClass.getName(),ownerPropertyName);
-                    navClass.setSelfNavigateId(selfNavigateId);
-                    navClass.setTargetNavigateId(targetNavigateId);
-                    navClass.setPropText(field.getText());
-                    navClass.setComment(psiFieldComment);
-//                    String sub = StrUtil.subAfter(propertyType, ".", true);
-                    classNode.addChild(navClass);
-                    classNodes.putIfAbsent(name,navClass);
-                    addClassProps(project, propClass,name, navClass, entityWithClass,entityProps, classNodeCirculateChecker,imports);
-                } else {
-                    PsiClass propertyClass = findClass(project, propertyType);
-                    if (propertyClass != null) {
-                        if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
-                            continue;
-                        }
-                        ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propertyClass.getName(),ownerPropertyName);
-                        navClass.setSelfNavigateId(selfProperty);
-                        navClass.setTargetNavigateId(targetNavigateId);
-                        navClass.setPropText(field.getText());
-                        navClass.setComment(psiFieldComment);
-                        classNode.addChild(navClass);
-                        classNodes.putIfAbsent(name,navClass);
-                        addClassProps(project, propertyClass,name, navClass, entityWithClass,entityProps, circulateChecker,imports);
-                    }
-                }
-
-            }
-
-        }
-    }
-
-
-    private PsiClass findClass(Project project, String fullClassName) {
-        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
-        PsiClass newClass = javaPsiFacade.findClass(fullClassName, GlobalSearchScope.projectScope(project));
-        if (newClass == null) {
-            newClass = javaPsiFacade.findClass(fullClassName, GlobalSearchScope.allScope(project));
-        }
-        return newClass;
-    }
 }

@@ -10,7 +10,6 @@ import com.easy.query.plugin.core.entity.StructDTOProp;
 import com.easy.query.plugin.core.entity.TreeClassNode;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
-import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.DialogUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
@@ -141,13 +140,6 @@ public class StructDTODialog extends JDialog {
                         return a.getClassNode().getSort() - b.getClassNode().getSort();
                     }
                 }).collect(Collectors.toList());
-        TreeClassNode rootNode = nodeList.get(0);
-        ClassNode rootClassNode = classNodes.stream().filter(o -> Objects.equals(o.getName(), rootNode.getClassNode().getName())).findFirst().orElse(null);
-
-        List<TreeClassNode> entityNode = nodeList.stream().filter(o -> o.getClassNode().isEntity()).collect(Collectors.toList());
-        for (TreeClassNode treeClassNode : entityNode) {
-
-        }
 
 
         Iterator<TreeClassNode> iterator = nodeList.iterator();
@@ -156,7 +148,7 @@ public class StructDTODialog extends JDialog {
         StructDTOApp structDTOApp = new StructDTOApp(app.getName(), app.getOwner(), structDTOContext.getPackageName(), app.getSort());
 
         String entityDTOName = "InitDTOName";
-        Messages.InputDialog dialog = new Messages.InputDialog("请输入DTO名称", "提示名称", Messages.getQuestionIcon(), structDTOApp.getEntityName() + "DTO", new InputAnyValidatorImpl());
+        Messages.InputDialog dialog = new Messages.InputDialog("请输入DTO名称", "提示名称", Messages.getQuestionIcon(), StrUtil.subAfter(structDTOApp.getEntityName(), ".", true) + "DTO", new InputAnyValidatorImpl());
         dialog.show();
         if (dialog.isOK()) {
             String dtoName = dialog.getInputString();
@@ -174,7 +166,6 @@ public class StructDTODialog extends JDialog {
         renderStructDTOContext.setData(dataCheck.isSelected());
         renderStructDTOContext.getImports().addAll(structDTOContext.getImports());
         PropAppendable base = structDTOApp;
-        int pathCount = appNode.getPathCount();
         int i = 0;
 
 
@@ -195,7 +186,7 @@ public class StructDTODialog extends JDialog {
             StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount());
             structDTOProp.setClassNode(classNode);
             if (structDTOProp.isEntity()) {
-                structDTOProp.setDtoName(entityDTOName+"_"+classNode.getOwner() + (i++));
+                structDTOProp.setDtoName(entityDTOName + "_" + classNode.getSelfEntityType() + (i++));
                 if (StringUtils.isNotBlank(structDTOProp.getPropText())) {
                     if (structDTOProp.getPropText().contains("<") && structDTOProp.getPropText().contains(">")) {
                         String regex = "<\\s*" + structDTOProp.getSelfEntityType() + "\\s*>";
@@ -207,8 +198,23 @@ public class StructDTODialog extends JDialog {
                         String newPropText = structDTOProp.getPropText().replaceAll(regex, "private " + structDTOProp.getDtoName());
                         structDTOProp.setPropText(newPropText);
                     }
+                    if (structDTOProp.getPropText().contains("@Navigate(") && StringUtils.isNotBlank(classNode.getRelationType())) {
+                        String regex = "@Navigate\\(.*?\\)";
+                        String newPropText = structDTOProp.getPropText().replaceAll(regex, "@Navigate(value = " + classNode.getRelationType() + ")");
+                        structDTOProp.setPropText(newPropText);
+                    }
                 }
                 renderStructDTOContext.getEntities().add(structDTOProp);
+            }
+            if (structDTOProp.getPropText().contains("@Column(")) {
+                String regex = "@Column\\(.*?\\)";
+                if (StringUtils.isNotBlank(classNode.getConversion())) {
+                    String newPropText = structDTOProp.getPropText().replaceAll(regex, "@Column(conversion = " + classNode.getConversion() + ")");
+                    structDTOProp.setPropText(newPropText);
+                } else {
+                    String newPropText = structDTOProp.getPropText().replaceAll(regex, "");
+                    structDTOProp.setPropText(newPropText);
+                }
             }
             base.addProp(structDTOProp);
         }
@@ -219,37 +225,41 @@ public class StructDTODialog extends JDialog {
                 if (entity instanceof StructDTOProp) {
                     StructDTOProp structDTOProp = (StructDTOProp) entity;
                     if (structDTOProp.getClassNode() != null) {
-                        appendIfNavigateMiss(structDTOProp,structDTOApp);
+                        appendIfNavigateMiss(structDTOProp, structDTOApp);
                     }
-
                 }
             }
         }
 
-        RenderEasyQueryTemplate.renderStructDTOType(renderStructDTOContext);
+        boolean b = RenderEasyQueryTemplate.renderStructDTOType(renderStructDTOContext);
+        if (!b) {
+            return;
+        }
         NotificationUtils.notifySuccess("生成成功", structDTOContext.getProject());
+        structDTOContext.setSuccess(true);
         dispose();
     }
 
-    private PropAppendable getParent(StructDTOProp structDTOProp,PropAppendable search){
-        if(CollUtil.isEmpty(search.getProps())){
+    private PropAppendable getParent(StructDTOProp structDTOProp, PropAppendable search) {
+        if (CollUtil.isEmpty(search.getProps())) {
             return null;
         }
         for (StructDTOProp prop : search.getProps()) {
-            if(prop==structDTOProp){
+            if (prop == structDTOProp) {
                 return search;
             }
-            return getParent(structDTOProp,prop);
+            return getParent(structDTOProp, prop);
         }
         return null;
     }
-    private void appendIfNavigateMiss(StructDTOProp structDTOProp,StructDTOApp structDTOApp) {
+
+    private void appendIfNavigateMiss(StructDTOProp structDTOProp, StructDTOApp structDTOApp) {
         {
             String selfNavigateId = structDTOProp.getClassNode().getSelfNavigateId();
             Map<String, ClassNode> propNodeMap = structDTOContext.getEntityProps().get(structDTOProp.getOwner());
             if (propNodeMap != null) {
                 PropAppendable parent = getParent(structDTOProp, structDTOApp);
-                if(parent!=null){
+                if (parent != null) {
                     if (StrUtil.isNotBlank(selfNavigateId)) {
                         ClassNode classNode = propNodeMap.get(selfNavigateId);
                         if (classNode != null) {

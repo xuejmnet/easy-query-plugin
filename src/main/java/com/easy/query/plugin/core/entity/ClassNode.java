@@ -34,6 +34,8 @@ public class ClassNode {
     private String targetNavigateId;
     private String dtoName;
     private String comment;
+    private String relationType;
+    private String conversion;
 
     public ClassNode(String name, String owner, int sort,boolean primary,boolean entity,String selfEntityType,String ownerPropertyName) {
 
@@ -141,5 +143,21 @@ public class ClassNode {
 
     public String getOwnerPropertyName() {
         return ownerPropertyName;
+    }
+
+    public String getRelationType() {
+        return relationType;
+    }
+
+    public void setRelationType(String relationType) {
+        this.relationType = relationType;
+    }
+
+    public String getConversion() {
+        return conversion;
+    }
+
+    public void setConversion(String conversion) {
+        this.conversion = conversion;
     }
 }

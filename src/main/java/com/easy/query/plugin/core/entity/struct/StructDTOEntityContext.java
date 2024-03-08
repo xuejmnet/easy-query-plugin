@@ -3,9 +3,9 @@ package com.easy.query.plugin.core.entity.struct;
 import com.easy.query.plugin.core.entity.ClassNode;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiClass;
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,23 +15,20 @@ import java.util.Set;
  *
  * @author xuejiaming
  */
-public class StructDTOContext {
+public class StructDTOEntityContext {
     private final Project project;
     private final String path;
     private final String packageName;
     private final Module module;
-    private final Map<String, Map<String,ClassNode>> entityProps;
-    private final Set<String> imports;
-    private boolean success;
+    private final Map<String, PsiClass> entityClass;
 
-    public StructDTOContext(Project project, String path, String packageName, Module module, Map<String, Map<String,ClassNode>> entityProps) {
+    public StructDTOEntityContext(Project project, String path, String packageName, Module module, Map<String, PsiClass> entityClass) {
         this.project = project;
 
         this.path = path;
         this.packageName = packageName;
         this.module = module;
-        this.entityProps = entityProps;
-        this.imports=new LinkedHashSet<>();
+        this.entityClass = entityClass;
     }
 
     public String getPath() {
@@ -50,19 +47,7 @@ public class StructDTOContext {
         return module;
     }
 
-    public Set<String> getImports() {
-        return imports;
-    }
-
-    public Map<String, Map<String,ClassNode>> getEntityProps() {
-        return entityProps;
-    }
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
+    public Map<String, PsiClass> getEntityClass() {
+        return entityClass;
     }
 }
