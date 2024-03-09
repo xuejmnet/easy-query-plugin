@@ -185,7 +185,7 @@ public class StructDTODialog extends JDialog {
                 }
                 base = propAppendable;
             }
-            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount());
+            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount(),classNode.getOwnerFullName());
             structDTOProp.setClassNode(classNode);
             if (structDTOProp.isEntity()) {
                 structDTOProp.setDtoName(entityDTOName + "_" + classNode.getSelfEntityType() + (i++));
@@ -275,14 +275,14 @@ public class StructDTODialog extends JDialog {
                     if (StrUtil.isNotBlank(selfNavigateId)) {
                         ClassNode classNode = propNodeMap.get(selfNavigateId);
                         if (classNode != null) {
-                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
 
                             parent.addProp(self);
                         }
                     } else {
                         ClassNode classNode = propNodeMap.values().stream().filter(o -> o.isPrimary()).findFirst().orElse(null);
                         if (classNode != null) {
-                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
 
                             parent.addProp(self);
                         }
@@ -299,13 +299,13 @@ public class StructDTODialog extends JDialog {
                 if (StrUtil.isNotBlank(targetNavigateId)) {
                     ClassNode classNode = propNodeMap.get(targetNavigateId);
                     if (classNode != null) {
-                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
                         structDTOProp.addProp(self);
                     }
                 } else {
                     ClassNode classNode = propNodeMap.values().stream().filter(o -> o.isPrimary()).findFirst().orElse(null);
                     if (classNode != null) {
-                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0);
+                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
                         structDTOProp.addProp(self);
                     }
 

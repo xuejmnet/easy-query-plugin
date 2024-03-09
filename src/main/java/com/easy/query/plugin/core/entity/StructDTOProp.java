@@ -21,12 +21,13 @@ public class StructDTOProp implements PropAppendable{
     private final String selfEntityType;
     private final int sort;
     private final int pathCount;
+    private final String ownerFullName;
     private  String dtoName;
     private  ClassNode classNode;
 
 
     private final Map<String,StructDTOProp> props;
-    public StructDTOProp(String propName, String propText,String owner,boolean entity,String selfEntityType,int sort,int pathCount){
+    public StructDTOProp(String propName, String propText,String owner,boolean entity,String selfEntityType,int sort,int pathCount,String ownerFullName){
 
         this.propName = propName;
         this.propText = propText;
@@ -35,6 +36,7 @@ public class StructDTOProp implements PropAppendable{
         this.selfEntityType = selfEntityType;
         this.sort = sort;
         this.pathCount = pathCount;
+        this.ownerFullName = ownerFullName;
         this.props = new LinkedHashMap<>();
     }
     @Override
@@ -97,4 +99,9 @@ public class StructDTOProp implements PropAppendable{
     public void setClassNode(ClassNode classNode) {
         this.classNode = classNode;
     }
+
+    public String getOwnerFullName(){
+        return ownerFullName;
+    }
+
 }

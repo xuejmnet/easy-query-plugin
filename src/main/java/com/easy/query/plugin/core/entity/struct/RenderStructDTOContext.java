@@ -86,4 +86,8 @@ public class RenderStructDTOContext {
     public Set<String> getImports() {
         return imports;
     }
+
+    public String getEntityClassName(){
+        return dtoApp.getEntityName();
+    }
 }

@@ -28,7 +28,7 @@ public class StructDTOUtil {
 
     public static void parseClassList(Project project, String entityName,PsiClass entityClass,Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String> imports,Set<String> ignoreColumns) {
 
-        ClassNode classNode = new ClassNode(entityName, null, 0, false,true, entityClass.getName(), null);
+        ClassNode classNode = new ClassNode(entityName, null, 0, false,true, entityClass.getName(), null,null);
         classNodeList.add(classNode);
 
         addClassProps(project, entityClass,null, classNode, entityWithClass,entityProps, null,imports,ignoreColumns);
@@ -91,7 +91,7 @@ public class StructDTOUtil {
 
             boolean includeProperty = navigate != null;
             if (!includeProperty) {
-                ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,false,null,ownerPropertyName);
+                ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,false,null,ownerPropertyName,null);
                 navClass.setPropText(field.getText());
                 navClass.setComment(psiFieldComment);
                 navClass.setConversion(conversion);
@@ -121,7 +121,7 @@ public class StructDTOUtil {
                     if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
                         continue;
                     }
-                    ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propClass.getName(),ownerPropertyName);
+                    ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propClass.getName(),ownerPropertyName,qualifiedName);
                     navClass.setSelfNavigateId(selfNavigateId);
                     navClass.setTargetNavigateId(targetNavigateId);
                     navClass.setPropText(field.getText());
@@ -138,7 +138,7 @@ public class StructDTOUtil {
                         if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
                             continue;
                         }
-                        ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propertyClass.getName(),ownerPropertyName);
+                        ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propertyClass.getName(),ownerPropertyName,qualifiedName);
                         navClass.setSelfNavigateId(selfProperty);
                         navClass.setTargetNavigateId(targetNavigateId);
                         navClass.setPropText(field.getText());
