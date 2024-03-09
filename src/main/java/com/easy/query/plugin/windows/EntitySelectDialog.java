@@ -138,10 +138,13 @@ public class EntitySelectDialog extends JDialog {
         Map<String, String> highlightMap = new HashMap<>();
         result.stream()
                 .forEach(el -> {
+                    String packageName = cn.hutool.core.util.StrUtil.subBefore(el, ".", true);
+                    String entityName = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
                     String finalKeyword = keyword;
                     String htmlText = "<html>";
-                    for (int i = 0; i < el.length(); i++) {
-                        String key = el.charAt(i) + "";
+                    htmlText+=packageName;
+                    for (int i = 0; i < entityName.length(); i++) {
+                        String key = entityName.charAt(i) + "";
                         if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
                             htmlText += "<span style='color:#c60'>" + key + "</span>";
                             finalKeyword = finalKeyword.replaceFirst(key, "");
@@ -174,11 +177,13 @@ public class EntitySelectDialog extends JDialog {
             result.addAll(INVERTED_ENTITY_INDEX.getOrDefault(key + "", Collections.emptySet()));
         }
         result = result.stream()
+//                .map(o-> cn.hutool.core.util.StrUtil.subAfter(o,".",true))
                 .filter(el -> {
+                    String elEntity = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
                     for (int i = 0; i < keyword.length(); i++) {
                         String key = keyword.charAt(i) + "";
-                        if (StringUtils.containsIgnoreCase(el, key)) {
-                            el = el.replaceFirst(key, "");
+                        if (StringUtils.containsIgnoreCase(elEntity, key)) {
+                            elEntity = elEntity.replaceFirst(key, "");
                         } else {
                             return false;
                         }
@@ -196,9 +201,10 @@ public class EntitySelectDialog extends JDialog {
      */
     public void initEntityIndexText(Collection<String> entityNameList) {
         for (String tableName : entityNameList) {
-            for (int i = 0; i < tableName.length(); i++) {
-                char word = tableName.charAt(i);
-                INVERTED_ENTITY_INDEX.computeIfAbsent((word + ""), k -> new HashSet<>()).add(tableName);
+            String entityName = cn.hutool.core.util.StrUtil.subAfter(tableName, ".", true);
+            for (int i = 0; i < entityName.length(); i++) {
+                char word = entityName.charAt(i);
+                INVERTED_ENTITY_INDEX.computeIfAbsent((word + "").toLowerCase(), k -> new HashSet<>()).add(tableName);
             }
         }
     }
