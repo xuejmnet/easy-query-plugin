@@ -48,9 +48,9 @@ tasks {
 
     patchPluginXml {
         //插件起始支持版本
-        sinceBuild.set("202.*")
+        sinceBuild.set("203")
         //插件结束支持版本
-        untilBuild.set("233.*")
+        untilBuild.set("233")
     }
 
     signPlugin {
