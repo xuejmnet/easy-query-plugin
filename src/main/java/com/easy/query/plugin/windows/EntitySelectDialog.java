@@ -23,6 +23,8 @@ import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -46,6 +48,9 @@ public class EntitySelectDialog extends JDialog {
     private JTextField searchEntity;
     private JTextField ignoreProps;
     private JButton ignoreBtn;
+    private JTextField ignoreInertProps;
+    private JTextField ignoreUpdateProps;
+    private JTextField ignoreResultProps;
     Map<String, Set<String>> INVERTED_ENTITY_INDEX = new HashMap<>();
 
     public EntitySelectDialog(StructDTOEntityContext structDTOEntityContext) {
@@ -99,6 +104,18 @@ public class EntitySelectDialog extends JDialog {
         entityList.setModel(model);
         EntityListCellRenderer cellRenderer = new EntityListCellRenderer(entityMap);
         entityList.setCellRenderer(cellRenderer);
+        entityList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+
+                    String entityName = entityList.getSelectedValue();
+                    ok0(entityName);
+                } else {
+                    super.mouseClicked(e);
+                }
+            }
+        });
 
 
         searchEntity.getDocument().addDocumentListener(new DocumentAdapter() {
@@ -142,7 +159,7 @@ public class EntitySelectDialog extends JDialog {
                     String entityName = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
                     String finalKeyword = keyword;
                     String htmlText = "<html>";
-                    htmlText+=packageName;
+                    htmlText += packageName;
                     for (int i = 0; i < entityName.length(); i++) {
                         String key = entityName.charAt(i) + "";
                         if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
@@ -209,24 +226,25 @@ public class EntitySelectDialog extends JDialog {
         }
     }
 
-    private void saveConfig(){
+    private void saveConfig() {
         String text = ignoreProps.getText();
         Project project = structDTOEntityContext.getProject();
 
         EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(new EasyQueryConfig());
-        if(config.getConfig()==null){
+        if (config.getConfig() == null) {
             config.setConfig(new HashMap<>());
         }
         String projectName = project.getName();
         String setting = config.getConfig().get(projectName);
-        if(StrUtil.isBlank(setting)){
-            setting="";
-            config.getConfig().put(projectName,setting);
+        if (StrUtil.isBlank(setting)) {
+            setting = "";
+            config.getConfig().put(projectName, setting);
         }
-        config.getConfig().put(projectName,text);
+        config.getConfig().put(projectName, text);
         EasyQueryQueryPluginConfigData.saveAllEnvEnvStructDTOIgnore(config);
         NotificationUtils.notifySuccess("保存成功", project);
     }
+
     private void onOK() {
         // add your code here
 
@@ -241,12 +259,20 @@ public class EntitySelectDialog extends JDialog {
         }
 
         String entityName = selectedEntityList.get(0);
+        boolean oked = ok0(entityName);
+        if (!oked) {
+            return;
+        }
+        dispose();
+    }
+
+    private boolean ok0(String entityName) {
         Project project = structDTOEntityContext.getProject();
         Map<String, PsiClass> entityClass = structDTOEntityContext.getEntityClass();
         PsiClass psiClass = entityClass.get(entityName);
         if (psiClass == null) {
             Messages.showWarningDialog("无法找到对象的类型:" + entityName, "提示");
-            return;
+            return false;
         }
         Set<String> ignoreColumns = getIgnoreColumns(project);
 
@@ -254,15 +280,15 @@ public class EntitySelectDialog extends JDialog {
         Map<String, Map<String, ClassNode>> entityProps = new HashMap<>();
         List<ClassNode> classNodes = new ArrayList<>();
         LinkedHashSet<String> imports = new LinkedHashSet<>();
-        StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports,ignoreColumns);
+        StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, ignoreColumns);
         StructDTOContext structDTOContext = new StructDTOContext(project, structDTOEntityContext.getPath(), structDTOEntityContext.getPackageName(), structDTOEntityContext.getModule(), entityProps);
         structDTOContext.getImports().addAll(imports);
-        StructDTODialog structDTODialog = new StructDTODialog(structDTOContext,classNodes);
+        StructDTODialog structDTODialog = new StructDTODialog(structDTOContext, classNodes);
         structDTODialog.setVisible(true);
-        if(!structDTOContext.isSuccess()){
-            return;
+        if (!structDTOContext.isSuccess()) {
+            return false;
         }
-        dispose();
+        return true;
     }
 
 
@@ -287,7 +313,6 @@ public class EntitySelectDialog extends JDialog {
         // add your code here if necessary
         dispose();
     }
-
 //    public static void main(String[] args) {
 //        EntitySelectDialog dialog = new EntitySelectDialog();
 //        dialog.pack();

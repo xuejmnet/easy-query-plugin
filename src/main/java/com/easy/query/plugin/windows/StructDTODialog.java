@@ -220,8 +220,21 @@ public class StructDTODialog extends JDialog {
             }
             if (structDTOProp.getPropText().contains("@Column(")) {
                 String regex = "@Column\\(.*?\\)";
-                if (StringUtils.isNotBlank(classNode.getConversion())) {
-                    String newPropText = structDTOProp.getPropText().replaceAll(regex, "@Column(conversion = " + classNode.getConversion() + ")");
+                if (StringUtils.isNotBlank(classNode.getConversion())||StringUtils.isNotBlank(classNode.getColumnValue())) {
+                    String columnText="@Column(";
+                    if(StringUtils.isNotBlank(classNode.getColumnValue())){
+                        columnText+="value = \""+classNode.getColumnValue()+"\"";
+                        if(StringUtils.isNotBlank(classNode.getConversion())){
+                            columnText+=",";
+                        }
+                    }
+                    if(StringUtils.isNotBlank(classNode.getConversion())){
+                        columnText+="conversion = "+classNode.getConversion();
+                    }
+                    columnText+=")";
+                    String newPropText = structDTOProp.getPropText().replaceAll(regex, columnText);
+//                    (conversion = " + classNode.getConversion() + ")
+
                     structDTOProp.setPropText(newPropText);
                 } else {
                     String newPropText = structDTOProp.getPropText().replaceAll(regex, "");

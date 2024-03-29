@@ -71,6 +71,7 @@ public class StructDTOUtil {
             PsiAnnotation column = field.getAnnotation("com.easy.query.core.annotation.Column");
             boolean isPrimary = false;
             String conversion = null;
+            String columnValue = null;
             if (column != null) {
                 String primary = PsiUtil.getPsiAnnotationValue(column, "primary", "");
                 isPrimary = Objects.equals("true", primary);
@@ -79,6 +80,7 @@ public class StructDTOUtil {
                 if(conversion!=null&&conversion.endsWith("DefaultValueConverter.class")){
                     conversion=null;
                 }
+                columnValue=PsiUtil.getPsiAnnotationValue(column, "value", "");
             }
 
 
@@ -95,6 +97,7 @@ public class StructDTOUtil {
                 navClass.setPropText(field.getText());
                 navClass.setComment(psiFieldComment);
                 navClass.setConversion(conversion);
+                navClass.setColumnValue(columnValue);
                 classNode.addChild(navClass);
                 classNodes.putIfAbsent(name,navClass);
             } else {
@@ -127,6 +130,7 @@ public class StructDTOUtil {
                     navClass.setPropText(field.getText());
                     navClass.setComment(psiFieldComment);
                     navClass.setConversion(conversion);
+                    navClass.setColumnValue(columnValue);
                     navClass.setRelationType(relationType);
 //                    String sub = StrUtil.subAfter(propertyType, ".", true);
                     classNode.addChild(navClass);
@@ -144,6 +148,7 @@ public class StructDTOUtil {
                         navClass.setPropText(field.getText());
                         navClass.setComment(psiFieldComment);
                         navClass.setConversion(conversion);
+                        navClass.setColumnValue(columnValue);
                         navClass.setRelationType(relationType);
                         classNode.addChild(navClass);
                         classNodes.putIfAbsent(name,navClass);

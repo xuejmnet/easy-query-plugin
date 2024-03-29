@@ -37,6 +37,7 @@ public class ClassNode {
     private String comment;
     private String relationType;
     private String conversion;
+    private String columnValue;
 
     public ClassNode(String name, String owner, int sort,boolean primary,boolean entity,String selfEntityType,String ownerPropertyName,String ownerFullName) {
 
@@ -165,5 +166,13 @@ public class ClassNode {
 
     public String getOwnerFullName() {
         return ownerFullName;
+    }
+
+    public String getColumnValue() {
+        return columnValue;
+    }
+
+    public void setColumnValue(String columnValue) {
+        this.columnValue = columnValue;
     }
 }
