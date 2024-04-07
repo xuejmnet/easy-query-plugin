@@ -27,6 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.46</h3>
+    <ul>
+    <li>支持最新版本的idea</li>
+    </ul>
     <h3>0.0.45</h3>
     <ul>
     <li>优化Column包含value时structDTO生成有问题</li>
