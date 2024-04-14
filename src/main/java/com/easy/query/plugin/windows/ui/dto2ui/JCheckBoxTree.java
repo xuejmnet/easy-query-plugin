@@ -1,5 +1,7 @@
 package com.easy.query.plugin.windows.ui.dto2ui;
 
+import com.easy.query.plugin.core.entity.ClassNode;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.event.MouseEvent;
@@ -9,6 +11,7 @@ import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
@@ -36,7 +39,6 @@ public class JCheckBoxTree extends JTree {
     JCheckBoxTree selfPointer = this;
 
 
-
     // Defining data structure that will enable to fast check-indicate the state of each node
     // It totally replaces the "selection" mechanism of the JTree
     private class CheckedNode {
@@ -50,6 +52,7 @@ public class JCheckBoxTree extends JTree {
             allChildrenSelected = allChildrenSelected_;
         }
     }
+
     HashMap<TreePath, CheckedNode> nodesCheckingState;
     HashSet<TreePath> checkedPaths = new LinkedHashSet<>();
 
@@ -71,6 +74,7 @@ public class JCheckBoxTree extends JTree {
     public void addCheckChangeEventListener(CheckChangeEventListener listener) {
         listenerList.add(CheckChangeEventListener.class, listener);
     }
+
     public void removeCheckChangeEventListener(CheckChangeEventListener listener) {
         listenerList.remove(CheckChangeEventListener.class, listener);
     }
@@ -95,6 +99,30 @@ public class JCheckBoxTree extends JTree {
         return checkedPaths.toArray(new TreePath[checkedPaths.size()]);
     }
 
+    public void removeCheckedPathsByName(String propertyName) {
+        checkedPaths.removeIf(checkedPath -> {
+            Object lastPathComponent = checkedPath.getLastPathComponent();
+            if (lastPathComponent instanceof DefaultMutableTreeNode) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) lastPathComponent;
+                Object userObject = node.getUserObject();
+                if (userObject instanceof ClassNode) {
+                    ClassNode classNode = (ClassNode) userObject;
+                    if (Objects.equals(classNode.getName(), propertyName)) {
+                        TreePath tp = new TreePath(node.getPath());
+                        CheckedNode cn = nodesCheckingState.get(tp);
+                        if(cn!=null){
+                            cn.isSelected=false;
+                        }
+                        return true;
+                    }
+                }
+
+            }
+            return false;
+        });
+        selfPointer.repaint();
+    }
+
     // Returns true in case that the node is selected, has children but not all of them are selected
     public boolean isSelectedPartially(TreePath path) {
         CheckedNode cn = nodesCheckingState.get(path);
@@ -104,7 +132,7 @@ public class JCheckBoxTree extends JTree {
     private void resetCheckingState() {
         nodesCheckingState = new HashMap<TreePath, CheckedNode>();
         checkedPaths = new LinkedHashSet<>();
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode)getModel().getRoot();
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) getModel().getRoot();
         if (node == null) {
             return;
         }
@@ -117,7 +145,7 @@ public class JCheckBoxTree extends JTree {
         TreePath tp = new TreePath(path);
         CheckedNode cn = new CheckedNode(false, node.getChildCount() > 0, false);
         nodesCheckingState.put(tp, cn);
-        for (int i = 0 ; i < node.getChildCount() ; i++) {
+        for (int i = 0; i < node.getChildCount(); i++) {
             addSubtreeToCheckingStateTracking((DefaultMutableTreeNode) tp.pathByAddingChild(node.getChildAt(i)).getLastPathComponent());
         }
     }
@@ -127,6 +155,7 @@ public class JCheckBoxTree extends JTree {
     private class CheckBoxCellRenderer extends JPanel implements TreeCellRenderer {
         private static final long serialVersionUID = -7341833835878991719L;
         JCheckBox checkBox;
+
         public CheckBoxCellRenderer() {
             super();
             this.setLayout(new BorderLayout());
@@ -139,7 +168,7 @@ public class JCheckBoxTree extends JTree {
         public Component getTreeCellRendererComponent(JTree tree, Object value,
                                                       boolean selected, boolean expanded, boolean leaf, int row,
                                                       boolean hasFocus) {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode)value;
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
             Object obj = node.getUserObject();
             TreePath tp = new TreePath(node.getPath());
             CheckedNode cn = nodesCheckingState.get(tp);
@@ -148,13 +177,15 @@ public class JCheckBoxTree extends JTree {
             }
             checkBox.setSelected(cn.isSelected);
             checkBox.setText(obj.toString());
-            checkBox.setOpaque(cn.isSelected && cn.hasChildren && ! cn.allChildrenSelected);
+            checkBox.setOpaque(cn.isSelected && cn.hasChildren && !cn.allChildrenSelected);
             return this;
         }
     }
+
     public JCheckBoxTree() {
         this(getDefaultTreeModel());
     }
+
     public JCheckBoxTree(TreeModel treeModel) {
         super(treeModel);
         // Disabling toggling by double-click
@@ -166,13 +197,17 @@ public class JCheckBoxTree extends JTree {
         // Overriding selection model by an empty one
         DefaultTreeSelectionModel dtsm = new DefaultTreeSelectionModel() {
             private static final long serialVersionUID = -8190634240451667286L;
+
             // Totally disabling the selection mechanism
             public void setSelectionPath(TreePath path) {
             }
+
             public void addSelectionPath(TreePath path) {
             }
+
             public void removeSelectionPath(TreePath path) {
             }
+
             public void setSelectionPaths(TreePath[] pPaths) {
             }
         };
@@ -183,7 +218,7 @@ public class JCheckBoxTree extends JTree {
                 if (tp == null) {
                     return;
                 }
-                boolean checkMode = ! nodesCheckingState.get(tp).isSelected;
+                boolean checkMode = !nodesCheckingState.get(tp).isSelected;
                 checkSubTree(tp, checkMode);
                 updatePredecessorsWithCheckMode(tp, checkMode);
                 // Firing the check change event
@@ -191,12 +226,16 @@ public class JCheckBoxTree extends JTree {
                 // Repainting tree after the data structures were updated
                 selfPointer.repaint();
             }
+
             public void mouseEntered(MouseEvent arg0) {
             }
+
             public void mouseExited(MouseEvent arg0) {
             }
+
             public void mousePressed(MouseEvent arg0) {
             }
+
             public void mouseReleased(MouseEvent arg0) {
             }
         });
@@ -214,12 +253,12 @@ public class JCheckBoxTree extends JTree {
         DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) parentPath.getLastPathComponent();
         parentCheckedNode.allChildrenSelected = true;
         parentCheckedNode.isSelected = false;
-        for (int i = 0 ; i < parentNode.getChildCount() ; i++) {
+        for (int i = 0; i < parentNode.getChildCount(); i++) {
             TreePath childPath = parentPath.pathByAddingChild(parentNode.getChildAt(i));
             CheckedNode childCheckedNode = nodesCheckingState.get(childPath);
             // It is enough that even one subtree is not fully selected
             // to determine that the parent is not fully selected
-            if (! childCheckedNode.allChildrenSelected) {
+            if (!childCheckedNode.allChildrenSelected) {
                 parentCheckedNode.allChildrenSelected = false;
             }
             // If at least one child is selected, selecting also the parent
@@ -241,7 +280,7 @@ public class JCheckBoxTree extends JTree {
         CheckedNode cn = nodesCheckingState.get(tp);
         cn.isSelected = check;
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp.getLastPathComponent();
-        for (int i = 0 ; i < node.getChildCount() ; i++) {
+        for (int i = 0; i < node.getChildCount(); i++) {
             checkSubTree(tp.pathByAddingChild(node.getChildAt(i)), check);
         }
         cn.allChildrenSelected = check;

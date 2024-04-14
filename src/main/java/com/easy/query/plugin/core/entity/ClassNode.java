@@ -26,6 +26,7 @@ public class ClassNode {
     private final String selfEntityType;
     private final String ownerPropertyName;
     private final String ownerFullName;
+    private final String selfFullEntityType;
     private final List<ClassNode> children;
     private final Set<String> requireProps;
     /**
@@ -39,7 +40,7 @@ public class ClassNode {
     private String conversion;
     private String columnValue;
 
-    public ClassNode(String name, String owner, int sort,boolean primary,boolean entity,String selfEntityType,String ownerPropertyName,String ownerFullName) {
+    public ClassNode(String name, String owner, int sort,boolean primary,boolean entity,String selfEntityType,String ownerPropertyName,String ownerFullName,String selfFullEntityType) {
 
         this.name = name;
         this.owner = owner;
@@ -49,6 +50,7 @@ public class ClassNode {
         this.selfEntityType = selfEntityType;
         this.ownerPropertyName = ownerPropertyName;
         this.ownerFullName = ownerFullName;
+        this.selfFullEntityType = selfFullEntityType;
         this.children = new ArrayList<>();
         this.requireProps = new HashSet<>();
     }
@@ -174,5 +176,9 @@ public class ClassNode {
 
     public void setColumnValue(String columnValue) {
         this.columnValue = columnValue;
+    }
+
+    public String getSelfFullEntityType() {
+        return selfFullEntityType;
     }
 }

@@ -46,11 +46,7 @@ public class EntitySelectDialog extends JDialog {
     private JButton buttonCancel;
     private JList<String> entityList;
     private JTextField searchEntity;
-    private JTextField ignoreProps;
-    private JButton ignoreBtn;
-    private JTextField ignoreInertProps;
-    private JTextField ignoreUpdateProps;
-    private JTextField ignoreResultProps;
+    private JButton settingBtn;
     Map<String, Set<String>> INVERTED_ENTITY_INDEX = new HashMap<>();
 
     public EntitySelectDialog(StructDTOEntityContext structDTOEntityContext) {
@@ -62,20 +58,35 @@ public class EntitySelectDialog extends JDialog {
         setSize(800, 900);
         setTitle("Struct DTO Entity Select");
         DialogUtil.centerShow(this);
+        Project project = structDTOEntityContext.getProject();
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onOK();
-            }
-        });
-        ignoreBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                saveConfig();
             }
         });
 
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
+            }
+        });
+        settingBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(new EasyQueryConfig());
+                if (config.getConfig() == null) {
+                    config.setConfig(new HashMap<>());
+                }
+                String projectName = project.getName();
+                String setting = config.getConfig().get(projectName);
+
+                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project,setting, newTemplate -> {
+                    config.getConfig().put(projectName, newTemplate);
+                    EasyQueryQueryPluginConfigData.saveAllEnvEnvStructDTOIgnore(config);
+                    NotificationUtils.notifySuccess("保存成功", project);
+                });
+                modelTemplateEditorDialog.setVisible(true);
             }
         });
 
@@ -224,25 +235,6 @@ public class EntitySelectDialog extends JDialog {
                 INVERTED_ENTITY_INDEX.computeIfAbsent((word + "").toLowerCase(), k -> new HashSet<>()).add(tableName);
             }
         }
-    }
-
-    private void saveConfig() {
-        String text = ignoreProps.getText();
-        Project project = structDTOEntityContext.getProject();
-
-        EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(new EasyQueryConfig());
-        if (config.getConfig() == null) {
-            config.setConfig(new HashMap<>());
-        }
-        String projectName = project.getName();
-        String setting = config.getConfig().get(projectName);
-        if (StrUtil.isBlank(setting)) {
-            setting = "";
-            config.getConfig().put(projectName, setting);
-        }
-        config.getConfig().put(projectName, text);
-        EasyQueryQueryPluginConfigData.saveAllEnvEnvStructDTOIgnore(config);
-        NotificationUtils.notifySuccess("保存成功", project);
     }
 
     private void onOK() {

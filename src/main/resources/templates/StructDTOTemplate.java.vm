@@ -36,7 +36,7 @@ public class ${appContext.getDtoName()}{
 
 
     /**
-     * {@link ${entity.getOwnerFullName()} }
+     * {@link ${entity.getSelfFullEntityType()} }
      *
      */
     #if($appContext.isData())

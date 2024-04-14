@@ -2,7 +2,10 @@ package com.easy.query.plugin.windows;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.TypeReference;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
+import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.ClassNode;
 import com.easy.query.plugin.core.entity.PropAppendable;
 import com.easy.query.plugin.core.entity.StructDTOApp;
@@ -10,10 +13,12 @@ import com.easy.query.plugin.core.entity.StructDTOProp;
 import com.easy.query.plugin.core.entity.TreeClassNode;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
+import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.DialogUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.easy.query.plugin.windows.ui.dto2ui.JCheckBoxTree;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,12 +32,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,6 +55,8 @@ public class StructDTODialog extends JDialog {
     private JCheckBoxTree entityProps;
     private JCheckBox combineCk;
     private JCheckBox dataCheck;
+    private JPanel dynamicBtnPanel;
+    private Map<String, String> buttonMaps;
 
     private TreeModel initTree(List<ClassNode> classNodes) {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("Entities");
@@ -108,6 +118,59 @@ public class StructDTODialog extends JDialog {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         dataCheck.setSelected(true);
+        BoxLayout boxLayout = new BoxLayout( dynamicBtnPanel, BoxLayout.LINE_AXIS );
+        dynamicBtnPanel.setLayout( boxLayout );
+        dynamicIgnoreButtons(structDTOContext.getProject());
+    }
+    private void dynamicIgnoreButtons(Project project){
+        this.buttonMaps=new LinkedHashMap<>();
+        EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(new EasyQueryConfig());
+        if (config.getConfig() == null) {
+            config.setConfig(new HashMap<>());
+        }
+        String projectName = project.getName();
+        String setting = config.getConfig().get(projectName);
+        initIgnoreButtons(setting);
+        for (Map.Entry<String, String> kv : buttonMaps.entrySet()) {
+            JButton jButton = new JButton(kv.getKey());
+            jButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    onIgnoreCancel(kv.getKey());
+                }
+            });
+            dynamicBtnPanel.add(jButton);
+        }
+
+    }
+
+    private void onIgnoreCancel(String key){
+        String s = this.buttonMaps.get(key);
+        if(s!=null){
+            List<String> ignoreProperties = Arrays.asList(s.split(","));
+
+            TreePath[] checkedPaths = entityProps.getCheckedPaths();
+            if (checkedPaths == null || checkedPaths.length == 0) {
+                return;
+            }
+            long count = Arrays.stream(checkedPaths).filter(o -> o.getPathCount() == 2).count();
+            if (count != 1) {
+                return;
+            }
+            for (String ignoreProperty : ignoreProperties) {
+                this.entityProps.removeCheckedPathsByName(ignoreProperty);
+            }
+        }
+    }
+    private void initIgnoreButtons(String setting){
+        try {
+
+            LinkedHashMap<String, String> configMap = JSONObject.parseObject(setting, new TypeReference<LinkedHashMap<String, String>>() {
+            });
+            buttonMaps.putAll(configMap);
+        }catch (Exception ignored){
+
+        }
     }
 
     private void onOK() {
@@ -185,7 +248,7 @@ public class StructDTODialog extends JDialog {
                 }
                 base = propAppendable;
             }
-            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount(),classNode.getOwnerFullName());
+            StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount(),classNode.getOwnerFullName(),classNode.getSelfFullEntityType());
             structDTOProp.setClassNode(classNode);
             if (structDTOProp.isEntity()) {
                 structDTOProp.setDtoName(entityDTOName + "_" + classNode.getSelfEntityType() + (i++));
@@ -243,18 +306,6 @@ public class StructDTODialog extends JDialog {
             }
             base.addProp(structDTOProp);
         }
-        //检查navigate属性是否也加上了
-        if (CollUtil.isNotEmpty(renderStructDTOContext.getEntities())) {
-            ArrayList<PropAppendable> propAppendables = new ArrayList<>(renderStructDTOContext.getEntities());
-            for (PropAppendable entity : propAppendables) {
-                if (entity instanceof StructDTOProp) {
-                    StructDTOProp structDTOProp = (StructDTOProp) entity;
-                    if (structDTOProp.getClassNode() != null) {
-                        appendIfNavigateMiss(structDTOProp, structDTOApp);
-                    }
-                }
-            }
-        }
 
         boolean b = RenderEasyQueryTemplate.renderStructDTOType(renderStructDTOContext);
         if (!b) {
@@ -263,69 +314,6 @@ public class StructDTODialog extends JDialog {
         NotificationUtils.notifySuccess("生成成功", structDTOContext.getProject());
         structDTOContext.setSuccess(true);
         dispose();
-    }
-
-    private PropAppendable getParent(StructDTOProp structDTOProp, PropAppendable search) {
-        if (CollUtil.isEmpty(search.getProps())) {
-            return null;
-        }
-        for (StructDTOProp prop : search.getProps()) {
-            if (prop == structDTOProp) {
-                return search;
-            }
-            return getParent(structDTOProp, prop);
-        }
-        return null;
-    }
-
-    private void appendIfNavigateMiss(StructDTOProp structDTOProp, StructDTOApp structDTOApp) {
-        {
-            String selfNavigateId = structDTOProp.getClassNode().getSelfNavigateId();
-            Map<String, ClassNode> propNodeMap = structDTOContext.getEntityProps().get(structDTOProp.getOwner());
-            if (propNodeMap != null) {
-                PropAppendable parent = getParent(structDTOProp, structDTOApp);
-                if (parent != null) {
-                    if (StrUtil.isNotBlank(selfNavigateId)) {
-                        ClassNode classNode = propNodeMap.get(selfNavigateId);
-                        if (classNode != null) {
-                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
-
-                            parent.addProp(self);
-                        }
-                    } else {
-                        ClassNode classNode = propNodeMap.values().stream().filter(o -> o.isPrimary()).findFirst().orElse(null);
-                        if (classNode != null) {
-                            StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
-
-                            parent.addProp(self);
-                        }
-                    }
-                }
-            }
-
-        }
-        {
-
-            String targetNavigateId = structDTOProp.getClassNode().getTargetNavigateId();
-            Map<String, ClassNode> propNodeMap = structDTOContext.getEntityProps().get(structDTOProp.getSelfEntityType());
-            if (propNodeMap != null) {
-                if (StrUtil.isNotBlank(targetNavigateId)) {
-                    ClassNode classNode = propNodeMap.get(targetNavigateId);
-                    if (classNode != null) {
-                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
-                        structDTOProp.addProp(self);
-                    }
-                } else {
-                    ClassNode classNode = propNodeMap.values().stream().filter(o -> o.isPrimary()).findFirst().orElse(null);
-                    if (classNode != null) {
-                        StructDTOProp self = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), 0,classNode.getOwnerFullName());
-                        structDTOProp.addProp(self);
-                    }
-
-                }
-            }
-
-        }
     }
 
 

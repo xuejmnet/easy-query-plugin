@@ -28,7 +28,7 @@ public class StructDTOUtil {
 
     public static void parseClassList(Project project, String entityName,PsiClass entityClass,Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String> imports,Set<String> ignoreColumns) {
 
-        ClassNode classNode = new ClassNode(entityName, null, 0, false,true, entityClass.getName(), null,null);
+        ClassNode classNode = new ClassNode(entityName, null, 0, false,true, entityClass.getName(), null,null,entityClass.getQualifiedName());
         classNodeList.add(classNode);
 
         addClassProps(project, entityClass,null, classNode, entityWithClass,entityProps, null,imports,ignoreColumns);
@@ -93,7 +93,7 @@ public class StructDTOUtil {
 
             boolean includeProperty = navigate != null;
             if (!includeProperty) {
-                ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,false,null,ownerPropertyName,null);
+                ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,false,null,ownerPropertyName,null,null);
                 navClass.setPropText(field.getText());
                 navClass.setComment(psiFieldComment);
                 navClass.setConversion(conversion);
@@ -124,7 +124,7 @@ public class StructDTOUtil {
                     if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
                         continue;
                     }
-                    ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propClass.getName(),ownerPropertyName,qualifiedName);
+                    ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propClass.getName(),ownerPropertyName,qualifiedName,propClass.getQualifiedName());
                     navClass.setSelfNavigateId(selfNavigateId);
                     navClass.setTargetNavigateId(targetNavigateId);
                     navClass.setPropText(field.getText());
@@ -142,7 +142,7 @@ public class StructDTOUtil {
                         if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, name))) {
                             continue;
                         }
-                        ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propertyClass.getName(),ownerPropertyName,qualifiedName);
+                        ClassNode navClass = new ClassNode(name, entityName, sort++, isPrimary,true,propertyClass.getName(),ownerPropertyName,qualifiedName,propertyClass.getQualifiedName());
                         navClass.setSelfNavigateId(selfProperty);
                         navClass.setTargetNavigateId(targetNavigateId);
                         navClass.setPropText(field.getText());
