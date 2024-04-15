@@ -92,7 +92,9 @@ public class CreateStructDTOAction extends AnAction {
 
                     StructDTOEntityContext structDTOEntityContext = new StructDTOEntityContext(project, path, packageName, module, entityWithClass);
                     EntitySelectDialog entitySelectDialog = new EntitySelectDialog(structDTOEntityContext);
-                    entitySelectDialog.setVisible(true);
+                    SwingUtilities.invokeLater(() -> {
+                        entitySelectDialog.setVisible(true);
+                    });
 
 //                    StructDTOContext structDTOContext = new StructDTOContext(project,path, packageName, module,entityProps);
 //                    structDTOContext.getImports().addAll(imports);
@@ -109,5 +111,4 @@ public class CreateStructDTOAction extends AnAction {
 //        String entityName = psiClass.getName();
 //        String entityFullName = psiClass.getQualifiedName();
     }
-
 }

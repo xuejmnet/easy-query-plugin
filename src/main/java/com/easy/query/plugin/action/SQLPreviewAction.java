@@ -11,6 +11,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiJavaFile;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.swing.*;
+
 public class SQLPreviewAction extends AnAction {
 
     @Override
@@ -35,7 +37,9 @@ public class SQLPreviewAction extends AnAction {
 //                &&StringUtils.containsIgnoreCase(selectedText,"Parameters")
         try {
             SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(selectedText);
-            sqlPreviewDialog.setVisible(true);
+            SwingUtilities.invokeLater(() -> {
+                sqlPreviewDialog.setVisible(true);
+            });
 //            System.out.println("预览选择文字:"+selectedText);
 //            String[] multiLogs = selectedText.split("\n");
 //            if (selectedText.startsWith("QueryWrapper")) {

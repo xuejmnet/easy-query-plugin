@@ -14,6 +14,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.SlowOperations;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -276,6 +277,7 @@ public class EntitySelectDialog extends JDialog {
         StructDTOContext structDTOContext = new StructDTOContext(project, structDTOEntityContext.getPath(), structDTOEntityContext.getPackageName(), structDTOEntityContext.getModule(), entityProps);
         structDTOContext.getImports().addAll(imports);
         StructDTODialog structDTODialog = new StructDTODialog(structDTOContext, classNodes);
+
         structDTODialog.setVisible(true);
         if (!structDTOContext.isSuccess()) {
             return false;

@@ -7,13 +7,17 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 
+import javax.swing.*;
+
 public class TableGenerateAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
         // TODO: insert action logic here
         EntityTableGenerateDialog entityTableGenerateDialog = new EntityTableGenerateDialog(e);
-        entityTableGenerateDialog.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            entityTableGenerateDialog.setVisible(true);
+        });
     }
     /**
      * 判断选中的是否是表，是表则显示，否则不显示
