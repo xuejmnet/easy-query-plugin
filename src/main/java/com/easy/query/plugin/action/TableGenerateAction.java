@@ -33,6 +33,10 @@ public class TableGenerateAction extends AnAction {
         e.getPresentation().setVisible(isSelectedTable);
     }
 
+    /**
+     * 2022.2.5才有的方法
+     * @return
+     */
     @Override
     public @NotNull ActionUpdateThread getActionUpdateThread() {
         return ActionUpdateThread.BGT;
