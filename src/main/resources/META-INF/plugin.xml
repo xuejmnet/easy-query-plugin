@@ -27,6 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.49</h3>
+    <ul>
+    <li>ignore配置错误StructDTO</li>
+    </ul>
     <h3>0.0.48</h3>
     <ul>
     <li>dialog open error</li>

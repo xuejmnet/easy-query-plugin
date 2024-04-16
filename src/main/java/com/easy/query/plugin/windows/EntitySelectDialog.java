@@ -267,13 +267,13 @@ public class EntitySelectDialog extends JDialog {
             Messages.showWarningDialog("无法找到对象的类型:" + entityName, "提示");
             return false;
         }
-        Set<String> ignoreColumns = getIgnoreColumns(project);
+//        Set<String> ignoreColumns = getIgnoreColumns(project);
 
 
         Map<String, Map<String, ClassNode>> entityProps = new HashMap<>();
         List<ClassNode> classNodes = new ArrayList<>();
         LinkedHashSet<String> imports = new LinkedHashSet<>();
-        StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, ignoreColumns);
+        StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, new HashSet<>());
         StructDTOContext structDTOContext = new StructDTOContext(project, structDTOEntityContext.getPath(), structDTOEntityContext.getPackageName(), structDTOEntityContext.getModule(), entityProps);
         structDTOContext.getImports().addAll(imports);
         StructDTODialog structDTODialog = new StructDTODialog(structDTOContext, classNodes);

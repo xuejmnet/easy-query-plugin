@@ -61,7 +61,6 @@ import java.util.stream.Collectors;
  */
 public class EasyQueryApiCompletionContributor extends CompletionContributor {
 
-    private static final Map<String,Map<String,PsiType>> PROJECT_TYPE_MAP=new ConcurrentHashMap<>();
 
     private static final Set<EasyContributor> API_METHODS = new HashSet<>(Arrays.asList(
             new EasySelectContributor("select", "select", false),
