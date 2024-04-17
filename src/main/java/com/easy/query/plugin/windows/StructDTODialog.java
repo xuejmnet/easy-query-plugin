@@ -251,7 +251,7 @@ public class StructDTODialog extends JDialog {
             StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount(),classNode.getOwnerFullName(),classNode.getSelfFullEntityType());
             structDTOProp.setClassNode(classNode);
             if (structDTOProp.isEntity()) {
-                structDTOProp.setDtoName(entityDTOName + "_" + classNode.getSelfEntityType() + (i++));
+                structDTOProp.setDtoName(entityDTOName + "_" + StrUtil.upperFirst(classNode.getName()));
                 if (StringUtils.isNotBlank(structDTOProp.getPropText())) {
                     if (structDTOProp.getPropText().contains("<") && structDTOProp.getPropText().contains(">")) {
                         String regex = "<\\s*" + structDTOProp.getSelfEntityType() + "\\s*>";
