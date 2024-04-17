@@ -233,7 +233,8 @@ public class StructDTODialog extends JDialog {
         PropAppendable base = structDTOApp;
         int i = 0;
 
-
+        HashSet<String> dtoNames = new HashSet<>();
+        dtoNames.add(entityDTOName);
         while (iterator.hasNext()) {
             TreeClassNode treeClassNode = iterator.next();
             ClassNode classNode = treeClassNode.getClassNode();
@@ -251,7 +252,13 @@ public class StructDTODialog extends JDialog {
             StructDTOProp structDTOProp = new StructDTOProp(classNode.getName(), classNode.getPropText(), classNode.getOwner(), classNode.isEntity(), classNode.getSelfEntityType(), classNode.getSort(), treeClassNode.getPathCount(),classNode.getOwnerFullName(),classNode.getSelfFullEntityType());
             structDTOProp.setClassNode(classNode);
             if (structDTOProp.isEntity()) {
-                structDTOProp.setDtoName(entityDTOName + "_" + StrUtil.upperFirst(classNode.getName()));
+                String dotName = "Internal"+StrUtil.upperFirst(classNode.getName());
+                if(!dtoNames.contains(dotName)){
+                    dtoNames.add(dotName);
+                    structDTOProp.setDtoName(dotName);
+                }else{
+                    structDTOProp.setDtoName(dotName+(i++));
+                }
                 if (StringUtils.isNotBlank(structDTOProp.getPropText())) {
                     if (structDTOProp.getPropText().contains("<") && structDTOProp.getPropText().contains(">")) {
                         String regex = "<\\s*" + structDTOProp.getSelfEntityType() + "\\s*>";
