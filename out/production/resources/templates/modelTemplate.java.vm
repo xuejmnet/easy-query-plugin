@@ -140,6 +140,6 @@ public class ${modelName} #if(${config.modelSuperClass}) extends ${table.superCl
     public void set${column.methodName}(${column.fieldType} ${column.fieldName}) {
         this.${column.fieldName} = ${column.fieldName};
     }
-#end
+    #end
 #end
         }

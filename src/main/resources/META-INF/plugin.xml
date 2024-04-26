@@ -27,6 +27,11 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.51</h3>
+    <ul>
+    <li>支持基本类型long,short,boolean的属性apt生成</li>
+    <li>支持boolean的属性生成连接到isXXX的注解</li>
+    </ul>
     <h3>0.0.50</h3>
     <ul>
     <li>StructDTO生成内部静态类不使用类型使用属性名</li>

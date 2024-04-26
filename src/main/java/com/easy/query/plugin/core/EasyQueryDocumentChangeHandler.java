@@ -8,6 +8,7 @@ import com.easy.query.plugin.core.entity.AptSelectorInfo;
 import com.easy.query.plugin.core.entity.AptValueObjectInfo;
 import com.easy.query.plugin.core.entity.GenerateFileEntry;
 import com.easy.query.plugin.core.entity.PropertyColumn;
+import com.easy.query.plugin.core.enums.BeanPropTypeEnum;
 import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.easy.query.plugin.core.util.BooleanUtil;
 import com.easy.query.plugin.core.util.ClassUtil;
@@ -100,6 +101,16 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         TYPE_COLUMN_MAPPING.put("java.time.LocalDate", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalDate"));
         TYPE_COLUMN_MAPPING.put("java.time.LocalDateTime", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalDateTime"));
         TYPE_COLUMN_MAPPING.put("java.time.LocalTime", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalTime"));
+
+
+
+        TYPE_COLUMN_MAPPING.put("float", new PropertyColumn("SQLNumberColumn", "java.lang.Float"));
+        TYPE_COLUMN_MAPPING.put("double", new PropertyColumn("SQLNumberColumn", "java.lang.Double"));
+        TYPE_COLUMN_MAPPING.put("short", new PropertyColumn("SQLNumberColumn", "java.lang.Short"));
+        TYPE_COLUMN_MAPPING.put("int", new PropertyColumn("SQLNumberColumn", "java.lang.Integer"));
+        TYPE_COLUMN_MAPPING.put("long", new PropertyColumn("SQLNumberColumn", "java.lang.Long"));
+        TYPE_COLUMN_MAPPING.put("byte", new PropertyColumn("SQLNumberColumn", "java.lang.Byte"));
+        TYPE_COLUMN_MAPPING.put("boolean", new PropertyColumn("SQLBooleanColumn", "java.lang.Boolean"));
     }
 //    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -224,8 +235,8 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(name)) {
                             continue;
                         }
-                        boolean isBeanProperty = ClassUtil.hasGetterAndSetter(psiClass, name);
-                        if (!isBeanProperty) {
+                        BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, name);
+                        if (beanPropType==BeanPropTypeEnum.NOT) {
                             continue;
                         }
                         PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
@@ -243,7 +254,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         boolean includeProperty = navigate != null;
                         boolean includeManyProperty = false;
                         if (!includeProperty) {
-                            aptFileCompiler.getSelectorInfo().addProperties(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName));
+                            aptFileCompiler.getSelectorInfo().addProperties(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName,beanPropType));
                         } else {
                             aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                             String propertyType = propertyColumn.getPropertyType();
@@ -261,7 +272,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                                 aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
                             }
                         }
-                        aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
+                        aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName,beanPropType));
                         aptFileCompiler.addImports(propertyColumn.getImport());
 
 
@@ -386,8 +397,8 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(parentProperty + "." + name)) {
                 continue;
             }
-            boolean isBeanProperty = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, name);
-            if (!isBeanProperty) {
+            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, name);
+            if (beanPropType==BeanPropTypeEnum.NOT) {
                 continue;
             }
             PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
@@ -422,7 +433,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
                 }
             }
-            aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName));
+            aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName,beanPropType));
 
             if (valueObject != null) {
                 aptFileCompiler.addImports(psiFieldPropertyType);

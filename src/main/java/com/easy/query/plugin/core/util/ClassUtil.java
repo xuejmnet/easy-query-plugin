@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.util;
 
+import com.easy.query.plugin.core.enums.BeanPropTypeEnum;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
@@ -12,6 +13,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.util.Objects;
 
 /**
  * create time 2023/9/16 12:46
@@ -22,26 +24,48 @@ import java.beans.PropertyDescriptor;
 public class ClassUtil {
 
 
-    public static boolean hasGetterAndSetter(PsiClass psiClass, String propertyName) {
+    public static BeanPropTypeEnum hasGetterAndSetter(PsiClass psiClass, String propertyName) {
         String capitalizedPropertyName = capitalize(propertyName);
 
         // 检查是否有公共的 getter 方法
-        PsiMethod[] getMethods = psiClass.findMethodsByName("get" + capitalizedPropertyName, true);
-        if(getMethods.length==0){
-            return false;
+        BeanPropTypeEnum beanProp = propertyIsBeanProp(psiClass, capitalizedPropertyName, "get");
+        if(beanProp==BeanPropTypeEnum.NOT){
+            beanProp = propertyIsBeanProp(psiClass, capitalizedPropertyName, "is");
+            if(beanProp==BeanPropTypeEnum.NOT){
+                return beanProp;
+            }
         }
-        PsiMethod getter = getMethods[0];
-        if (getter == null || !getter.hasModifierProperty(PsiModifier.PUBLIC)) {
-            return false;
-        }
+//        PsiMethod[] getMethods = psiClass.findMethodsByName("get" + capitalizedPropertyName, true);
+//        if(getMethods.length==0){
+//            return false;
+//        }
+//        PsiMethod getter = getMethods[0];
+//        if (getter == null || !getter.hasModifierProperty(PsiModifier.PUBLIC)) {
+//            return false;
+//        }
 
         // 检查是否有公共的 setter 方法
         PsiMethod[] setMethods = psiClass.findMethodsByName("set" + capitalizedPropertyName, true);
         if(setMethods.length==0){
-            return false;
+            return BeanPropTypeEnum.NOT;
         }
         PsiMethod setter = setMethods[0];
-        return setter != null && setter.hasModifierProperty(PsiModifier.PUBLIC);
+        if(setter != null && setter.hasModifierProperty(PsiModifier.PUBLIC)){
+            return beanProp;
+        }
+        return BeanPropTypeEnum.NOT;
+    }
+
+    private static BeanPropTypeEnum propertyIsBeanProp(PsiClass psiClass,String capitalizedPropertyName,String prefix){
+        PsiMethod[] getMethods = psiClass.findMethodsByName(prefix + capitalizedPropertyName, true);
+        if(getMethods.length==0){
+            return BeanPropTypeEnum.NOT;
+        }
+        PsiMethod getter = getMethods[0];
+        if (getter == null || !getter.hasModifierProperty(PsiModifier.PUBLIC)) {
+            return BeanPropTypeEnum.NOT;
+        }
+        return Objects.equals("is",prefix)?BeanPropTypeEnum.IS:BeanPropTypeEnum.GET;
     }
 
     private static String capitalize(String s) {
