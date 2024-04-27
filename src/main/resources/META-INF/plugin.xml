@@ -27,6 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.52</h3>
+    <ul>
+    <li>支持easy-query 2.x.x版本并且兼容1.x.x版本的apt</li>
+    </ul>
     <h3>0.0.51</h3>
     <ul>
     <li>支持基本类型long,short,boolean的属性apt生成</li>

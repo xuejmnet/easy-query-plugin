@@ -4,6 +4,8 @@ import com.easy.query.plugin.core.enums.BeanPropTypeEnum;
 import com.easy.query.plugin.core.util.StrUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Objects;
+
 /**
  * create time 2023/9/16 12:12
  * 文件说明
@@ -97,7 +99,7 @@ public class AptPropertyInfo {
         return sqlColumn;
     }
 
-    public boolean isIncludeAndHasNavgateProxyName(){
+    public boolean isIncludeAndHasNavigateProxyName(){
         return includeProperty&&getNavigateProxyName()!=null;
     }
 
@@ -114,6 +116,9 @@ public class AptPropertyInfo {
     }
     public String getNavigateProxyName(){
         return propertyColumn.getNavigateProxyName();
+    }
+    public boolean isAnyType(){
+        return propertyColumn.isAnyType();
     }
 
 }

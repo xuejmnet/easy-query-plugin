@@ -78,40 +78,9 @@ import java.util.stream.Collectors;
  */
 public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorFactoryListener, Disposable, FileEditorManagerListener {
     private static final Logger log = Logger.getInstance(EasyQueryDocumentChangeHandler.class);
-    private static final Map<String, PropertyColumn> TYPE_COLUMN_MAPPING = new HashMap<>();
     public static final Key<Boolean> CHANGE = Key.create("change");
     private static final Key<Boolean> LISTENER = Key.create("listener");
 
-    static {
-
-        TYPE_COLUMN_MAPPING.put("java.lang.Float", new PropertyColumn("SQLNumberColumn", "java.lang.Float"));
-        TYPE_COLUMN_MAPPING.put("java.lang.Double", new PropertyColumn("SQLNumberColumn", "java.lang.Double"));
-        TYPE_COLUMN_MAPPING.put("java.lang.Short", new PropertyColumn("SQLNumberColumn", "java.lang.Short"));
-        TYPE_COLUMN_MAPPING.put("java.lang.Integer", new PropertyColumn("SQLNumberColumn", "java.lang.Integer"));
-        TYPE_COLUMN_MAPPING.put("java.lang.Long", new PropertyColumn("SQLNumberColumn", "java.lang.Long"));
-        TYPE_COLUMN_MAPPING.put("java.lang.Byte", new PropertyColumn("SQLNumberColumn", "java.lang.Byte"));
-        TYPE_COLUMN_MAPPING.put("java.math.BigDecimal", new PropertyColumn("SQLNumberColumn", "java.math.BigDecimal"));
-        TYPE_COLUMN_MAPPING.put("java.lang.Boolean", new PropertyColumn("SQLBooleanColumn", "java.lang.Boolean"));
-        TYPE_COLUMN_MAPPING.put("java.lang.String", new PropertyColumn("SQLStringColumn", "java.lang.String"));
-        TYPE_COLUMN_MAPPING.put("java.util.UUID", new PropertyColumn("SQLStringColumn", "java.util.UUID"));
-        TYPE_COLUMN_MAPPING.put("java.sql.Timestamp", new PropertyColumn("SQLDateTimeColumn", "java.sql.Timestamp"));
-        TYPE_COLUMN_MAPPING.put("java.sql.Time", new PropertyColumn("SQLDateTimeColumn", "java.sql.Time"));
-        TYPE_COLUMN_MAPPING.put("java.sql.Date", new PropertyColumn("SQLDateTimeColumn", "java.sql.Date"));
-        TYPE_COLUMN_MAPPING.put("java.util.Date", new PropertyColumn("SQLDateTimeColumn", "java.util.Date"));
-        TYPE_COLUMN_MAPPING.put("java.time.LocalDate", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalDate"));
-        TYPE_COLUMN_MAPPING.put("java.time.LocalDateTime", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalDateTime"));
-        TYPE_COLUMN_MAPPING.put("java.time.LocalTime", new PropertyColumn("SQLDateTimeColumn", "java.time.LocalTime"));
-
-
-
-        TYPE_COLUMN_MAPPING.put("float", new PropertyColumn("SQLNumberColumn", "java.lang.Float"));
-        TYPE_COLUMN_MAPPING.put("double", new PropertyColumn("SQLNumberColumn", "java.lang.Double"));
-        TYPE_COLUMN_MAPPING.put("short", new PropertyColumn("SQLNumberColumn", "java.lang.Short"));
-        TYPE_COLUMN_MAPPING.put("int", new PropertyColumn("SQLNumberColumn", "java.lang.Integer"));
-        TYPE_COLUMN_MAPPING.put("long", new PropertyColumn("SQLNumberColumn", "java.lang.Long"));
-        TYPE_COLUMN_MAPPING.put("byte", new PropertyColumn("SQLNumberColumn", "java.lang.Byte"));
-        TYPE_COLUMN_MAPPING.put("boolean", new PropertyColumn("SQLBooleanColumn", "java.lang.Boolean"));
-    }
 //    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Override
@@ -155,151 +124,14 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                 PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
                 if (entityProxy == null && entityFileProxy == null) {
                     log.warn("annotation [EntityProxy] is null and [EntityFileProxy] is null");
-                    return;
+                    continue;
                 }
-                //com.easy.query.core.enums.FileGenerateEnum.GENERATE_CURRENT_COMPILE_OVERRIDE
-                String strategy = entityFileProxy == null ? null : PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "strategy", "GENERATE_CURRENT_COMPILE_OVERRIDE");
-//                if(entityFileProxy!=null){
-//                    // todo写文件而不是写到类里面
-//                    continue;
-//                }
-
-
-                FileTypeEnum fileType = PsiUtil.getFileType(psiFile);
-                String path = moduleDirPath + CustomConfig.getConfig(config.getGenPath(),
-                        fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
-                        + psiFile.getPackageName().replace(".", "/") + "/proxy";
-
-                PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);
-                // 等待索引准备好
-                DumbService.getInstance(project).runWhenSmart(() -> {
-                    // 在智能模式下，执行需要等待索引准备好的操作，比如创建文件
-                    // 创建文件等操作代码
-                    oldFile.putUserData(CHANGE, false);
-//                    PsiClass anInterface = JavaPsiFacade.getInstance(project).getElementFactory().createInterface("ProxyEntityAvailable<Topic, TopicProxy>" );
-//                    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-//                    PsiClass anInterface1 = elementFactory.createInterface("com.easy.query.core.proxy.ProxyEntityAvailable" );
-//                    psiClass.add(anInterface1);
-
-//                    PsiClass[] interfaces = psiClass.getInterfaces();
-                    // 创建接口添加到PsiClass中
-//                    if (psiClass.getInterfaces().length == 0) {
-//
-//                    }
-//                    PsiClass psiClass1 = JavaPsiFacade.getInstance(project).findClass("org.example.entity.ProxyEntityAvailable", GlobalSearchScope.allScope(project));
-//                    if(psiClass1!=null){
-//                        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-//                        PsiJavaCodeReferenceElement referenceElementByType = elementFactory.createClassReferenceElement(psiClass);
-////                        PsiJavaCodeReferenceElement ref = elementFactory.createClassReferenceElement(psiClass1);
-////                        String text = psiClass1.getText();
-////                        PsiSubstitutor substitutor = PsiSubstitutor.EMPTY;
-////                        PsiClassType typeWithSubstitutor = elementFactory.createType(psiClass, substitutor);
-////                        PsiJavaCodeReferenceElement parameterRef = elementFactory.createReferenceElementByType(typeWithSubstitutor);
-//                        PsiJavaCodeReferenceElement referenceFromText = elementFactory.createReferenceFromText("ProxyEntityAvailable<TopicProxy>", psiClass);
-//
-//                        PsiMethod method = elementFactory.createMethodFromText("public Class<TopicProxy> proxyTableClass() {return TopicProxy.class;}",psiClass);
-//                        method.getModifierList().addAnnotation("Override");
-////                        PsiCodeBlock codeBlockFromText = elementFactory.createCodeBlockFromText("implements ProxyEntityAvailable<Topic, TopicProxy>", psiClass);
-//                        WriteCommandAction.runWriteCommandAction(project,()->{
-//
-////                            ref.getParameterList().add(parameterRef);
-//                            psiClass.getImplementsList().add(referenceFromText);
-//                            psiClass.add(method);
-//                        });
-//                    }
-
-                    String entityName = psiClass.getName();
-                    String entityFullName = psiClass.getQualifiedName();
-                    //获取对应的代理对象名称
-                    String proxyEntityName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value", psiClass.getName() + "Proxy");
-                    //代理对象属性忽略
-                    Set<String> proxyIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityProxy, "ignoreProperties", new HashSet<>());
-                    //是否是数据库对象
-                    PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
-                    //获取对应的忽略属性
-                    Set<String> tableAndProxyIgnoreProperties = PsiUtil.getPsiAnnotationValues(entityTable, "ignoreProperties", proxyIgnoreProperties);
-
-                    PsiField[] fields = psiClass.getAllFields();
-
-                    AptValueObjectInfo aptValueObjectInfo = new AptValueObjectInfo(entityName);
-                    String packageName = psiFile.getPackageName() + "." + ObjectUtil.defaultIfEmpty(config.getAllInTablesPackage(), "proxy");
-                    AptFileCompiler aptFileCompiler = new AptFileCompiler(packageName, entityName, proxyEntityName, new AptSelectorInfo(proxyEntityName + "Fetcher"), psiFile instanceof KtFile);
-                    aptFileCompiler.addImports(entityFullName);
-                    for (PsiField field : fields) {
-                        PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
-                        if (columnIgnore != null) {
-                            continue;
-                        }
-                        String name = field.getName();
-                        //是否存在忽略属性
-                        if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(name)) {
-                            continue;
-                        }
-                        BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, name);
-                        if (beanPropType==BeanPropTypeEnum.NOT) {
-                            continue;
-                        }
-                        PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
-                        String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-                        String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
-                        PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
-                        boolean isValueObject = valueObject != null;
-                        String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
-
-                        PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty");
-                        String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
-
-                        PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
-
-                        boolean includeProperty = navigate != null;
-                        boolean includeManyProperty = false;
-                        if (!includeProperty) {
-                            aptFileCompiler.getSelectorInfo().addProperties(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName,beanPropType));
-                        } else {
-                            aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
-                            String propertyType = propertyColumn.getPropertyType();
-
-                            String propIsProxy = PsiUtil.getPsiAnnotationValue(navigate, "propIsProxy", "true");
-                            String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType,!Objects.equals("false",propIsProxy));
-                            if (navigatePropertyProxyFullName != null) {
-                                propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
-                            }else{
-                                psiFieldComment+="\n//插件提示无法获取导航属性代理:"+propertyType;
-                            }
-                            String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
-                            if (psiAnnotationValue.endsWith("ToMany")) {
-                                includeManyProperty = true;
-                                aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
-                            }
-                        }
-                        aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName,beanPropType));
-                        aptFileCompiler.addImports(propertyColumn.getImport());
-
-
-                        if (isValueObject) {
-                            aptFileCompiler.addImports("com.easy.query.core.proxy.AbstractValueObjectProxyEntity");
-                            aptFileCompiler.addImports(psiFieldPropertyType);
-                            PsiType fieldType = field.getType();
-                            PsiClass fieldClass = ((PsiClassType) fieldType).resolve();
-                            if (fieldClass == null) {
-                                log.warn("field [" + name + "] is value object,cant resolve PsiClass");
-                                continue;
-                            }
-                            AptValueObjectInfo fieldAptValueObjectInfo = new AptValueObjectInfo(fieldClass.getName());
-                            aptValueObjectInfo.getChildren().add(fieldAptValueObjectInfo);
-                            addValueObjectClass(project,name, fieldAptValueObjectInfo, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
-                        }
-
-                    }
-
-                    VelocityContext context = new VelocityContext();
-                    context.put("aptValueObjectInfo", aptValueObjectInfo);
-                    context.put("aptFileCompiler", aptFileCompiler);
-                    String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
-                    PsiFile psiProxyFile = VelocityUtils.render(project,context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
-                    CodeStyleManager.getInstance(project).reformat(psiProxyFile);
-                    psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
-                });
+                int easyQueryVersion = getEasyQueryVersion(entityProxy, entityFileProxy);
+                if(easyQueryVersion==2){
+                    APTVersion2.generateApt(project,psiDirectoryMap,entityFileProxy,entityProxy,psiFile,moduleDirPath,config,moduleForFile,psiClass,oldFile,allCompileFrom);
+                }else{
+                    APTVersion1.generateApt(project,psiDirectoryMap,entityFileProxy,entityProxy,psiFile,moduleDirPath,config,moduleForFile,psiClass,oldFile,allCompileFrom);
+                }
             }
             // 等待索引准备好
             DumbService.getInstance(project).runWhenSmart(() -> {
@@ -332,122 +164,21 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             e.printStackTrace();
         }
     }
-    private static PsiClass getNavigatePropertyProxyClass(Project project,String fullClassName) {
-        PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.projectScope(project));
-        if(psiClass!=null){
-            return psiClass;
-        }
-        return JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.allScope(project));
-    }
 
-    private static String getNavigatePropertyProxyFullName(Project project,String fullClassName,boolean propIsProxy) {
-//        if(propertyColumn.getPropertyType().equals("com.easy.query.test.entity.school.MySchoolClass1")){
-        if(!fullClassName.contains(".")){
-            return null;
-        }
-        PsiClass psiClass = getNavigatePropertyProxyClass(project,fullClassName);
-
-        if (psiClass != null) {
-
-
-            PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
-            if(entityProxy!=null){
-                String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(entityProxy, "value", "");
-                if(StrUtil.isBlank(psiAnnotationValue)){
-                    return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
-                }
-                return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + psiAnnotationValue;
-            }
-            PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
-            if(entityFileProxy!=null){
-                String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(entityFileProxy, "value", "");
-                if(StrUtil.isBlank(psiAnnotationValue)){
-                    return getDefaultClassProxyName(fullClassName);
-                }
-                return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + psiAnnotationValue;
+    private static int getEasyQueryVersion(PsiAnnotation entityProxy,PsiAnnotation entityFileProxy){
+        if(entityProxy!=null){
+            String version = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "version", "1");
+            if("2".equals(version)){
+                return 2;
             }
         }
-        //todo 后续直接不支持别名强制转成classNameProxy
-        if(propIsProxy){
-            return getDefaultClassProxyName(fullClassName);
-        }
-//        }
-        return null;
-    }
-    private static String getDefaultClassProxyName(String fullClassName){
-        return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
-    }
-
-    public static PropertyColumn getPropertyColumn(String fieldGenericType) {
-        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn("SQLAnyColumn", fieldGenericType));
-    }
-
-    private static void addValueObjectClass(Project project,String parentProperty, AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
-        PsiField[] allFields = fieldValueObjectClass.getAllFields();
-
-        String entityName = fieldValueObjectClass.getName();
-        aptFileCompiler.addImports(fieldValueObjectClass.getQualifiedName());
-        for (PsiField field : allFields) {
-            PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
-            if (columnIgnore != null) {
-                continue;
-            }
-            String name = field.getName();
-            //是否存在忽略属性
-            if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(parentProperty + "." + name)) {
-                continue;
-            }
-            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, name);
-            if (beanPropType==BeanPropTypeEnum.NOT) {
-                continue;
-            }
-            PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
-            String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-            String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
-            PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
-            boolean isValueObject = valueObject != null;
-            String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
-
-
-            PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty");
-            String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
-
-            PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
-            aptFileCompiler.addImports(propertyColumn.getImport());
-
-            boolean includeProperty = navigate != null;
-            boolean includeManyProperty = false;
-            if (includeProperty) {
-                aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
-                String propertyType = propertyColumn.getPropertyType();
-                String propIsProxy = PsiUtil.getPsiAnnotationValue(navigate, "propIsProxy", "true");
-                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType,!Objects.equals("false",propIsProxy));
-                if (navigatePropertyProxyFullName != null) {
-                    propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
-                }else{
-                    psiFieldComment+="\n//插件提示无法获取导航属性代理:"+propertyType;
-                }
-                String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
-                if (psiAnnotationValue.endsWith("ToMany")) {
-                    includeManyProperty = true;
-                    aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
-                }
-            }
-            aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName,beanPropType));
-
-            if (valueObject != null) {
-                aptFileCompiler.addImports(psiFieldPropertyType);
-                PsiType fieldType = field.getType();
-                PsiClass fieldClass = ((PsiClassType) fieldType).resolve();
-                if (fieldClass == null) {
-                    log.warn("field [" + name + "] is value object,cant resolve PsiClass");
-                    continue;
-                }
-                AptValueObjectInfo innerValueObject = new AptValueObjectInfo(fieldClass.getName());
-                aptValueObjectInfo.getChildren().add(innerValueObject);
-                addValueObjectClass(project,parentProperty + "." + name, innerValueObject, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
+        if(entityFileProxy!=null){
+            String version = PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "version", "1");
+            if("2".equals(version)){
+                return 2;
             }
         }
+        return 1;
     }
 
 
