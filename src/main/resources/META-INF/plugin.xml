@@ -131,12 +131,12 @@
                 text="CompileCurrentFile" icon="/icons/eq.svg">
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
-        <action id="com.easy.query.plugin.action.TableGenerateAction"
-                icon="/icons/eq.svg"
-                class="com.easy.query.plugin.action.TableGenerateAction"
-                text="TableEntityGenerate">
-            <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>
-        </action>
+<!--        <action id="com.easy.query.plugin.action.TableGenerateAction"-->
+<!--                icon="/icons/eq.svg"-->
+<!--                class="com.easy.query.plugin.action.TableGenerateAction"-->
+<!--                text="TableEntityGenerate">-->
+<!--            <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>-->
+<!--        </action>-->
         <action id="com.easy.query.plugin.action.EntityQueryImplementAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.EntityQueryImplementAction"

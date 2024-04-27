@@ -27,6 +27,15 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.52</h3>
+    <ul>
+    <li>支持easy-query 2.x.x版本并且兼容1.x.x版本的apt</li>
+    </ul>
+    <h3>0.0.51</h3>
+    <ul>
+    <li>支持基本类型long,short,boolean的属性apt生成</li>
+    <li>支持boolean的属性生成连接到isXXX的注解</li>
+    </ul>
     <h3>0.0.50</h3>
     <ul>
     <li>StructDTO生成内部静态类不使用类型使用属性名</li>
@@ -122,12 +131,12 @@
                 text="CompileCurrentFile" icon="/icons/eq.svg">
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
-        <action id="com.easy.query.plugin.action.TableGenerateAction"
-                icon="/icons/eq.svg"
-                class="com.easy.query.plugin.action.TableGenerateAction"
-                text="TableEntityGenerate">
-            <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>
-        </action>
+<!--        <action id="com.easy.query.plugin.action.TableGenerateAction"-->
+<!--                icon="/icons/eq.svg"-->
+<!--                class="com.easy.query.plugin.action.TableGenerateAction"-->
+<!--                text="TableEntityGenerate">-->
+<!--            <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>-->
+<!--        </action>-->
         <action id="com.easy.query.plugin.action.EntityQueryImplementAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.EntityQueryImplementAction"
