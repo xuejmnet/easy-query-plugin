@@ -27,6 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.53</h3>
+    <ul>
+    <li>修复使用鼠标快捷键切换选项卡时没有进行apt编译</li>
+    </ul>
     <h3>0.0.52</h3>
     <ul>
     <li>支持easy-query 2.x.x版本并且兼容1.x.x版本的apt</li>
@@ -144,4 +148,9 @@
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
     </actions>
+    <project-components>
+        <component>
+            <implementation-class>com.easy.query.plugin.components.MyComponent</implementation-class>
+        </component>
+    </project-components>
 </idea-plugin>

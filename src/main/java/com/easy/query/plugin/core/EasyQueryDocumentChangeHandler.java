@@ -76,16 +76,12 @@ import java.util.stream.Collectors;
 /**
  * @author bigtian
  */
-public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorFactoryListener, Disposable, FileEditorManagerListener {
+public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorFactoryListener, Disposable {
     private static final Logger log = Logger.getInstance(EasyQueryDocumentChangeHandler.class);
     public static final Key<Boolean> CHANGE = Key.create("change");
     private static final Key<Boolean> LISTENER = Key.create("listener");
 
 //    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
-    @Override
-    public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-    }
 
     public static void createAptFile(List<VirtualFile> virtualFiles, Project project, boolean allCompileFrom) {
 //        Project project = ProjectUtils.getCurrentProject();
