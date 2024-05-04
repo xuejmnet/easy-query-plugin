@@ -1,12 +1,12 @@
 package com.easy.query.plugin.components;
 
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
@@ -19,14 +19,8 @@ import java.util.Collections;
  *
  * @author xuejiaming
  */
-public class MyComponent implements ProjectComponent,FileEditorManagerListener {
-    private static final Logger log = Logger.getInstance(MyComponent.class);
-    @NotNull
-    private final Project project;
-
-    public MyComponent(Project project){
-        this.project = project;
-    }
+public class MyStartupActivity implements StartupActivity,FileEditorManagerListener {
+    private static final Logger log = Logger.getInstance(MyStartupActivity.class);
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
         FileEditor oldEditor = event.getOldEditor();
@@ -43,10 +37,15 @@ public class MyComponent implements ProjectComponent,FileEditorManagerListener {
         }
     }
 
+//    @Override
+//    public void projectOpened() {
+//    }
+
     @Override
-    public void projectOpened() {
+    public void runActivity(@NotNull Project project) {
         MessageBus messageBus = project.getMessageBus();
         messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+
     }
 
 //    @Override

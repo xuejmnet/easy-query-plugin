@@ -27,9 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
-    <h3>0.0.53</h3>
+    <h3>0.0.53、0.0.54</h3>
     <ul>
     <li>修复使用鼠标快捷键切换选项卡时没有进行apt编译</li>
+    <li>移除过期api-0.0.54</li>
     </ul>
     <h3>0.0.52</h3>
     <ul>
@@ -148,9 +149,14 @@
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
     </actions>
-    <project-components>
-        <component>
-            <implementation-class>com.easy.query.plugin.components.MyComponent</implementation-class>
-        </component>
-    </project-components>
+<!--    <project-components>-->
+<!--        <component>-->
+<!--            <implementation-class>com.easy.query.plugin.components.MyStartupActivity</implementation-class>-->
+<!--        </component>-->
+<!--    </project-components>-->
+
+
+    <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity implementation="com.easy.query.plugin.components.MyStartupActivity"/>
+    </extensions>
 </idea-plugin>
