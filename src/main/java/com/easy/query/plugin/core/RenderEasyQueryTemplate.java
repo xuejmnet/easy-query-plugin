@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -103,7 +104,12 @@ public class RenderEasyQueryTemplate {
             columnInfo.setName(column.getName());
             columnInfo.setFieldName(StrUtil.toCamelCase(column.getName().toLowerCase()));
             String fieldType = getFieldType(column.getJdbcType(), tableInfo, column.getJdbcTypeName(), column.getSize(), column.getJdbcTypeStr().toLowerCase(), typeMapping);
-            columnInfo.setFieldType(fieldType);
+            if(Objects.equals("Object",fieldType)){
+                //防止用户不知道是啥类型无法添加mapping映射的正则匹配
+                columnInfo.setFieldType(column.getJdbcTypeStr().toLowerCase());
+            }else{
+                columnInfo.setFieldType(fieldType);
+            }
             columnInfo.setNotNull(column.isNotNull());
             columnInfo.setComment(column.getComment());
             columnInfo.setMethodName(StrUtil.upperFirst(columnInfo.getFieldName()));
