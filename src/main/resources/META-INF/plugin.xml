@@ -27,10 +27,17 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+
+    <h3>0.0.56</h3>
+    <ul>
+    <li>移除column默认生成的@Column推荐使用nameConversion</li>
+    </ul>
+
     <h3>0.0.55</h3>
     <ul>
     <li>表生成为实体时对未知对象使用jdbcTypeStr来描述</li>
     </ul>
+
     <h3>0.0.53、0.0.54</h3>
     <ul>
     <li>修复使用鼠标快捷键切换选项卡时没有进行apt编译</li>
