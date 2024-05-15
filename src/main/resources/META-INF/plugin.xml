@@ -105,6 +105,10 @@
         <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
     </extensions>
     <actions>
+<!--        <action id="com.easy.query.plugin.action.AutoProxyAvailableAction" class="com.easy.query.plugin.action.AutoProxyAvailableAction"-->
+<!--                text="AnonymousMap123">-->
+<!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
+<!--        </action>-->
         <action id="com.easy.query.plugin.action.CreateStructDTOAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.CreateStructDTOAction"
@@ -153,11 +157,11 @@
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
     </actions>
-<!--    <project-components>-->
-<!--        <component>-->
-<!--            <implementation-class>com.easy.query.plugin.components.MyStartupActivity</implementation-class>-->
-<!--        </component>-->
-<!--    </project-components>-->
+    <!--    <project-components>-->
+    <!--        <component>-->
+    <!--            <implementation-class>com.easy.query.plugin.components.MyStartupActivity</implementation-class>-->
+    <!--        </component>-->
+    <!--    </project-components>-->
 
 
     <extensions defaultExtensionNs="com.intellij">
