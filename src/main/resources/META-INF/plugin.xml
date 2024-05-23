@@ -29,7 +29,7 @@
     <change-notes><![CDATA[
     <h3>0.0.57</h3>
     <ul>
-    <li>支持2.0.15,默认插件implement生成不生成proxyTableClass</li>
+    <li>支持2.0.15,默认插件implement生成不生成proxyTableClass,修复未知类型不生成__cast(Object.class)</li>
     </ul>
 
     <h3>0.0.56</h3>

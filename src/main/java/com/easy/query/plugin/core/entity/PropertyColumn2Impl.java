@@ -14,6 +14,7 @@ import java.util.Objects;
 public class PropertyColumn2Impl implements PropertyColumn {
     private final String sqlColumnName;
     private final String propertyType;
+    private final Boolean anyType;
     private String navigateProxyName;
 
     private static Map<String, String> IMPORT_MAPPING = new HashMap<>();
@@ -40,9 +41,14 @@ public class PropertyColumn2Impl implements PropertyColumn {
     }
 
     public PropertyColumn2Impl(String sqlColumnName, String propertyType) {
+        this(sqlColumnName, propertyType, false);
+    }
+
+    public PropertyColumn2Impl(String sqlColumnName, String propertyType, Boolean anyType) {
 
         this.sqlColumnName = sqlColumnName;
         this.propertyType = propertyType;
+        this.anyType = anyType;
     }
 
     @Override
@@ -57,13 +63,17 @@ public class PropertyColumn2Impl implements PropertyColumn {
 
     @Override
     public String getPropertyTypeClass(boolean includeProperty) {
-        if(!includeProperty){
-            if(Objects.equals("SQLAnyColumn",sqlColumnName)){
+        if (!includeProperty) {
+            if (Objects.equals("SQLAnyTypeColumn", sqlColumnName)) {
                 return "__cast(Object.class)";
             }
         }
-        return propertyType+".class";
+        if(anyType!=null&&anyType){
+            return "__cast(Object.class)";
+        }
+        return propertyType + ".class";
     }
+
     @Override
     public String getImport() {
         return IMPORT_MAPPING.get(sqlColumnName);
@@ -119,8 +129,9 @@ public class PropertyColumn2Impl implements PropertyColumn {
     public void setNavigateProxyName(String navigateProxyName) {
         this.navigateProxyName = navigateProxyName;
     }
+
     @Override
-    public boolean isAnyType(){
-        return Objects.equals("SQLAnyTypeColumn",sqlColumnName);
+    public boolean isAnyType() {
+        return Objects.equals("SQLAnyTypeColumn", sqlColumnName);
     }
 }

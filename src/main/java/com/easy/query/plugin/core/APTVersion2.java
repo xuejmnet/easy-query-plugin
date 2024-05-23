@@ -77,21 +77,20 @@ public class APTVersion2 {
         TYPE_COLUMN_MAPPING.put("java.time.LocalTime", new PropertyColumn2Impl("SQLLocalTimeTypeColumn", "java.time.LocalTime"));
 
 
-
         TYPE_COLUMN_MAPPING.put("float", new PropertyColumn2Impl("SQLFloatTypeColumn", "java.lang.Float"));
         TYPE_COLUMN_MAPPING.put("double", new PropertyColumn2Impl("SQLDoubleTypeColumn", "java.lang.Double"));
         TYPE_COLUMN_MAPPING.put("short", new PropertyColumn2Impl("SQLShortTypeColumn", "java.lang.Short"));
         TYPE_COLUMN_MAPPING.put("int", new PropertyColumn2Impl("SQLIntegerTypeColumn", "java.lang.Integer"));
-        TYPE_COLUMN_MAPPING.put("long",new PropertyColumn2Impl("SQLLongTypeColumn", "java.lang.Long"));
+        TYPE_COLUMN_MAPPING.put("long", new PropertyColumn2Impl("SQLLongTypeColumn", "java.lang.Long"));
         TYPE_COLUMN_MAPPING.put("byte", new PropertyColumn2Impl("SQLByteTypeColumn", "java.lang.Byte"));
         TYPE_COLUMN_MAPPING.put("boolean", new PropertyColumn2Impl("SQLBooleanTypeColumn", "java.lang.Boolean"));
     }
 
     public static void generateApt(Project project, Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap,
-                                   PsiAnnotation entityFileProxy,PsiAnnotation entityProxy,
-                                   PsiClassOwner psiFile,String moduleDirPath,CustomConfig config,
-                                   Module moduleForFile,PsiClass psiClass,
-                                   VirtualFile oldFile, boolean allCompileFrom){
+                                   PsiAnnotation entityFileProxy, PsiAnnotation entityProxy,
+                                   PsiClassOwner psiFile, String moduleDirPath, CustomConfig config,
+                                   Module moduleForFile, PsiClass psiClass,
+                                   VirtualFile oldFile, boolean allCompileFrom) {
 
         //com.easy.query.core.enums.FileGenerateEnum.GENERATE_CURRENT_COMPILE_OVERRIDE
         String strategy = entityFileProxy == null ? null : PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "strategy", "GENERATE_CURRENT_COMPILE_OVERRIDE");
@@ -141,7 +140,7 @@ public class APTVersion2 {
                     continue;
                 }
                 BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, name);
-                if (beanPropType==BeanPropTypeEnum.NOT) {
+                if (beanPropType == BeanPropTypeEnum.NOT) {
                     continue;
                 }
                 PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
@@ -153,23 +152,24 @@ public class APTVersion2 {
 
                 PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty");
                 String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
-
-                PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
+                String generateAnyType = PsiUtil.getPsiAnnotationValue(proxyProperty, "generateAnyType", null);
+                Boolean anyType = StrUtil.isBlank(generateAnyType) ? null : Objects.equals("true", generateAnyType);
+                PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType,anyType);
 
                 boolean includeProperty = navigate != null;
                 boolean includeManyProperty = false;
                 if (!includeProperty) {
-                    aptFileCompiler.getSelectorInfo().addProperties(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName,beanPropType));
+                    aptFileCompiler.getSelectorInfo().addProperties(new AptSelectPropertyInfo(name, psiFieldComment, proxyPropertyName, beanPropType));
                 } else {
                     aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                     String propertyType = propertyColumn.getPropertyType();
 
                     String propIsProxy = PsiUtil.getPsiAnnotationValue(navigate, "propIsProxy", "true");
-                    String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType,!Objects.equals("false",propIsProxy));
+                    String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project, propertyType, !Objects.equals("false", propIsProxy));
                     if (navigatePropertyProxyFullName != null) {
                         propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
-                    }else{
-                        psiFieldComment+="\n//插件提示无法获取导航属性代理:"+propertyType;
+                    } else {
+                        psiFieldComment += "\n//插件提示无法获取导航属性代理:" + propertyType;
                     }
                     String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
                     if (psiAnnotationValue.endsWith("ToMany")) {
@@ -177,7 +177,7 @@ public class APTVersion2 {
                         aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
                     }
                 }
-                aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName,beanPropType));
+                aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty, includeManyProperty, proxyPropertyName, beanPropType));
                 aptFileCompiler.addImports(propertyColumn.getImport());
 
 
@@ -192,7 +192,7 @@ public class APTVersion2 {
                     }
                     AptValueObjectInfo fieldAptValueObjectInfo = new AptValueObjectInfo(fieldClass.getName());
                     aptValueObjectInfo.getChildren().add(fieldAptValueObjectInfo);
-                    addValueObjectClass(project,name, fieldAptValueObjectInfo, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
+                    addValueObjectClass(project, name, fieldAptValueObjectInfo, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
                 }
 
             }
@@ -201,61 +201,64 @@ public class APTVersion2 {
             context.put("aptValueObjectInfo", aptValueObjectInfo);
             context.put("aptFileCompiler", aptFileCompiler);
             String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
-            PsiFile psiProxyFile = VelocityUtils.render(project,context, Template.getTemplateContent("AptTemplate2" + suffix), proxyEntityName + suffix);
+            PsiFile psiProxyFile = VelocityUtils.render(project, context, Template.getTemplateContent("AptTemplate2" + suffix), proxyEntityName + suffix);
             CodeStyleManager.getInstance(project).reformat(psiProxyFile);
             psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
         });
     }
 
-    private static PropertyColumn getPropertyColumn(String fieldGenericType) {
-        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn2Impl("SQLAnyTypeColumn", fieldGenericType));
+    private static PropertyColumn getPropertyColumn(String fieldGenericType,Boolean anyType) {
+        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn2Impl("SQLAnyTypeColumn", fieldGenericType,anyType));
     }
-    private static String getNavigatePropertyProxyFullName(Project project,String fullClassName,boolean propIsProxy) {
+
+    private static String getNavigatePropertyProxyFullName(Project project, String fullClassName, boolean propIsProxy) {
 //        if(propertyColumn.getPropertyType().equals("com.easy.query.test.entity.school.MySchoolClass1")){
-        if(!fullClassName.contains(".")){
+        if (!fullClassName.contains(".")) {
             return null;
         }
-        PsiClass psiClass = getNavigatePropertyProxyClass(project,fullClassName);
+        PsiClass psiClass = getNavigatePropertyProxyClass(project, fullClassName);
 
         if (psiClass != null) {
 
 
             PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
-            if(entityProxy!=null){
+            if (entityProxy != null) {
                 String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(entityProxy, "value", "");
-                if(StrUtil.isBlank(psiAnnotationValue)){
+                if (StrUtil.isBlank(psiAnnotationValue)) {
                     return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
                 }
                 return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + psiAnnotationValue;
             }
             PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
-            if(entityFileProxy!=null){
+            if (entityFileProxy != null) {
                 String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(entityFileProxy, "value", "");
-                if(StrUtil.isBlank(psiAnnotationValue)){
+                if (StrUtil.isBlank(psiAnnotationValue)) {
                     return getDefaultClassProxyName(fullClassName);
                 }
                 return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + psiAnnotationValue;
             }
         }
         //todo 后续直接不支持别名强制转成classNameProxy
-        if(propIsProxy){
+        if (propIsProxy) {
             return getDefaultClassProxyName(fullClassName);
         }
 //        }
         return null;
     }
 
-    private static String getDefaultClassProxyName(String fullClassName){
+    private static String getDefaultClassProxyName(String fullClassName) {
         return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
     }
-    private static PsiClass getNavigatePropertyProxyClass(Project project,String fullClassName) {
+
+    private static PsiClass getNavigatePropertyProxyClass(Project project, String fullClassName) {
         PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.projectScope(project));
-        if(psiClass!=null){
+        if (psiClass != null) {
             return psiClass;
         }
         return JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.allScope(project));
     }
-    private static void addValueObjectClass(Project project,String parentProperty, AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
+
+    private static void addValueObjectClass(Project project, String parentProperty, AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
         PsiField[] allFields = fieldValueObjectClass.getAllFields();
 
         String entityName = fieldValueObjectClass.getName();
@@ -271,7 +274,7 @@ public class APTVersion2 {
                 continue;
             }
             BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, name);
-            if (beanPropType==BeanPropTypeEnum.NOT) {
+            if (beanPropType == BeanPropTypeEnum.NOT) {
                 continue;
             }
             PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
@@ -284,8 +287,10 @@ public class APTVersion2 {
 
             PsiAnnotation proxyProperty = field.getAnnotation("com.easy.query.core.annotation.ProxyProperty");
             String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
+            String generateAnyType = PsiUtil.getPsiAnnotationValue(proxyProperty, "generateAnyType", null);
+            Boolean anyType = StrUtil.isBlank(generateAnyType) ? null : Objects.equals("true", generateAnyType);
 
-            PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType);
+            PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType,anyType);
             aptFileCompiler.addImports(propertyColumn.getImport());
 
             boolean includeProperty = navigate != null;
@@ -294,11 +299,11 @@ public class APTVersion2 {
                 aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLNavigateColumn");
                 String propertyType = propertyColumn.getPropertyType();
                 String propIsProxy = PsiUtil.getPsiAnnotationValue(navigate, "propIsProxy", "true");
-                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project,propertyType,!Objects.equals("false",propIsProxy));
+                String navigatePropertyProxyFullName = getNavigatePropertyProxyFullName(project, propertyType, !Objects.equals("false", propIsProxy));
                 if (navigatePropertyProxyFullName != null) {
                     propertyColumn.setNavigateProxyName(navigatePropertyProxyFullName);
-                }else{
-                    psiFieldComment+="\n//插件提示无法获取导航属性代理:"+propertyType;
+                } else {
+                    psiFieldComment += "\n//插件提示无法获取导航属性代理:" + propertyType;
                 }
                 String psiAnnotationValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
                 if (psiAnnotationValue.endsWith("ToMany")) {
@@ -306,7 +311,7 @@ public class APTVersion2 {
                     aptFileCompiler.addImports("com.easy.query.core.proxy.columns.SQLQueryable");
                 }
             }
-            aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty,includeManyProperty, proxyPropertyName,beanPropType));
+            aptValueObjectInfo.addProperties(new AptPropertyInfo(name, propertyColumn, psiFieldComment, fieldName, isValueObject, entityName, includeProperty, includeManyProperty, proxyPropertyName, beanPropType));
 
             if (valueObject != null) {
                 aptFileCompiler.addImports(psiFieldPropertyType);
@@ -318,7 +323,7 @@ public class APTVersion2 {
                 }
                 AptValueObjectInfo innerValueObject = new AptValueObjectInfo(fieldClass.getName());
                 aptValueObjectInfo.getChildren().add(innerValueObject);
-                addValueObjectClass(project,parentProperty + "." + name, innerValueObject, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
+                addValueObjectClass(project, parentProperty + "." + name, innerValueObject, fieldClass, aptFileCompiler, tableAndProxyIgnoreProperties);
             }
         }
     }
