@@ -39,14 +39,14 @@
 //        if (psiFile.isWritable()) {
 //            PsiClass psiClass = OverrideImplementUtil.getContextClass(project, editor, psiFile, false);
 //            if (null != psiClass) {
-//                processClass(project, psiClass);
-//
+//                processClass(project, psiClass,psiFile);
 //                UndoUtil.markPsiFileForUndo(psiFile);
+//
 //            }
 //        }
 //    }
 //
-//    protected void processClass(@NotNull Project project, @NotNull PsiClass psiClass) {
+//    protected void processClass(@NotNull Project project, @NotNull PsiClass psiClass,PsiFile psiFile) {
 //
 //        PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
 //        PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
@@ -56,7 +56,6 @@
 //        boolean implementInterface = isImplementInterface(psiClass);
 //        if (!implementInterface) {//没有注解或者没实现
 //
-//            PsiFile psiFile = psiClass.getContainingFile();
 //            Set<String> importSet = new HashSet<>();
 //            if (psiFile instanceof KtFile) {
 //                KtFile ktFile = (KtFile) psiFile;
@@ -78,23 +77,26 @@
 //            PsiImportStatement importProxyAvailableStatement = getImportStatement(true, javaPsiFacade, elementFactory, "com.easy.query.core.proxy.ProxyEntityAvailable", project);
 //            PsiJavaCodeReferenceElement referenceFromText = elementFactory.createReferenceFromText(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName), psiClass);
 //            PsiMethod method = elementFactory.createMethodFromText(String.format("public Class<%s> proxyTableClass() {return %s.class;}", entityProxyName, entityProxyName), psiClass);
-//            method.getModifierList().addAnnotation("Override");
+////            method.getModifierList().addAnnotation("Override");
 //            if (psiFile instanceof PsiJavaFile) {
-//                if (importProxyAvailableStatement != null) {
 //
-//                    PsiImportList importList = ((PsiJavaFile) psiClass.getContainingFile()).getImportList();
-//                    if (importList != null) {
-//                        importList.add(importProxyAvailableStatement);
-//                    }
-//                }
-////                        KtPsiFactory psiFactory = new KtPsiFactory(project);
-////                        KtSuperTypeEntry superTypeEntry = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
-////                        KtSuperTypeList superTypeList = ktClass.getSuperTypeList();
-////                        superTypeList.add(navigationElement);
-//                if (psiClass.getImplementsList() != null) {
-//                    psiClass.getImplementsList().add(referenceFromText);
-//                }
+////                    if (importProxyAvailableStatement != null) {
+////
+////                        PsiImportList importList = ((PsiJavaFile) psiFile).getImportList();
+////                        if (importList != null) {
+////                            importList.add(importProxyAvailableStatement);
+////                        }
+////                    }
+//////                        KtPsiFactory psiFactory = new KtPsiFactory(project);
+//////                        KtSuperTypeEntry superTypeEntry = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
+//////                        KtSuperTypeList superTypeList = ktClass.getSuperTypeList();
+//////                        superTypeList.add(navigationElement);
+////                    if (psiClass.getImplementsList() != null) {
+////                        psiClass.getImplementsList().add(referenceFromText);
+////                    }
 //                psiClass.add(method);
+//
+//                method.delete();
 ////                WriteCommandAction.runWriteCommandAction(project, () -> {
 ////
 ////                    if (importProxyAvailableStatement != null) {

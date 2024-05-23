@@ -142,8 +142,8 @@ public class EntityQueryImplementAction extends AnAction {
                     PsiJavaCodeReferenceElement referenceFromText = elementFactory.createReferenceFromText(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName), psiClass);
 //                    PsiElement navigationElement = referenceFromText.getNavigationElement();
 //                    PsiElement navigationElement = referenceFromText.getNavigationElement();
-                    PsiMethod method = elementFactory.createMethodFromText(String.format("public Class<%s> proxyTableClass() {return %s.class;}", entityProxyName, entityProxyName), psiClass);
-                    method.getModifierList().addAnnotation("Override" );
+//                    PsiMethod method = elementFactory.createMethodFromText(String.format("public Class<%s> proxyTableClass() {return %s.class;}", entityProxyName, entityProxyName), psiClass);
+//                    method.getModifierList().addAnnotation("Override" );
                     WriteCommandAction.runWriteCommandAction(project, () -> {
                         if (importProxyAvailableStatement != null) {
 
@@ -159,7 +159,7 @@ public class EntityQueryImplementAction extends AnAction {
                         if (psiClass.getImplementsList() != null) {
                             psiClass.getImplementsList().add(referenceFromText);
                         }
-                        psiClass.add(method);
+//                        psiClass.add(method);
                     });
                 }
             }
@@ -192,10 +192,10 @@ public class EntityQueryImplementAction extends AnAction {
                         KtSuperTypeEntry referenceSuperType = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
 //                    PsiElement navigationElement = referenceFromText.getNavigationElement();
 //                    PsiElement navigationElement = referenceFromText.getNavigationElement();
-                        KtNamedFunction function = psiFactory.createFunction(String.format("override fun proxyTableClass(): Class<%s> {return %s::class.java;}", entityProxyName, entityProxyName));
+//                        KtNamedFunction function = psiFactory.createFunction(String.format("override fun proxyTableClass(): Class<%s> {return %s::class.java;}", entityProxyName, entityProxyName));
 //                        PsiMethod method = elementFactory.createMethodFromText(String.format("public Class<%s> proxyTableClass() {return %s.class;}", entityProxyName, entityProxyName), psiClass);
 //                        method.getModifierList().addAnnotation("Override" );
-                        KtClassBody ktClassBody = Arrays.stream(ktClass.getChildren()).filter(o -> o instanceof KtClassBody).map(o -> (KtClassBody) o).findFirst().orElse(null);
+//                        KtClassBody ktClassBody = Arrays.stream(ktClass.getChildren()).filter(o -> o instanceof KtClassBody).map(o -> (KtClassBody) o).findFirst().orElse(null);
                         WriteCommandAction.runWriteCommandAction(project, () -> {
                             if (importProxyAvailableStatement != null) {
                                 KtImportList importList = ktFile.getImportList();
@@ -207,9 +207,9 @@ public class EntityQueryImplementAction extends AnAction {
 //                                ktClass.addBefore(importProxyAvailableStatement,ktImportDirective);
                             }
                             ktClass.addSuperTypeListEntry(referenceSuperType);
-                            if(ktClassBody!=null){
-                                ktClassBody.addBefore(function,ktClassBody.getLastChild());
-                            }
+//                            if(ktClassBody!=null){
+//                                ktClassBody.addBefore(function,ktClassBody.getLastChild());
+//                            }
 //                        KtSuperTypeEntry superTypeEntry = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
 //                        KtSuperTypeList superTypeList = ktClass.getSuperTypeList();
 //                        superTypeList.add(navigationElement);
