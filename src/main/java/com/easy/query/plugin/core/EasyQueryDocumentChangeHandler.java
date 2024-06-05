@@ -122,11 +122,17 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     log.warn("annotation [EntityProxy] is null and [EntityFileProxy] is null");
                     continue;
                 }
-                int easyQueryVersion = getEasyQueryVersion(entityProxy, entityFileProxy);
-                if(easyQueryVersion==2){
-                    APTVersion2.generateApt(project,psiDirectoryMap,entityFileProxy,entityProxy,psiFile,moduleDirPath,config,moduleForFile,psiClass,oldFile,allCompileFrom);
-                }else{
-                    APTVersion1.generateApt(project,psiDirectoryMap,entityFileProxy,entityProxy,psiFile,moduleDirPath,config,moduleForFile,psiClass,oldFile,allCompileFrom);
+                String easyQueryVersion = getEasyQueryVersion(entityProxy, entityFileProxy);
+                if (Objects.equals("1", easyQueryVersion)) {
+                    APTVersion1.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
+                } else {
+                    String easyQueryRevision = getEasyQueryRevision(entityProxy, entityFileProxy);
+                    if (Objects.equals("", easyQueryRevision)) {
+                        APTVersion2.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
+                    } else {
+                        APTVersion2_1.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
+                    }
+
                 }
             }
             // 等待索引准备好
@@ -161,20 +167,24 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         }
     }
 
-    private static int getEasyQueryVersion(PsiAnnotation entityProxy,PsiAnnotation entityFileProxy){
-        if(entityProxy!=null){
-            String version = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "version", "1");
-            if("2".equals(version)){
-                return 2;
-            }
+    private static String getEasyQueryVersion(PsiAnnotation entityProxy, PsiAnnotation entityFileProxy) {
+        if (entityProxy != null) {
+            return PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "version", "1");
         }
-        if(entityFileProxy!=null){
-            String version = PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "version", "1");
-            if("2".equals(version)){
-                return 2;
-            }
+        if (entityFileProxy != null) {
+            return PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "version", "1");
         }
-        return 1;
+        return "1";
+    }
+
+    private static String getEasyQueryRevision(PsiAnnotation entityProxy, PsiAnnotation entityFileProxy) {
+        if (entityProxy != null) {
+            return PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "revision", "");
+        }
+        if (entityFileProxy != null) {
+            return PsiUtil.getPsiAnnotationValueIfEmpty(entityFileProxy, "revision", "");
+        }
+        return "";
     }
 
 
