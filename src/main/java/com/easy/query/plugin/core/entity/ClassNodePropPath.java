@@ -12,12 +12,14 @@ public class ClassNodePropPath {
     private final String from;
     private final String to;
     private final String property;
+    private int deep;
 
-    public ClassNodePropPath(String from, String to, String property){
+    public ClassNodePropPath(String from, String to, String property,int deep){
 
         this.from = from;
         this.to = to;
         this.property = property;
+        this.deep = deep;
     }
 
     @Override
@@ -35,5 +37,13 @@ public class ClassNodePropPath {
 
     public String getTo() {
         return to;
+    }
+
+    public int getDeep() {
+        return deep;
+    }
+
+    public void setDeep(int deep) {
+        this.deep = deep;
     }
 }

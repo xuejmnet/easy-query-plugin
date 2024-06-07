@@ -1,6 +1,8 @@
 package com.easy.query.plugin.core.entity;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -12,13 +14,25 @@ import java.util.Set;
  */
 public class ClassNodeCirculateChecker {
     private final String rootClass;
-    private Set<ClassNodePropPath> classNodePropPaths = new HashSet<>();
+    private Map<ClassNodePropPath,ClassNodePropPath> classNodePropPaths = new HashMap<>();
     public ClassNodeCirculateChecker(String rootClass){
 
         this.rootClass = rootClass;
     }
 
     public boolean pathRepeat(ClassNodePropPath classNodePropPath) {
-        return Objects.equals(rootClass,classNodePropPath.getTo()) || !classNodePropPaths.add(classNodePropPath);
+        if(Objects.equals(rootClass,classNodePropPath.getTo())){
+            return true;
+        }
+        ClassNodePropPath oldPath = classNodePropPaths.get(classNodePropPath);
+        if(oldPath==null){
+            classNodePropPaths.put(classNodePropPath,classNodePropPath);
+            return false;
+        }
+        if(oldPath.getDeep()<classNodePropPath.getDeep()){
+            return true;
+        }
+        oldPath.setDeep(classNodePropPath.getDeep());
+        return  false;
     }
 }
