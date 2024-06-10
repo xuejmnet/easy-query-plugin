@@ -1,5 +1,6 @@
 package com.easy.query.plugin.action;
 
+import com.easy.query.plugin.core.util.MyStringUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -14,6 +15,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiElement;
@@ -25,6 +27,7 @@ import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiImportList;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiReferenceExpression;
 import org.jetbrains.kotlin.psi.KtFile;
 
@@ -64,16 +67,25 @@ public class NavigatePathAction extends AnAction {
                     //如果是字段的话
                     if (ELEMENT_FIELD.accepts(elementAt)) {
                         PsiIdentifier field = (PsiIdentifier) elementAt;
-                        String fieldName = field.getText();
+                        String fieldName = MyStringUtil.toUpperUnderlined(field.getText());
 
 //                        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
                         PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                         PsiClass ownerClass = psiClassOwner.getClasses()[0];
                         String className = ownerClass.getName();
-//                        String text = ownerClass.getDocComment().getText();
-//                        String referenceClassName = getReferenceClassName(className, text);
-                        PsiField psiField = elementFactory.createFieldFromText(String.format("private static final MappingPath %s_PATH =%s.TABLE", fieldName, className + "Proxy"), ownerClass);
+                        String text = ownerClass.getDocComment().getText();
+                        String referenceClassName = getReferenceClassName(className, text);
+                        PsiField psiField = elementFactory.createFieldFromText(String.format("private static final MappingPath %s_PATH =%s.TABLE", fieldName, referenceClassName + "Proxy"), ownerClass);
+                        PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(String.format("@NavigateFlat(mapping=\"%s_PATH\")", fieldName), psiField);
+                        PsiElement prevSibling = elementAt.getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling();
+                        PsiModifierList psiModifierList = prevSibling instanceof PsiModifierList ? (PsiModifierList) prevSibling : null;
                         WriteCommandAction.runWriteCommandAction(project, () -> {
+
+                            if (psiModifierList != null) {
+                                psiFile.addBefore(annotationFromText, psiModifierList);
+                            } else {
+                                psiFile.addBefore(annotationFromText, elementAt.getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling());
+                            }
                             psiFile.addBefore(psiField, elementAt.getParent());
                         });
                     }
@@ -88,18 +100,32 @@ public class NavigatePathAction extends AnAction {
         }
     }
 
-    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+(\\w+)}";
+    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+(\\w+)|\\{@link\\s+([\\w\\.]+)\\}";;
 
-    private String getReferenceClassName(String className, String docText) {
+    private String getReferenceClassName(String className, String docText){
+        String result = getReferenceClassName0(className, docText).trim();
+        if(result.contains(".")){
+            return StrUtil.subAfter(result,".",true);
+        }else {
+            return result;
+        }
+    }
+    private String getReferenceClassName0(String className, String docText) {
+//        docText = docText.replaceAll("\n", "");
         if (StrUtil.isNotBlank(docText)) {
             Pattern pattern = Pattern.compile(LINK_SEE_CLASS_REGEX);
 
             // 创建匹配器
             Matcher matcher = pattern.matcher(docText);
-            if(matcher.find()){
-                String result =  matcher.group(1);
+            if (matcher.find()) {
+                String result = matcher.group(1);
                 if (StrUtil.isNotBlank(result)) {
                     return result;
+                }else{
+                    String resultLink = matcher.group(2);
+                    if (StrUtil.isNotBlank(resultLink)) {
+                        return resultLink;
+                    }
                 }
             }
         }

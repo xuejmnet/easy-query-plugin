@@ -29,5 +29,18 @@ public class MyStringUtil {
             }
         }
         return str.toLowerCase();
+    }/**
+     * 转下划线字符, eg AaaBbb => AAA_BBB
+     */
+    public static String toUpperUnderlined(String s) {
+        char[] chars = s.toCharArray();
+        StringBuilder temp = new StringBuilder();
+        for (int i = 0; i < chars.length; i++) {
+            if (i!=0&&Character.isUpperCase(chars[i])) {
+                temp.append("_");
+            }
+            temp.append(Character.toUpperCase(chars[i]));
+        }
+        return temp.toString();
     }
 }
