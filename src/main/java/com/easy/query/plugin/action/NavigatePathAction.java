@@ -76,7 +76,7 @@ public class NavigatePathAction extends AnAction {
                         String text = ownerClass.getDocComment().getText();
                         String referenceClassName = getReferenceClassName(className, text);
                         PsiField psiField = elementFactory.createFieldFromText(String.format("private static final MappingPath %s_PATH =%s.TABLE", fieldName, referenceClassName + "Proxy"), ownerClass);
-                        PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(String.format("@NavigateFlat(mapping=\"%s_PATH\")", fieldName), psiField);
+                        PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(String.format("@NavigateFlat(pathAlias=\"%s_PATH\")", fieldName), psiField);
                         PsiElement prevSibling = elementAt.getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling();
                         PsiModifierList psiModifierList = prevSibling instanceof PsiModifierList ? (PsiModifierList) prevSibling : null;
                         WriteCommandAction.runWriteCommandAction(project, () -> {
