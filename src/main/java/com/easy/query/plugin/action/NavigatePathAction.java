@@ -100,7 +100,7 @@ public class NavigatePathAction extends AnAction {
         }
     }
 
-    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+(\\w+)|\\{@link\\s+([\\w\\.]+)\\}";;
+    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)|\\{@link\\s+([\\w\\.]+)\\}";
 
     private String getReferenceClassName(String className, String docText){
         String result = getReferenceClassName0(className, docText).trim();
