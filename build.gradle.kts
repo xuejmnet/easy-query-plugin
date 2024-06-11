@@ -50,7 +50,7 @@ tasks {
         //插件起始支持版本
         sinceBuild.set("222")
         //插件结束支持版本
-        untilBuild.set("241.*")
+        untilBuild.set("242.*")
     }
 
     signPlugin {
