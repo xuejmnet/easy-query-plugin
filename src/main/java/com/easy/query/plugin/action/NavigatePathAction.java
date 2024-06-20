@@ -29,6 +29,7 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.javadoc.PsiDocComment;
 import org.jetbrains.kotlin.psi.KtFile;
 
 import java.util.regex.Matcher;
@@ -73,7 +74,8 @@ public class NavigatePathAction extends AnAction {
                         PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                         PsiClass ownerClass = psiClassOwner.getClasses()[0];
                         String className = ownerClass.getName();
-                        String text = ownerClass.getDocComment().getText();
+                        PsiDocComment docComment = ownerClass.getDocComment();
+                        String text = docComment != null ? docComment.getText() : "";
                         String referenceClassName = getReferenceClassName(className, text);
                         PsiField psiField = elementFactory.createFieldFromText(String.format("private static final MappingPath %s_PATH =%s.TABLE", fieldName, referenceClassName + "Proxy"), ownerClass);
                         PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(String.format("@NavigateFlat(pathAlias=\"%s_PATH\")", fieldName), psiField);
@@ -102,14 +104,15 @@ public class NavigatePathAction extends AnAction {
 
     private static final String LINK_SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)|\\{@link\\s+([\\w\\.]+)\\}";
 
-    private String getReferenceClassName(String className, String docText){
+    private String getReferenceClassName(String className, String docText) {
         String result = getReferenceClassName0(className, docText).trim();
-        if(result.contains(".")){
-            return StrUtil.subAfter(result,".",true);
-        }else {
+        if (result.contains(".")) {
+            return StrUtil.subAfter(result, ".", true);
+        } else {
             return result;
         }
     }
+
     private String getReferenceClassName0(String className, String docText) {
 //        docText = docText.replaceAll("\n", "");
         if (StrUtil.isNotBlank(docText)) {
@@ -121,7 +124,7 @@ public class NavigatePathAction extends AnAction {
                 String result = matcher.group(1);
                 if (StrUtil.isNotBlank(result)) {
                     return result;
-                }else{
+                } else {
                     String resultLink = matcher.group(2);
                     if (StrUtil.isNotBlank(resultLink)) {
                         return resultLink;

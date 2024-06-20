@@ -27,6 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.62</h3>
+    <ul>
+    <li>修复NavigateGenerate的生成无注释导致的bug</li>
+    </ul>
     <h3>0.0.61</h3>
     <ul>
     <li>支持2.0.25版本的easy-query的静态TABLE属性用于快速构建NavigateFlat和NavigateJoin</li>
