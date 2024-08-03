@@ -1,0 +1,143 @@
+package $config.modelPackage;
+
+#if($config.data)
+import lombok.Data;
+#end
+#if($config.allArgsConstructor)
+import lombok.AllArgsConstructor;
+#end
+#if($config.noArgsConstructor)
+import lombok.NoArgsConstructor;
+#end
+#if($config.requiredArgsConstructor)
+import lombok.RequiredArgsConstructor;
+#end
+#if($config.builder)
+import lombok.Builder;
+#end
+#if($config.accessors)
+import lombok.experimental.Accessors;
+#end
+#if($config.swagger)
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+#end
+#if($config.swagger3)
+import io.swagger.v3.oas.annotations.media.Schema;
+#end
+#foreach($column in $table.columnList)
+#if($column.primaryKey)
+import com.easy.query.core.annotation.Column;
+#end
+#end
+import com.easy.query.core.annotation.Table;
+#if($config.entityProxy)
+import com.easy.query.core.annotation.EntityProxy;
+#end
+#if($config.entityFileProxy)
+import com.easy.query.core.annotation.EntityFileProxy;
+#end
+#if($config.easyAssertMessage)
+import com.easy.query.core.annotation.EasyAssertMessage;
+#end
+#foreach($classImport in $importClassList)
+import $classImport;
+#end
+
+/**
+ * $!table.comment 实体类。
+ *
+ * @author $author
+ * @since $since
+ */
+#if($config.data)
+@Data
+#end
+#if($config.accessors)
+@Accessors(chain = true)
+#end
+#if($config.requiredArgsConstructor)
+@RequiredArgsConstructor
+#end
+#if($config.builder)
+@Builder
+#end
+#if($config.noArgsConstructor)
+@NoArgsConstructor
+#end
+#if($config.allArgsConstructor)
+@AllArgsConstructor
+#end
+#if($config.swagger)
+@ApiModel(value = "$!table.comment", description = "$!table.comment")
+#end
+#if($config.swagger3)
+@Schema(name = "$table.comment")
+#end
+@Table(value = "$table.name")
+#if($config.entityProxy)
+@EntityProxy
+#end
+#if($config.entityFileProxy)
+@EntityFileProxy
+#end
+#if($config.easyAssertMessage)
+@EasyAssertMessage("未找到对应的xxxxx信息")
+#end
+public class ${modelName} #if(${config.modelSuperClass}) extends ${table.superClass}  #end {
+
+    #foreach($column in $table.columnList)
+    #if($column.comment.length()>0)
+    /**
+    * $!column.comment
+    */
+    #end
+    #if($config.swagger && $column.comment)
+        #if(${column.notNull})
+            #if(${column.fieldType} == "LocalDateTime")
+    @ApiModelProperty(value = "$column.comment", required = true, example = "yyyy-MM-dd HH:mm:ss")
+            #else
+    @ApiModelProperty(value = "$column.comment", required = true)
+            #end
+        #else
+            #if(${column.fieldType} == "LocalDateTime")
+    @ApiModelProperty(value = "$column.comment", example = "yyyy-MM-dd HH:mm:ss")
+            #else
+    @ApiModelProperty(value = "$column.comment")
+            #end
+        #end
+    #end
+    #if($config.swagger3 && $column.comment)
+        #if(${column.notNull})
+            #if(${column.fieldType} == "LocalDateTime")
+    @Schema(description = "$column.comment", requiredMode = Schema.RequiredMode.REQUIRED, example = "yyyy-MM-dd HH:mm:ss")
+            #else
+    @Schema(description = "$column.comment", requiredMode = Schema.RequiredMode.REQUIRED)
+            #end
+        #else
+            #if(${column.fieldType} == "LocalDateTime")
+    @Schema(description = "$column.comment", example = "yyyy-MM-dd HH:mm:ss")
+            #else
+    @Schema(description = "$column.comment")
+            #end
+        #end
+    #end
+    #if($column.primaryKey)
+    @Column(primaryKey = true,value = "$column.name")
+    #end
+    private $column.fieldType  $column.fieldName;
+
+#end
+
+#if($config.data==false)
+    #foreach($column in $table.columnList)
+    public  $column.fieldType  get${column.methodName}() {
+        return ${column.fieldName};
+    }
+
+    public void set${column.methodName}(${column.fieldType} ${column.fieldName}) {
+        this.${column.fieldName} = ${column.fieldName};
+    }
+    #end
+#end
+        }
