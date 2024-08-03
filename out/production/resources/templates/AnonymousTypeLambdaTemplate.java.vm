@@ -1,5 +1,0 @@
-${className}Proxy result = ${className}Proxy();
-#foreach($property in $properties)
-        result.${property.propertyName}().set(${property.targetInvokeName});
-#end
-return result;
