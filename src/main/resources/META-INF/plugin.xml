@@ -27,6 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.63</h3>
+    <ul>
+    <li>修复sql format的预览参数如果存在逗号或者其他符号时的bug</li>
+    </ul>
     <h3>0.0.62</h3>
     <ul>
     <li>修复NavigateGenerate的生成无注释导致的bug</li>

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -180,20 +181,52 @@ public class SQLPreviewDialog extends JDialog {
         }
         line = StringUtils.removeEnd(line, "\n").replaceAll(".*(Parameters[\\s]*(?=:)): ", "");
 
-        final String[] strings = StringUtils.splitByWholeSeparator(line, ",");
-        final Queue<Map.Entry<String, String>> queue = new ArrayDeque<>(strings.length);
 
-        for (String s : strings) {
-            String trim = StringUtils.trim(s);
-            String value = StringUtils.substringBeforeLast(trim, "(");
-            String type = StringUtils.substringBetween(trim, "(", ")");
-            if (StringUtils.isEmpty(type)) {
-                queue.offer(new AbstractMap.SimpleEntry<>(value, null));
-            } else {
-                queue.offer(new AbstractMap.SimpleEntry<>(value, type));
+        final Queue<Map.Entry<String, String>> queue = new ArrayDeque<>();
+        // 正则表达式模式，用于匹配值和类型
+        String pattern = "(.*?[^,]*)\\(([^)]+?)\\),";
+
+        // 创建Pattern对象
+        Pattern r = Pattern.compile(pattern);
+
+        // 创建Matcher对象
+        Matcher m = r.matcher(line+",");
+
+
+        // 查找所有匹配项
+        while (m.find()) {
+            String value = m.group(1);
+            String type = m.group(2);
+            if(StringUtils.isEmpty(type)){
+                queue.offer(new AbstractMap.SimpleEntry<>(StringUtils.trim(value), null));
+            }else{
+                queue.offer(new AbstractMap.SimpleEntry<>(StringUtils.trim(value), type));
             }
         }
 
+
         return queue;
     }
+//    private Queue<Map.Entry<String, String>> parseParams(String line) {
+//        if(StringUtils.isBlank(line)){
+//            return new ArrayDeque<>(0);
+//        }
+//        line = StringUtils.removeEnd(line, "\n").replaceAll(".*(Parameters[\\s]*(?=:)): ", "");
+//
+//        final String[] strings = StringUtils.splitByWholeSeparator(line, ",");
+//        final Queue<Map.Entry<String, String>> queue = new ArrayDeque<>(strings.length);
+//
+//        for (String s : strings) {
+//            String trim = StringUtils.trim(s);
+//            String value = StringUtils.substringBeforeLast(trim, "(");
+//            String type = StringUtils.substringBetween(trim, "(", ")");
+//            if (StringUtils.isEmpty(type)) {
+//                queue.offer(new AbstractMap.SimpleEntry<>(value, null));
+//            } else {
+//                queue.offer(new AbstractMap.SimpleEntry<>(value, type));
+//            }
+//        }
+//
+//        return queue;
+//    }
 }
