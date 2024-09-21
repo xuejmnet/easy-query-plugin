@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.contributor;
 
 import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.entity.QueryType;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
  *
  * @author xuejiaming
  */
-public class EasySelectEntityVOContributor extends EasyContributor{
+public class EasySelectEntityVOContributor extends EasyContributor {
     public EasySelectEntityVOContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);
     }

@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.contributor;
 
+import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -8,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author xuejiaming
  */
-public class EasySetIgnoreColumnsContributor extends EasyContributor{
+public class EasySetIgnoreColumnsContributor extends EasyContributor {
     public EasySetIgnoreColumnsContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);
     }

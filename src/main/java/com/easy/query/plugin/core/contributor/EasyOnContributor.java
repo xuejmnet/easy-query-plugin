@@ -1,6 +1,6 @@
 package com.easy.query.plugin.core.contributor;
 
-import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.entity.QueryType;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +12,7 @@ import java.util.Collection;
  *
  * @author xuejiaming
  */
-public class EasyOnContributor extends EasyContributor{
+public class EasyOnContributor extends EasyContributor {
 
     public EasyOnContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);

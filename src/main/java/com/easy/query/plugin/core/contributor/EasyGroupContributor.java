@@ -1,13 +1,11 @@
 package com.easy.query.plugin.core.contributor;
 
 import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.entity.QueryType;
-import com.intellij.codeInsight.completion.InsertionContext;
-import com.intellij.openapi.editor.Document;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 /**
  * create time 2024/2/1 08:26
@@ -15,7 +13,7 @@ import java.util.stream.Collectors;
  *
  * @author xuejiaming
  */
-public class EasyGroupContributor  extends EasyContributor{
+public class EasyGroupContributor  extends EasyContributor {
 
     public EasyGroupContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);

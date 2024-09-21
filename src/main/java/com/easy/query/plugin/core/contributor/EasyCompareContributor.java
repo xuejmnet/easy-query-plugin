@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.contributor;
 
 import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.entity.QueryType;
 import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.openapi.editor.Document;
@@ -14,7 +15,7 @@ import java.util.Collection;
  *
  * @author xuejiaming
  */
-public class EasyCompareContributor extends EasyContributor{
+public class EasyCompareContributor extends EasyContributor {
 
     private final String lambdaExpression;
 
