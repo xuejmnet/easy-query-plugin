@@ -2,6 +2,15 @@ package com.easy.query.plugin.core.contributor;
 
 import com.easy.query.plugin.core.contributor.java.EasyAnonymousContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
+import com.easy.query.plugin.core.contributor.java.EasyEntitySetColumnsContributor;
+import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
+import com.easy.query.plugin.core.contributor.java.EasyIncludeContributor;
+import com.easy.query.plugin.core.contributor.java.EasyIncludesContributor;
+import com.easy.query.plugin.core.contributor.java.EasyOrderContributor;
+import com.easy.query.plugin.core.contributor.java.EasySelectContributor;
+import com.easy.query.plugin.core.contributor.java.EasySelectDraftContributor;
+import com.easy.query.plugin.core.contributor.java.EasySetIgnoreColumnsContributor;
+import com.easy.query.plugin.core.contributor.java.EasyWhereColumnsContributor;
 import com.easy.query.plugin.core.util.TrieTree;
 
 import java.util.Arrays;
@@ -32,7 +41,7 @@ public class BaseEasyQueryApiCompletionContributor {
             new EasySelectContributor("having", "having", false),
             new EasySelectContributor("having", "having_code_block", true),
             new EasySelectContributor("selectColumn", "selectColumn", false),
-            new EasyFetchByContributor("fetchBy", "fetchBy", false),//支持弹窗选择
+//            new EasyFetchByContributor("fetchBy", "fetchBy", false),//支持弹窗选择
             new EasyExpressionSetColumnsContributor("setColumns", "setColumns", false),
             new EasyExpressionSetColumnsContributor("setColumns", "setColumns_code_block", true),
             new EasyEntitySetColumnsContributor("setColumns", "setColumns", false),

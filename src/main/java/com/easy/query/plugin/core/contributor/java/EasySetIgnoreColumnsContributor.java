@@ -1,6 +1,5 @@
-package com.easy.query.plugin.core.contributor;
+package com.easy.query.plugin.core.contributor.java;
 
-import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import org.jetbrains.annotations.NotNull;
 
 /**

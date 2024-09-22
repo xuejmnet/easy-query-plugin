@@ -18,13 +18,11 @@ import java.util.stream.Collectors;
 public class EasyKtContributor {
     protected final String tipWord;
     protected final String insertWord;
-    protected final boolean blockCode;
 
-    public EasyKtContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
+    public EasyKtContributor(@NotNull String insertWord, @NotNull String tipWord) {
 
         this.insertWord = insertWord;
         this.tipWord = tipWord;
-        this.blockCode = blockCode;
     }
 
     public String getTipWord() {
@@ -38,9 +36,6 @@ public class EasyKtContributor {
         try {
 
             String lambdaBody = StrUtil.EMPTY;
-            if (blockCode) {
-                lambdaBody = "{}";
-            }
             String lambdaExpression = getLambdaBodyExpression(queries, lambdaBody, true);
             int realBackOffset = realBackOffset(wordBackOffset);
             document.insertString(insertPosition + wordBackOffset, lambdaExpression);
@@ -67,9 +62,9 @@ public class EasyKtContributor {
     }
 
     protected int realBackOffset(int backOffset) {
-        if (blockCode) {
-            return backOffset - 2;
-        }
+//        if (blockCode) {
+//            return backOffset - 2;
+//        }
         return backOffset - 1;
     }
 

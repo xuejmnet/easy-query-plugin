@@ -2,7 +2,19 @@ package com.easy.query.plugin.core.contributor;
 
 import com.easy.query.plugin.core.contributor.java.EasyAnonymousContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
+import com.easy.query.plugin.core.contributor.java.EasyOrderContributor;
+import com.easy.query.plugin.core.contributor.java.EasySelectContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtEntitySetColumnsContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtGroupContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtIncludeContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtIncludesContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtOrderContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtSelectContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtSelectDraftContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtSelectorContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtSetIgnoreColumnsContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtWhereColumnsContributor;
 import com.easy.query.plugin.core.util.TrieTree;
 
 import java.util.Arrays;
@@ -20,23 +32,31 @@ public class BaseKotlinEasyQueryApiCompletionContributor {
 
 
     protected static final Set<EasyKtContributor> API_METHODS = new HashSet<>(Arrays.asList(
-//            new EasySelectContributor("select", "select", false),
+            new EasyKtSelectContributor("select", "select"),
+            new EasyKtSelectContributor("having", "having"),
+            new EasyKtSelectContributor("include", "include"),
+            new EasyKtSelectContributor("includes", "includes"),
 //            new EasySelectEntityVOContributor("select", "selectv", false),
-            new EasyKtContributor("where", "where", false),
-            new EasyKtContributor("where", "where_code_block", true)
-//            new EasyIncludeContributor("include", "include", false),
+            new EasyKtContributor("where", "where"),
+//            new EasyKtContributor("where", "where_code_block", true)
+            new EasyKtIncludeContributor("include", "include"),
+            new EasyKtIncludesContributor("includes", "includes"),
 //            new EasyIncludesContributor("includes", "includes", false),
-//            new EasyOrderContributor("orderBy", "orderBy", false),
+            new EasyKtOrderContributor("orderBy", "orderBy"),
 //            new EasyOrderContributor("orderBy", "orderBy_code_block", true),
-//            new EasyGroupContributor("groupBy", "groupBy", false),
-//            new EasySelectDraftContributor("select", "selectDraft", false),
+            new EasyKtGroupContributor("groupBy", "groupBy"),
+            new EasyKtEntitySetColumnsContributor("setColumns", "setColumns"),
+            new EasyKtSelectorContributor("select", "selector"),
+            new EasyKtWhereColumnsContributor("whereColumns", "whereColumns"),
+            new EasyKtSetIgnoreColumnsContributor("setIgnoreColumns", "setIgnoreColumns"),
+            new EasyKtSelectDraftContributor("select", "selectDraft")
 //            new EasySelectContributor("having", "having", false),
 //            new EasySelectContributor("having", "having_code_block", true),
 //            new EasySelectContributor("selectColumn", "selectColumn", false),
 //            new EasyFetchByContributor("fetchBy", "fetchBy", false),//支持弹窗选择
 //            new EasyExpressionSetColumnsContributor("setColumns", "setColumns", false),
 //            new EasyExpressionSetColumnsContributor("setColumns", "setColumns_code_block", true),
-//            new EasyEntitySetColumnsContributor("setColumns", "setColumns", false),
+//            new EasyKtEntitySetColumnsContributor("setColumns", "setColumns", false),
 //            new EasySetIgnoreColumnsContributor("setIgnoreColumns", "setIgnoreColumns", false),
 //            new EasySetIgnoreColumnsContributor("setIgnoreColumns", "setIgnoreColumns_code_block", true),
 //            new EasyWhereColumnsContributor("whereColumns", "whereColumns", false),

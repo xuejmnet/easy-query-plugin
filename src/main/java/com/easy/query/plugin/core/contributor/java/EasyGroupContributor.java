@@ -1,7 +1,6 @@
-package com.easy.query.plugin.core.contributor;
+package com.easy.query.plugin.core.contributor.java;
 
 import cn.hutool.core.util.StrUtil;
-import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.entity.QueryType;
 import org.jetbrains.annotations.NotNull;
 

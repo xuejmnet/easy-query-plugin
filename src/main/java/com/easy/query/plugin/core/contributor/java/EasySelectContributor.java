@@ -1,6 +1,5 @@
-package com.easy.query.plugin.core.contributor;
+package com.easy.query.plugin.core.contributor.java;
 
-import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -9,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author xuejiaming
  */
-public class EasyOrderContributor extends EasyContributor {
-    public EasyOrderContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
+public class EasySelectContributor extends EasyContributor {
+    public EasySelectContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);
     }
 

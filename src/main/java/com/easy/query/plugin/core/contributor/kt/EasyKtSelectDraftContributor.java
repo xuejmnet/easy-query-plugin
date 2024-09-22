@@ -1,4 +1,4 @@
-package com.easy.query.plugin.core.contributor;
+package com.easy.query.plugin.core.contributor.kt;
 
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
@@ -13,20 +13,15 @@ import java.util.Collection;
  *
  * @author xuejiaming
  */
-public class EasySelectDraftContributor extends EasyContributor {
+public class EasyKtSelectDraftContributor extends EasyKtContributor {
 
-    public EasySelectDraftContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
-        super(insertWord, tipWord, blockCode);
+    public EasyKtSelectDraftContributor(@NotNull String insertWord, @NotNull String tipWord) {
+        super(insertWord, tipWord);
     }
 
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
-        String groupExpression = "Select.DRAFT.of()";
-        if(blockCode){
-            return StrUtil.format("{ %s };",groupExpression);
-        }
-
-        return groupExpression;
+        return "Select.DRAFT.of()";
     }
 
     @Override

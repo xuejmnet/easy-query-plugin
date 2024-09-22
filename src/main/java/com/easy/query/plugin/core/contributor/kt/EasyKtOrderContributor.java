@@ -1,4 +1,4 @@
-package com.easy.query.plugin.core.contributor;
+package com.easy.query.plugin.core.contributor.kt;
 
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import org.jetbrains.annotations.NotNull;
@@ -9,9 +9,9 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author xuejiaming
  */
-public class EasyIncludesContributor extends EasyContributor {
-    public EasyIncludesContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
-        super(insertWord, tipWord, blockCode);
+public class EasyKtOrderContributor extends EasyKtContributor {
+    public EasyKtOrderContributor(@NotNull String insertWord, @NotNull String tipWord) {
+        super(insertWord, tipWord);
     }
 
     @Override

@@ -4,7 +4,10 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
+import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtGroupContributor;
+import com.easy.query.plugin.core.entity.QueryCountType;
 import com.easy.query.plugin.core.entity.QueryType;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
@@ -59,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -183,7 +187,7 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             return null;
         }
         String queryableMethodName = getQueryableMethodName(psiElement);
-        System.out.println("queryableMethodName:"+queryableMethodName);
+        System.out.println("queryableMethodName:" + queryableMethodName);
         if (StrUtil.isBlank(queryableMethodName)) {
             return null;
         }
@@ -286,41 +290,19 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                                 if (elementAt == null) {
                                     return;
                                 }
-                                PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
-                                if (psiMethodCallExpression == null) {
-                                    return;
-                                }
-                                PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
-                                PsiElement lastChild = methodExpression.getLastChild();
-                                if (lastChild == null) {
-                                    return;
-                                }
-                                String joinText = lastChild.getText();
-                                if (!JOIN_METHODS.contains(joinText)) {
-                                    return;
-                                }
-                                PsiExpression qualifierExpression = methodExpression.getQualifierExpression();
-                                if (qualifierExpression == null) {
-                                    return;
-                                }
-                                PsiType returnType = qualifierExpression.getType();
-                                if (returnType == null) {
-                                    return;
-                                }
-                                String canonicalText = returnType.getCanonicalText();
-                                List<QueryType> queryTypes = parseQueryable(project, canonicalText);
+                                List<QueryType> queryTypes = parseQueryable(elementAt);
                                 if (CollUtil.isEmpty(queryTypes)) {
                                     return;
                                 }
-                                QueryType joinFirstParameterType = getJoinFirstParameterType(project, queryTypes.size(), queryTypes.size() + 1, psiMethodCallExpression);
-                                queryTypes.add(joinFirstParameterType);
+//                                QueryType joinFirstParameterType = getJoinFirstParameterType(project, queryTypes.size(), queryTypes.size() + 1, psiMethodCallExpression);
+//                                queryTypes.add(joinFirstParameterType);
 
                                 easyContributor.insertString(context, queryTypes, false);
                             } catch (Exception ex) {
                                 System.out.println(ex.getMessage());
                             }
                         }).withIcon(Icons.EQ);
-                completionResultSet.addElement(elementBuilder);
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
         } catch (Exception e) {
         }
@@ -357,7 +339,7 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                                 System.out.println(ex.getMessage());
                             }
                         }).withIcon(Icons.EQ);
-                completionResultSet.addElement(elementBuilder);
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
         } catch (Exception e) {
         }
@@ -394,7 +376,7 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                                 System.out.println(ex.getMessage());
                             }
                         }).withIcon(Icons.EQ);
-                completionResultSet.addElement(elementBuilder);
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
         } catch (Exception e) {
         }
@@ -444,7 +426,8 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                                 System.out.println(ex.getMessage());
                             }
                         }).withIcon(Icons.EQ);
-                completionResultSet.addElement(elementBuilder);
+
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
@@ -485,27 +468,26 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
 
 
         KtDotQualifiedExpression parentOfType = PsiTreeUtil.getParentOfType(psiElement, KtDotQualifiedExpression.class);
-        if(parentOfType==null){
+        if (parentOfType == null) {
             return null;
         }
         KtExpression receiverExpression = parentOfType.getReceiverExpression();
         BindingContext bindingContext = ResolutionUtils.analyze(receiverExpression, BodyResolveMode.FULL);
         KotlinType expressionType = bindingContext.getType(receiverExpression);
-        if(expressionType==null){
+        if (expressionType == null) {
             return null;
         }
         ClassifierDescriptor declarationDescriptor = expressionType.getConstructor().getDeclarationDescriptor();
-        if(declarationDescriptor==null){
+        if (declarationDescriptor == null) {
             return null;
         }
         ClassifierDescriptor declarationDescriptor1 = declarationDescriptor.getTypeConstructor().getDeclarationDescriptor();
-        if(declarationDescriptor1==null){
+        if (declarationDescriptor1 == null) {
             return null;
         }
         String lazyEntityMethodName = declarationDescriptor1.toString();
-        return StrUtil.removePrefix(lazyEntityMethodName,"Lazy Java class ");
+        return StrUtil.removePrefix(lazyEntityMethodName, "Lazy Java class ");
     }
-
 
 
     private boolean matchQueryableMethodNameByCompare(Project project, PsiElement psiElement) {
@@ -615,25 +597,25 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                                 }
                                 easyContributor.insertString(context, queryTypes, true);
 
-//                                if (easyContributor instanceof EasyGroupContributor) {
-//
-//                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
-//                                    if (newClass != null) {
-//                                        WriteCommandAction.runWriteCommandAction(project, () -> {
-//                                            if (psiFile instanceof PsiJavaFile) {
-//                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
-//                                            }
-//                                        });
-//                                    }
-//
-//                                }
+                                if (easyContributor instanceof EasyKtGroupContributor) {
+
+                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
+                                    if (newClass != null) {
+                                        WriteCommandAction.runWriteCommandAction(project, () -> {
+                                            if (psiFile instanceof PsiJavaFile) {
+                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
+                                            }
+                                        });
+                                    }
+
+                                }
                             } catch (Exception e) {
                                 System.out.println(e.getMessage());
                             }
                         })
                         .withIcon(Icons.EQ);
 
-                completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, 100 - 1));
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, Integer.MAX_VALUE));
 
             }
         } catch (Exception ex) {
@@ -658,32 +640,31 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                                     return;
                                 }
 
-                                String queryableMethodName = getQueryableMethodName(elementAt);
-                                List<QueryType> queryTypes = parseQueryable(project, queryableMethodName);
+                                List<QueryType> queryTypes = parseQueryable(elementAt);
                                 if (CollUtil.isEmpty(queryTypes)) {
                                     return;
                                 }
                                 easyContributor.insertString(context, queryTypes, true);
 
-//                                if (easyContributor instanceof EasyGroupContributor) {
-//
-//                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
-//                                    if (newClass != null) {
-//                                        WriteCommandAction.runWriteCommandAction(project, () -> {
-//                                            if (psiFile instanceof PsiJavaFile) {
-//                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
-//                                            }
-//                                        });
-//                                    }
-//
-//                                }
+                                if (easyContributor instanceof EasyKtGroupContributor) {
+
+                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
+                                    if (newClass != null) {
+                                        WriteCommandAction.runWriteCommandAction(project, () -> {
+                                            if (psiFile instanceof PsiJavaFile) {
+                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
+                                            }
+                                        });
+                                    }
+
+                                }
                             } catch (Exception e) {
                                 System.out.println(e.getMessage());
                             }
                         })
                         .withIcon(Icons.EQ);
 
-                completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, 100 - 1));
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, Integer.MAX_VALUE));
 
             }
         } catch (Exception ex) {
@@ -713,7 +694,7 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
     );
     private static final String QUERYABLE_END = ">";
 
-    private QueryType getQueryType(TypeProjection typeProjection,int index){
+    private QueryCountType getQueryType(TypeProjection typeProjection, int index, Map<String, Integer> nameCountMap) {
 
 //        ClassifierDescriptor declarationDescriptor1 = typeProjection.getType().getConstructor().getDeclarationDescriptor();
 //        if(declarationDescriptor1 instanceof LazyClassDescriptor){
@@ -722,22 +703,32 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
 //        }
 
         ClassifierDescriptor declarationDescriptor = typeProjection.getType().getConstructor().getDeclarationDescriptor();
-        if(declarationDescriptor!=null){
+        if (declarationDescriptor != null) {
 
             for (AnnotationDescriptor annotation : declarationDescriptor.getAnnotations()) {
                 TypeConstructor constructor = annotation.getType().getConstructor();
                 ClassifierDescriptor declarationDescriptor2 = annotation.getType().getConstructor().getDeclarationDescriptor();
 
-                if(declarationDescriptor2!=null){
+                if (declarationDescriptor2 != null) {
                     String annotationString = declarationDescriptor2.toString();
-                    if("Lazy Java class com.easy.query.core.annotation.EasyAlias".equals(annotationString)){
+                    if ("Lazy Java class com.easy.query.core.annotation.EasyAlias".equals(annotationString)) {
                         Map<Name, ConstantValue<?>> allValueArguments = annotation.getAllValueArguments();
                         for (Map.Entry<Name, ConstantValue<?>> nameConstantValueEntry : allValueArguments.entrySet()) {
 
                             Name key = nameConstantValueEntry.getKey();
                             String string = key.toString();
-                            if("value".equals(string)){
-                                return new QueryType(nameConstantValueEntry.getValue().toString().replaceAll("\"",""));
+                            if ("value".equals(string)) {
+                                String aliasName = nameConstantValueEntry.getValue().toString().replaceAll("\"", "");
+                                Integer i = nameCountMap.get(aliasName);
+                                if(i==null){
+                                    QueryCountType queryCountType = new QueryCountType(aliasName, 1);
+                                    nameCountMap.put(aliasName,1);
+                                    return queryCountType;
+                                }else{
+                                    QueryCountType queryCountType = new QueryCountType(aliasName, i + 1);
+                                    nameCountMap.put(aliasName,queryCountType.getIndex());
+                                    return queryCountType;
+                                }
                             }
                         }
                     }
@@ -746,8 +737,9 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                 System.out.println(constructor);
             }
         }
-        return new QueryType("it"+(index==0?"":index));
+        return new QueryCountType("it" + (index == 0 ? "" : index),index+1);
     }
+
     //获取注解没有就返回单一对象o有就用他的
     private List<QueryType> parseQueryable(PsiElement psiElement) {
         if (psiElement == null) {
@@ -756,64 +748,74 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
 
 
         KtDotQualifiedExpression parentOfType = PsiTreeUtil.getParentOfType(psiElement, KtDotQualifiedExpression.class);
-        if(parentOfType==null){
+        if (parentOfType == null) {
             return null;
         }
         KtExpression receiverExpression = parentOfType.getReceiverExpression();
         BindingContext bindingContext = ResolutionUtils.analyze(receiverExpression, BodyResolveMode.FULL);
         KotlinType expressionType = bindingContext.getType(receiverExpression);
-        if(expressionType==null){
+        if (expressionType == null) {
             return null;
         }
         List<TypeProjection> arguments = expressionType.getArguments();
-        if(arguments.size()==2){
+        if (arguments.size() == 2) {
             return Collections.singletonList(new QueryType("it"));
         }
-        if(arguments.size()>=4){
+        if (arguments.size() >= 4) {
             int i = arguments.size() / 2;
-            ArrayList<QueryType> queryTypes = new ArrayList<>();
+            ArrayList<QueryCountType> queryCountTypes = new ArrayList<>();
+            HashMap<String, Integer> nameCountMap = new HashMap<>();
             for (int j = 1; j <= i; j++) {
                 TypeProjection typeProjection = arguments.get(j * 2 - 1);
-                QueryType queryType1 = getQueryType(typeProjection, j - 1);
-                queryTypes.add(queryType1);
+                QueryCountType queryType1 = getQueryType(typeProjection, j - 1,nameCountMap);
+                queryCountTypes.add(queryType1);
+            }
+            ArrayList<QueryType> queryTypes = new ArrayList<>();
+            for (QueryCountType queryCountType : queryCountTypes) {
+                Integer i1 = nameCountMap.get(queryCountType.getShortName());
+                if(i1==null||i1<=1){
+                    queryTypes.add(new QueryType(queryCountType.getShortName(),queryCountType.isGroup()));
+                }else{
+                    queryTypes.add(new QueryType(queryCountType.getShortName()+queryCountType.getIndex(),queryCountType.isGroup()));
+                }
             }
             return queryTypes;
         }
         return Collections.emptyList();
     }
-    private List<QueryType> parseQueryable(Project project, String queryable) {
-
-        if (ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o -> queryable.startsWith(o))) {
-
-            //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
-            if (queryable.contains("<") && queryable.endsWith(">")) {
-                String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
-                String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
-                if (typeString.startsWith("com.easy.query.core.proxy.grouping.proxy.Grouping")) {
-                    return Collections.singletonList(new QueryType("group", true));
-                }
-                List<List<String>> types = MyCollectionUtil.partition(StrUtil.split(typeString, ","), 2);
-
-                Map<Integer, List<String>> matchNames = getMatchNames(project);
-
-                List<QueryType> shortNames = new ArrayList<>(types.size());
-                for (int i = 0; i < types.size(); i++) {
-                    List<String> typeList = types.get(i);
-                    if (typeList.size() < 2) {
-                        shortNames.add(new QueryType("unknown" + (i + 1)));
-                    }
-                    String classFullName = typeList.get(1);
-                    if (StrUtil.isBlank(classFullName)) {
-                        shortNames.add(new QueryType("unknown" + (i + 1)));
-                    } else {
-                        shortNames.add(new QueryType(getShortName(project, i, types.size(), classFullName, matchNames)));
-                    }
-                }
-                return shortNames;
-            }
-        }
-        return Collections.emptyList();
-    }
+//    private List<QueryType> parseQueryable(Project project, String queryable) {
+//
+//        if (ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o -> queryable.startsWith(o))) {
+//
+//            //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
+//            if (queryable.contains("<") && queryable.endsWith(">")) {
+//                String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
+//                String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
+//                if (typeString.startsWith("com.easy.query.core.proxy.grouping.proxy.Grouping")) {
+//                    return Collections.singletonList(new QueryType("group", true));
+//                }
+//                List<List<String>> types = MyCollectionUtil.partition(StrUtil.split(typeString, ","), 2);
+//
+//                Map<Integer, List<String>> matchNames = getMatchNames(project);
+//
+//                List<QueryType> shortNames = new ArrayList<>(types.size());
+//                for (int i = 0; i < types.size(); i++) {
+//                    List<String> typeList = types.get(i);
+//                    if (typeList.size() < 2) {
+//                        shortNames.add(new QueryType("unknown" + (i + 1)));
+//                    }
+//                    String classFullName = typeList.get(1);
+//                    if (StrUtil.isBlank(classFullName)) {
+//                        shortNames.add(new QueryType("unknown" + (i + 1)));
+//                    } else {
+//                        shortNames.add(new QueryType(getShortName(project, i, types.size(), classFullName, matchNames)));
+//                    }
+//                }
+//                return shortNames;
+//            }
+//        }
+//        return Collections.emptyList();
+//    }
 
     private boolean isQueryable(String queryable) {
 
