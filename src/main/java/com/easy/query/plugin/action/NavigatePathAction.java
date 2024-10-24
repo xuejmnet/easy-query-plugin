@@ -102,7 +102,8 @@ public class NavigatePathAction extends AnAction {
         }
     }
 
-    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)|\\{@link\\s+([\\w\\.]+)\\}";
+//    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)|\\{@link\\s+([\\w\\.]+)\\}";
+    private static final String SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)";
 
     private String getReferenceClassName(String className, String docText) {
         String result = getReferenceClassName0(className, docText).trim();
@@ -116,10 +117,11 @@ public class NavigatePathAction extends AnAction {
     private String getReferenceClassName0(String className, String docText) {
 //        docText = docText.replaceAll("\n", "");
         if (StrUtil.isNotBlank(docText)) {
-            Pattern pattern = Pattern.compile(LINK_SEE_CLASS_REGEX);
+            String newDocText = docText.replaceAll("@link", "@see");
+            Pattern pattern = Pattern.compile(SEE_CLASS_REGEX);
 
             // 创建匹配器
-            Matcher matcher = pattern.matcher(docText);
+            Matcher matcher = pattern.matcher(newDocText);
             if (matcher.find()) {
                 String result = matcher.group(1);
                 if (StrUtil.isNotBlank(result)) {
