@@ -2,6 +2,9 @@ package com.easy.query.plugin.core.util;
 
 import com.intellij.util.ArrayUtil;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * create time 2023/9/16 14:19
  * 文件说明
@@ -9,6 +12,15 @@ import com.intellij.util.ArrayUtil;
  * @author xuejiaming
  */
 public class StrUtil {
+    public static String replaceBlank(String str) {
+        String dest = "";
+        if (str!=null) {
+            Pattern p = Pattern.compile("\\s*|\t|\r|\n");
+            Matcher m = p.matcher(str);
+            dest = m.replaceAll("");
+        }
+        return dest;
+    }
     public static boolean isBlank(CharSequence str) {
         int length;
         if (str != null && (length = str.length()) != 0) {

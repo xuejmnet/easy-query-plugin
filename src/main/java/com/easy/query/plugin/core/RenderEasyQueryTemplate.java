@@ -103,7 +103,8 @@ public class RenderEasyQueryTemplate {
             ColumnInfo columnInfo = new ColumnInfo();
             columnInfo.setName(column.getName());
             columnInfo.setFieldName(StrUtil.toCamelCase(column.getName().toLowerCase()));
-            String fieldType = getFieldType(column.getJdbcType(), tableInfo, column.getJdbcTypeName(), column.getSize(), column.getJdbcTypeStr().toLowerCase(), typeMapping);
+            columnInfo.setJdbcTypeStr(StrUtil.replaceBlank(column.getJdbcTypeStr()));
+            String fieldType = getFieldType(column.getJdbcType(), tableInfo, column.getJdbcTypeName(), column.getSize(), StrUtil.replaceBlank(column.getJdbcTypeStr()).toLowerCase(), typeMapping);
             if(Objects.equals("Object",fieldType)){
                 //防止用户不知道是啥类型无法添加mapping映射的正则匹配
                 columnInfo.setFieldType(column.getJdbcTypeStr().toLowerCase());

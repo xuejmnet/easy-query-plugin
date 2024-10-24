@@ -29,6 +29,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -259,7 +260,7 @@ public class TableUtils {
     }
 
     public static Map<String, List<MatchTypeMapping>> getDefaultTypeMappingMap() {
-        Map<String, List<MatchTypeMapping>> map = new HashMap<>();
+        Map<String, List<MatchTypeMapping>> map = new LinkedHashMap<>();
         map.put("REGEX" , getRegexTypeMapping());
         map.put("ORDINARY" , getOrdinaryTypeMapping());
         return map;
@@ -271,8 +272,8 @@ public class TableUtils {
         list.add(new MatchTypeMapping("REGEX" , "java.lang.String" , "char(\\(\\d+\\))?" ));
         list.add(new MatchTypeMapping("REGEX" , "java.lang.String" , "(tiny|medium|long)*text" ));
         list.add(new MatchTypeMapping("REGEX" , "java.math.BigDecimal" , "decimal(\\(\\d+,\\d+\\))?" ));
-        list.add(new MatchTypeMapping("REGEX" , "java.lang.Integer" , "(tiny|small|medium)*int(\\(\\d+\\))?" ));
         list.add(new MatchTypeMapping("REGEX" , "java.lang.Long" , "bigint(\\(\\d+\\))?" ));
+        list.add(new MatchTypeMapping("REGEX" , "java.lang.Integer" , "(tiny|small|medium)*int(\\(\\d+\\))?" ));
         return list;
     }
 

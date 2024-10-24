@@ -27,6 +27,7 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -139,7 +140,7 @@ public class ColumnMappingDialog extends JDialog {
         }
         TableModel model = table.getModel();
         int rowCount = model.getRowCount();
-        Map<String, List<MatchTypeMapping>> typeMappingMap = new HashMap<>();
+        Map<String, List<MatchTypeMapping>> typeMappingMap = new LinkedHashMap<>();
         try {
             for (int row = 0; row < rowCount; row++) {
                 String matchType = model.getValueAt(row, 0).toString();

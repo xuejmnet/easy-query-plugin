@@ -39,6 +39,7 @@ public class ColumnInfo {
      * 方法名称
      */
     private String methodName;
+    private String jdbcTypeStr;
 
     /**
      * 是否必填
@@ -126,6 +127,14 @@ public class ColumnInfo {
         this.size = size;
     }
 
+    public String getJdbcTypeStr() {
+        return jdbcTypeStr;
+    }
+
+    public void setJdbcTypeStr(String jdbcTypeStr) {
+        this.jdbcTypeStr = jdbcTypeStr;
+    }
+
     @Override
     public String toString() {
         return "ColumnInfo{" +
@@ -137,6 +146,7 @@ public class ColumnInfo {
                 ", primaryKey=" + primaryKey +
                 ", isAutoIncrement=" + isAutoIncrement +
                 ", methodName='" + methodName + '\'' +
+                ", jdbcTypeStr='" + jdbcTypeStr + '\'' +
                 ", notNull=" + notNull +
                 ", size=" + size +
                 '}';
