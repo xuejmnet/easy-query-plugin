@@ -11,6 +11,7 @@ public class ColumnInfo {
      * 列名
      */
     private String name;
+    private String firstLowName;
 
     /**
      * 字段名
@@ -133,6 +134,14 @@ public class ColumnInfo {
 
     public void setJdbcTypeStr(String jdbcTypeStr) {
         this.jdbcTypeStr = jdbcTypeStr;
+    }
+
+    public String getFirstLowName() {
+        return firstLowName;
+    }
+
+    public void setFirstLowName(String firstLowName) {
+        this.firstLowName = firstLowName;
     }
 
     @Override
