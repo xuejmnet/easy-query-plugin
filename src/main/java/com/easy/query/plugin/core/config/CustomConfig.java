@@ -224,7 +224,7 @@ public class CustomConfig {
                 if(fileProxy){
                     return "src/main/java/";
                 }
-                return "build/generated/sources/annotationProcessor/java/main";
+                return "build/generated/sources/annotationProcessor/java/main/";
             }
             return "build/generated/ksp/main/";
         }
