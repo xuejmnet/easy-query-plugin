@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.68"
+version = "0.0.69"
 
 repositories {
     maven {
@@ -19,7 +19,8 @@ repositories {
 intellij {
 //    version.set("2023.2.5")
 //    version.set("2022.2.5")
-    version.set("2023.3")
+//    version.set("2023.3")
+    version.set("2024.1")
     type.set("IU") // Target
     // IDE Platform
 

@@ -54,10 +54,12 @@ public class MyModuleUtil {
         isManvenProject = Objects.nonNull(virtualFile);
         return isManvenProject;
     }
+
     public static Module[] getModules(Project project) {
         return ModuleManager.getInstance(project).getModules();
     }
-    public static Module getModule(Project project,String moduleName) {
+
+    public static Module getModule(Project project, String moduleName) {
         Module[] modules = getModules(project);
         if (ArrayUtil.isEmpty(modules)) {
             NotificationUtils.notifyError("目录层级有误!", "", project);
@@ -159,14 +161,16 @@ public class MyModuleUtil {
         ModuleFileIndex fileIndex = ModuleRootManager.getInstance(module).getFileIndex();
         fileIndex.iterateContent(fileOrDir -> {
             if (fileOrDir.isDirectory() && fileIndex.isUnderSourceRootOfType(fileOrDir, javaResourceRootTypes)) {
-                directory.set(VirtualFileUtils.getPsiDirectory(module.getProject(), fileOrDir));
-                return false;
+                String path = fileOrDir.getPath();
+                if (path.contains("/src/main")) {
+                    directory.set(VirtualFileUtils.getPsiDirectory(module.getProject(), fileOrDir));
+                    return false;
+                }
             }
             return true;
         });
         return directory.get();
     }
-
 
 
     /**
