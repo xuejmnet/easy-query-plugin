@@ -1,6 +1,8 @@
 package com.easy.query.plugin.core.util;
 
 import com.easy.query.plugin.core.enums.FileTypeEnum;
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiArrayType;
@@ -14,6 +16,7 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.javadoc.PsiDocComment;
+import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.kotlin.psi.KtFile;
 
 import java.lang.reflect.Field;
@@ -34,6 +37,14 @@ import java.util.regex.Pattern;
  * @author xuejiaming
  */
 public class PsiUtil {
+
+    public static PsiClass getClassByFullName(Project project, String fullClassName) {
+        PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.projectScope(project));
+        if (psiClass != null) {
+            return psiClass;
+        }
+        return JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.allScope(project));
+    }
     public static FileTypeEnum getFileType(PsiClassOwner psiFile){
         if(psiFile instanceof PsiJavaFile){
             return FileTypeEnum.Java;

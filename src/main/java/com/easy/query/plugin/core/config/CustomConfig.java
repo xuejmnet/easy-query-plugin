@@ -2,6 +2,7 @@ package com.easy.query.plugin.core.config;
 
 
 import com.easy.query.plugin.core.enums.FileTypeEnum;
+import com.easy.query.plugin.core.util.BooleanUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 
 public class CustomConfig {
@@ -9,6 +10,10 @@ public class CustomConfig {
      * 全局启用apt开关
      */
     private Boolean enable;
+    /**
+     * 使用kapt
+     */
+    private Boolean kapt;
 
     /**
      * 是否停止向上级合并配
@@ -81,7 +86,8 @@ public class CustomConfig {
     private String tableDefIgnoreEntitySuffixes;
 
 
-    public Boolean isEnable() {
+
+    public Boolean getEnable() {
         return enable;
     }
 
@@ -201,34 +207,45 @@ public class CustomConfig {
         this.tableDefIgnoreEntitySuffixes = tableDefIgnoreEntitySuffixes;
     }
 
-    public static String getConfig(String value, FileTypeEnum fileType, boolean isMaven,boolean fileProxy) {
+    public Boolean getKapt() {
+        return kapt;
+    }
+
+    public void setKapt(Boolean kapt) {
+        this.kapt = kapt;
+    }
+
+    public static String getConfig(CustomConfig config,String value, FileTypeEnum fileType, boolean isMaven, boolean fileProxy) {
         if (StrUtil.isNotBlank(value)) {
             return value;
         }
-        if(isMaven){
-            if(fileType==FileTypeEnum.Java){
-                if(fileProxy){
+        if (isMaven) {
+            if (fileType == FileTypeEnum.Java) {
+                if (fileProxy) {
                     return "src/main/java/";
                 }
                 return "target/generated-sources/annotations/";
             }
-            if(fileType==FileTypeEnum.Kotlin){
-                if(fileProxy){
+            if (fileType == FileTypeEnum.Kotlin) {
+                if (fileProxy) {
                     return "src/main/kotlin/";
                 }
                 return "target/generated-sources/kapt/compile/";
             }
         }
-        if(!isMaven){
-            if(fileType==FileTypeEnum.Java){
-                if(fileProxy){
+        if (!isMaven) {
+            if (fileType == FileTypeEnum.Java) {
+                if (fileProxy) {
                     return "src/main/java/";
                 }
                 return "build/generated/sources/annotationProcessor/java/main/";
             }
+            if(BooleanUtil.isTrue(config.getKapt())){
+                return "target/generated-sources/kapt/compile/";
+            }
             return "build/generated/ksp/main/java/";
         }
-        if(fileProxy){
+        if (fileProxy) {
             return "src/main/java/";
         }
         return "target/generated-sources/annotations/";

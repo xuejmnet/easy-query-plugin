@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.util;
 
+import com.alibaba.fastjson2.JSON;
 import com.easy.query.plugin.core.config.CustomConfig;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -238,6 +239,12 @@ public class MyModuleUtil {
         }
         if (Objects.isNull(file)) {
             return new CustomConfig();
+        }
+        String text = file.getText();
+        try {
+            return JSON.parseObject(text, CustomConfig.class);
+        }catch (Exception ex){
+            NotificationUtils.notifyError("配置文件有误:"+ex.getMessage(), "", module.getProject());
         }
         CustomConfig config = new CustomConfig();
 //        try {

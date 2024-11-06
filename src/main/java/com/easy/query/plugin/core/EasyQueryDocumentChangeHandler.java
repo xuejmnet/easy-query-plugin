@@ -94,6 +94,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
                 }).collect(Collectors.toList());
         Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap = new HashMap<>();
+
         try {
 
             // 检查索引是否已准备好
@@ -104,7 +105,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     continue;
                 }
                 CustomConfig config = MyModuleUtil.moduleConfig(moduleForFile);
-                if (!ObjectUtil.defaultIfNull(config.isEnable(), true)) {
+                if (!ObjectUtil.defaultIfNull(config.getEnable(), true)) {
                     continue;
                 }
                 String moduleDirPath = MyModuleUtil.getPath(moduleForFile);

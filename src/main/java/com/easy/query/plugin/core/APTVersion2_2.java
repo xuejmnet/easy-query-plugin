@@ -215,7 +215,7 @@ public class APTVersion2_2 {
         if (!fullClassName.contains(".")) {
             return null;
         }
-        PsiClass psiClass = getNavigatePropertyProxyClass(project, fullClassName);
+        PsiClass psiClass = PsiUtil.getClassByFullName(project, fullClassName);
 
         if (psiClass != null) {
 
@@ -249,13 +249,6 @@ public class APTVersion2_2 {
         return fullClassName.substring(0, fullClassName.lastIndexOf(".")) + ".proxy." + fullClassName.substring(fullClassName.lastIndexOf(".") + 1) + "Proxy";
     }
 
-    private static PsiClass getNavigatePropertyProxyClass(Project project, String fullClassName) {
-        PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.projectScope(project));
-        if (psiClass != null) {
-            return psiClass;
-        }
-        return JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.allScope(project));
-    }
 
     private static void addValueObjectClass(Project project, String parentProperty, AptValueObjectInfo aptValueObjectInfo, PsiClass fieldValueObjectClass, AptFileCompiler aptFileCompiler, Set<String> tableAndProxyIgnoreProperties) {
         PsiField[] allFields = fieldValueObjectClass.getAllFields();
