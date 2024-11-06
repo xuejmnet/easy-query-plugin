@@ -27,7 +27,11 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
-    <h3>0.0.68</h3>
+    <h3>0.0.71</h3>
+    <ul>
+    <li>支持kt选择kapt编译</li>
+    </ul>
+    <h3>0.0.70</h3>
     <ul>
     <li>修复gradle下生成proxy的ksp下生成的路径</li>
     </ul>

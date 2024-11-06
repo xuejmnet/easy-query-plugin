@@ -100,7 +100,7 @@ public class APTVersion2_2 {
 
 
         FileTypeEnum fileType = PsiUtil.getFileType(psiFile);
-        String path = moduleDirPath + CustomConfig.getConfig(config.getGenPath(),fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
+        String path = moduleDirPath + CustomConfig.getConfig(config,config.getGenPath(),fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
                 + psiFile.getPackageName().replace(".", "/") + "/proxy";
 
         PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);
