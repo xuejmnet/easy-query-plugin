@@ -1,15 +1,22 @@
 package com.easy.query.plugin.action;
 
 import com.easy.query.plugin.core.util.ProjectUtils;
+import com.easy.query.plugin.core.util.TableUtil;
 import com.easy.query.plugin.windows.EntityTableGenerateDialog;
 import com.intellij.database.model.DasTable;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ApplicationInfo;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Set;
 
 public class TableGenerateAction extends AnAction {
 
@@ -21,6 +28,9 @@ public class TableGenerateAction extends AnAction {
             entityTableGenerateDialog.setVisible(true);
         });
     }
+
+    private static final LocalDateTime AFTER_2024_3_TIME = LocalDateTime.of(2024, 11, 1, 0, 0);
+
     /**
      * 判断选中的是否是表，是表则显示，否则不显示
      *
@@ -28,13 +38,31 @@ public class TableGenerateAction extends AnAction {
      */
     @Override
     public void update(AnActionEvent e) {
+        boolean selectedTable = shouldShow(e);
+        e.getPresentation().setVisible(selectedTable);
+    }
+
+    private boolean shouldShow(AnActionEvent e) {
+        try {
+
+            Calendar buildDate = ApplicationInfo.getInstance().getBuildDate();
+            Date time = buildDate.getTime();
+            LocalDateTime buildTime = LocalDateTime.ofInstant(time.toInstant(), ZoneId.systemDefault());
+            if (buildTime.isAfter(AFTER_2024_3_TIME)) {
+
+                DasTable dasTable = TableUtil.getSelectedSingleTable(e);
+                return dasTable != null;
+            }
+        } catch (Exception ignored) {
+
+        }
         Object selectedElement = e.getData(CommonDataKeys.PSI_ELEMENT);
-        boolean isSelectedTable = selectedElement instanceof DasTable;
-        e.getPresentation().setVisible(isSelectedTable);
+        return selectedElement instanceof DasTable;
     }
 
     /**
      * 2022.2.5才有的方法
+     *
      * @return
      */
     @Override
