@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.util;
 
 import cn.hutool.core.util.ReflectUtil;
+import com.easy.query.plugin.core.VersionUtil;
 import com.easy.query.plugin.core.entity.ColumnInfo;
 import com.easy.query.plugin.core.entity.ColumnMetadata;
 import com.easy.query.plugin.core.entity.MatchTypeMapping;
@@ -49,16 +50,38 @@ public class TableUtils {
      * @return {@code List<TableInfo>}
      */
     public static List<TableMetadata> getAllTables(AnActionEvent event) {
-        DbTableImpl table = (DbTableImpl) event.getData(CommonDataKeys.PSI_ELEMENT);
-        DbElement tableParent = table.getParent();
-        assert tableParent != null;
-        List<DasTable> list = tableParent.getDasChildren(ObjectKind.TABLE).map(el -> (DasTable) el)
-                .toList();
-        List<DasTable> viewList = tableParent.getDasChildren(ObjectKind.VIEW).map(el -> (DasTable) el)
-                .toList();
-        List<DasTable> dasTables = new ArrayList<>(list);
-        dasTables.addAll(viewList);
+        List<DasTable> dasTables = getDasTables(event);
         return getTableInfoList(dasTables);
+    }
+    private static List<DasTable> getDasTables(AnActionEvent event){
+
+        boolean after20243 = VersionUtil.isAfter2024_3();
+        List<DasTable> dasTables = new ArrayList<>();
+        if(after20243){
+
+
+            DasObject tableParent = TableUtil.getSelectedSingleTable(event).getDasParent();
+            List<DasTable> list = tableParent.getDasChildren(ObjectKind.TABLE).map(el -> (DasTable) el)
+                    .toList();
+            dasTables.addAll(list);
+            List<DasTable> viewList = tableParent.getDasChildren(ObjectKind.VIEW).map(el -> (DasTable) el)
+                    .toList();
+            dasTables.addAll(viewList);
+        }else{
+
+            DbTableImpl table = (DbTableImpl) event.getData(CommonDataKeys.PSI_ELEMENT);
+            DbElement tableParent = table.getParent();
+            assert tableParent != null;
+
+            List<DasTable> list = tableParent.getDasChildren(ObjectKind.TABLE).map(el -> (DasTable) el)
+                    .toList();
+            dasTables.addAll(list);
+            List<DasTable> viewList = tableParent.getDasChildren(ObjectKind.VIEW).map(el -> (DasTable) el)
+                    .toList();
+            dasTables.addAll(viewList);
+        }
+        return dasTables;
+
     }
 
     public static List<TableMetadata> getTableInfoList(List<DasTable> selectedTableList) {

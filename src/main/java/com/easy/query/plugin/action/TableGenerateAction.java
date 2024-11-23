@@ -1,5 +1,6 @@
 package com.easy.query.plugin.action;
 
+import com.easy.query.plugin.core.VersionUtil;
 import com.easy.query.plugin.core.util.ProjectUtils;
 import com.easy.query.plugin.core.util.TableUtil;
 import com.easy.query.plugin.windows.EntityTableGenerateDialog;
@@ -29,7 +30,6 @@ public class TableGenerateAction extends AnAction {
         });
     }
 
-    private static final LocalDateTime AFTER_2024_3_TIME = LocalDateTime.of(2024, 11, 1, 0, 0);
 
     /**
      * 判断选中的是否是表，是表则显示，否则不显示
@@ -43,13 +43,10 @@ public class TableGenerateAction extends AnAction {
     }
 
     private boolean shouldShow(AnActionEvent e) {
+        boolean after20243 = VersionUtil.isAfter2024_3();
         try {
 
-            Calendar buildDate = ApplicationInfo.getInstance().getBuildDate();
-            Date time = buildDate.getTime();
-            LocalDateTime buildTime = LocalDateTime.ofInstant(time.toInstant(), ZoneId.systemDefault());
-            if (buildTime.isAfter(AFTER_2024_3_TIME)) {
-
+            if (after20243) {
                 DasTable dasTable = TableUtil.getSelectedSingleTable(e);
                 return dasTable != null;
             }
