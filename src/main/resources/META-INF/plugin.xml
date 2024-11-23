@@ -193,6 +193,12 @@
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
+        <action id="com.easy.query.plugin.action.StructDTOModifyAction"
+                class="com.easy.query.plugin.action.StructDTOModifyAction" text="StructDTOModify"
+                icon="/icons/eq.svg">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+        </action>
         <action id="com.easy.query.plugin.action.NavigatePathAction"
                 class="com.easy.query.plugin.action.NavigatePathAction" text="NavigatePathGenerate"
                 icon="/icons/eq.svg">
