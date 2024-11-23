@@ -102,7 +102,7 @@ public class EntityTableGenerateDialog extends JDialog {
     private JButton confDelBtn;
     private JTextField ignoreColumnsText;
     private JTextField superClassText;
-    private JButton previewBtn;
+    private JButton overrideBtn;
 
     Map<String, Module> moduleMap;
     Map<String, Map<String, String>> modulePackageMap;
@@ -132,9 +132,9 @@ public class EntityTableGenerateDialog extends JDialog {
             }
         });
 
-        previewBtn.addActionListener(new ActionListener() {
+        overrideBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onOK();
+                onOverride();
             }
         });
 
@@ -506,7 +506,7 @@ public class EntityTableGenerateDialog extends JDialog {
 
     private void onOK() {
         // add your code here
-        boolean close = onGenerate();
+        boolean close = onGenerate(false);
         if (!close) {
             return;
         }
@@ -514,8 +514,19 @@ public class EntityTableGenerateDialog extends JDialog {
 
         dispose();
     }
+    private void onOverride() {
+        // add your code here
+        boolean close = onGenerate(true);
+        if (!close) {
+            return;
+        }
 
-    private boolean onGenerate() {
+        NotificationUtils.notifySuccess("功能开发中...", project);
+
+        dispose();
+    }
+
+    private boolean onGenerate(boolean override) {
         for (JComboBox<String> el : list) {
             JTextField textField = (JTextField) el.getEditor().getEditorComponent();
             String moduleName = textField.getText();
@@ -534,12 +545,12 @@ public class EntityTableGenerateDialog extends JDialog {
         for (String tableName : selectedTabeList) {
             selectedTableInfo.add(tableInfoMap.get(tableName));
         }
-        startGenCode(selectedTableInfo);
+        startGenCode(selectedTableInfo,override);
         return true;
     }
 
 
-    private void startGenCode(List<TableMetadata> selectedTableInfo) {
+    private void startGenCode(List<TableMetadata> selectedTableInfo, boolean override) {
         EasyQueryConfig configData = getConfigData();
 //        for (JCheckBox box : enableList) {
 //            boolean selected = box.isSelected();
@@ -548,7 +559,7 @@ public class EntityTableGenerateDialog extends JDialog {
 //            }
 //            ReflectUtil.setFieldValue(configData, box.getName(),"");
 //        }
-        RenderEasyQueryTemplate.assembleData(selectedTableInfo, configData, project, getModule(String.valueOf(modelCombox.getSelectedItem())));
+        RenderEasyQueryTemplate.assembleData(selectedTableInfo, configData, project, getModule(String.valueOf(modelCombox.getSelectedItem())),override);
         NotificationUtils.notifySuccess("代码生成成功", project);
         onCancel();
     }

@@ -315,6 +315,29 @@ public class RenderEasyQueryTemplate {
         return sw.toString();
     }
 
+    private static void override(Project project, Map<PsiDirectory, List<PsiElement>> templateMap,ValueHolder<Boolean> valueHolder) {
+
+        DumbService.getInstance(project).runWhenSmart(() -> {
+            WriteCommandAction.runWriteCommandAction(project, () -> {
+                for (Map.Entry<PsiDirectory, List<PsiElement>> entry : templateMap.entrySet()) {
+                    List<PsiElement> list = entry.getValue();
+                    for (PsiElement psiFileElement : list) {
+                        if(psiFileElement instanceof PsiFile){
+                            PsiFile psiFile = (PsiFile) psiFileElement;
+                            PsiClassOwner newFile = (PsiClassOwner)psiFile ;
+                            PsiClass[] classes = newFile.getClasses();
+                            if (classes.length == 0) {
+                                Messages.showErrorDialog("未找到对应类，文件：" + psiFile.getName(), "错误");
+                                continue;
+                            }
+                            PsiClass psiClass = classes[0];
+                            //差异化覆盖
+                        }
+                    }
+                }
+            });
+        });
+    }
     private static void flush(Project project, Map<PsiDirectory, List<PsiElement>> templateMap,boolean deleteIfExists,ValueHolder<Boolean> valueHolder) {
 
         DumbService.getInstance(project).runWhenSmart(() -> {
@@ -374,7 +397,7 @@ public class RenderEasyQueryTemplate {
         });
     }
 
-    public static void assembleData(List<TableMetadata> selectedTableInfo, EasyQueryConfig config, @NotNull Project project, Module module) {
+    public static void assembleData(List<TableMetadata> selectedTableInfo, EasyQueryConfig config, @NotNull Project project, Module module,boolean override) {
 
         VelocityEngine velocityEngine = new VelocityEngine();
         // 修复因velocity.log拒绝访问，导致Velocity初始化失败
@@ -427,7 +450,11 @@ public class RenderEasyQueryTemplate {
         }
         ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
         booleanValueHolder.setValue(true);
-        flush(project, templateMap,false,booleanValueHolder);
+        if(override){
+            override(project,templateMap,booleanValueHolder);
+        }else{
+            flush(project, templateMap,false,booleanValueHolder);
+        }
         //
         // // 生成代码之后，重新构建
         // CompilerManagerUtil.make(Modules.getModule(config.getModelModule()));
