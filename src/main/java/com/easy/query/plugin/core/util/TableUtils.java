@@ -16,10 +16,13 @@ import com.intellij.database.model.DataType;
 import com.intellij.database.model.ObjectKind;
 import com.intellij.database.psi.DbDataSourceImpl;
 import com.intellij.database.psi.DbElement;
+import com.intellij.database.psi.DbPsiFacade;
 import com.intellij.database.psi.DbTableImpl;
 import com.intellij.database.util.JdbcUtil;
+import com.intellij.database.view.DatabaseCoreUiService;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.containers.JBIterable;
 
 import java.lang.reflect.InvocationTargetException;
@@ -51,7 +54,7 @@ public class TableUtils {
      */
     public static List<TableMetadata> getAllTables(AnActionEvent event) {
         List<DasTable> dasTables = getDasTables(event);
-        return getTableInfoList(dasTables);
+        return getTableInfoList(dasTables,event.getProject());
     }
     private static List<DasTable> getDasTables(AnActionEvent event){
 
@@ -84,10 +87,10 @@ public class TableUtils {
 
     }
 
-    public static List<TableMetadata> getTableInfoList(List<DasTable> selectedTableList) {
+    public static List<TableMetadata> getTableInfoList(List<DasTable> selectedTableList,Project project) {
         List<TableMetadata> tableInfoList = new ArrayList<>();
         DasTable dasTable = selectedTableList.get(0);
-        DatabaseDialectEx dialect = getDialect(dasTable);
+        DatabaseDialectEx dialect = getDialect(dasTable,project);
         for (DasTable table : selectedTableList) {
             TableMetadata tableInfo = new TableMetadata(table.getName(), table.getComment());
             List<ColumnMetadata> columnList = new ArrayList<>();
@@ -184,10 +187,18 @@ public class TableUtils {
         return fieldType;
     }
 
-    public static DatabaseDialectEx getDialect(DasTable dasTable) {
-        DbTableImpl table = (DbTableImpl) dasTable;
-        DbDataSourceImpl dataSource = table.getDataSource();
-        return dataSource.getDatabaseDialect();
+    public static DatabaseDialectEx getDialect(DasTable dasTable, Project project) {
+        if(VersionUtil.isAfter2024_3()){
+
+//            DbPsiFacade dbPsiFacade = DbPsiFacade.getInstance(project);
+            DbTableImpl table = (DbTableImpl)  DatabaseCoreUiService.getInstance().findElement(project, dasTable);
+            DbDataSourceImpl dataSource = table.getDataSource();
+            return dataSource.getDatabaseDialect();
+        }else{
+            DbTableImpl table = (DbTableImpl) dasTable;
+            DbDataSourceImpl dataSource = table.getDataSource();
+            return dataSource.getDatabaseDialect();
+        }
     }
 
     public static Class<?> convert(int sqlType, int size) {
