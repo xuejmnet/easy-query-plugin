@@ -3,38 +3,17 @@ package com.easy.query.plugin.core;
 import cn.hutool.core.util.ReUtil;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.constant.EasyQueryConstant;
-import com.easy.query.plugin.core.entity.AnonymousParseContext;
-import com.easy.query.plugin.core.entity.AnonymousParseResult;
-import com.easy.query.plugin.core.entity.ColumnInfo;
-import com.easy.query.plugin.core.entity.ColumnMetadata;
-import com.easy.query.plugin.core.entity.MatchTypeMapping;
-import com.easy.query.plugin.core.entity.TableInfo;
-import com.easy.query.plugin.core.entity.TableMetadata;
-import com.easy.query.plugin.core.entity.ValueHolder;
+import com.easy.query.plugin.core.entity.*;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
-import com.easy.query.plugin.core.util.CodeReformatUtil;
-import com.easy.query.plugin.core.util.GenUtils;
-import com.easy.query.plugin.core.util.MyModuleUtil;
-import com.easy.query.plugin.core.util.NotificationUtils;
-import com.easy.query.plugin.core.util.PsiJavaFileUtil;
-import com.intellij.openapi.module.Module;
-import com.easy.query.plugin.core.util.ObjectUtil;
-import com.easy.query.plugin.core.util.StrUtil;
-import com.easy.query.plugin.core.util.TableUtils;
-import com.easy.query.plugin.core.util.VirtualFileUtils;
+import com.easy.query.plugin.core.util.*;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassOwner;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.*;
 import com.intellij.util.IncorrectOperationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
@@ -45,15 +24,7 @@ import java.io.StringWriter;
 import java.sql.Types;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -106,10 +77,10 @@ public class RenderEasyQueryTemplate {
             columnInfo.setFieldName(StrUtil.toCamelCase(column.getName().toLowerCase()));
             columnInfo.setJdbcTypeStr(StrUtil.replaceBlank(column.getJdbcTypeStr()));
             String fieldType = getFieldType(column.getJdbcType(), tableInfo, column.getJdbcTypeName(), column.getSize(), StrUtil.replaceBlank(column.getJdbcTypeStr()).toLowerCase(), typeMapping);
-            if(Objects.equals("Object",fieldType)){
+            if (Objects.equals("Object", fieldType)) {
                 //防止用户不知道是啥类型无法添加mapping映射的正则匹配
                 columnInfo.setFieldType(column.getJdbcTypeStr().toLowerCase());
-            }else{
+            } else {
                 columnInfo.setFieldType(fieldType);
             }
             columnInfo.setNotNull(column.isNotNull());
@@ -248,19 +219,45 @@ public class RenderEasyQueryTemplate {
     }
 
 
-    public static boolean renderStructDTOType(RenderStructDTOContext renderStructDTOContext) {
+    public static boolean renderStructDTOType(RenderStructDTOContext renderContext) {
         Map<PsiDirectory, List<PsiElement>> templateMap = new HashMap<>();
         VelocityEngine velocityEngine = new VelocityEngine();
-        VelocityContext context = new VelocityContext();
-        context.put("appContext", renderStructDTOContext);
-        Project project = renderStructDTOContext.getProject();
-        Module module = renderStructDTOContext.getModule();
+        VelocityContext velocityContext = new VelocityContext();
+        Project project = renderContext.getProject();
+        Module module = renderContext.getModule();
         PsiFileFactory factory = PsiFileFactory.getInstance(project);
-        renderTemplate(Template.getTemplateContent("StructDTOTemplate.java"), context, renderStructDTOContext.getDtoName(), velocityEngine, templateMap, renderStructDTOContext.getPackageName(), "", factory, project, module);
+
+        String className = renderContext.getDtoName();
+        String suffix = "";
+        String _package = renderContext.getPackageName();
+
+        StringWriter dtoClassContent = new StringWriter();
+
+        velocityContext.put("appContext", renderContext);
+        velocityContext.put("className", className);
+
+        String template = Template.getTemplateContent("StructDTOTemplate.java");
+        velocityEngine.evaluate(velocityContext, dtoClassContent, "easy-query", template);
+
+        PsiDirectory packageDirectory = VirtualFileUtils.getPsiDirectory(project, module, _package, EasyQueryConstant.ENTITY);
+        DumbService.getInstance(project).runWhenSmart(() -> {
+            String fileName = className + suffix + ".java";
+            PsiFile psiFile = factory.createFileFromText(fileName, JavaFileType.INSTANCE, dtoClassContent.toString());
+            if (Objects.nonNull(renderContext.getRootDtoPsiClass())) {
+                // DTO PsiClass 不为空, 是修改
+                WriteCommandAction.runWriteCommandAction(project, () -> {
+                    renderContext.getRootDtoPsiClass().replace(((PsiJavaFile) psiFile).getClasses()[0]);
+                });
+            } else {
+                // 新增的仍然走原先的逻辑
+                templateMap.computeIfAbsent(packageDirectory, k -> new ArrayList<>()).add(CodeReformatUtil.reformat(psiFile));
+            }
+        });
+
         ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
         booleanValueHolder.setValue(true);
-        flush(project, templateMap,renderStructDTOContext.getDeleteExistsFile(),booleanValueHolder);
-        return booleanValueHolder.getValue();
+        flush(project, templateMap, renderContext.getDeleteExistsFile(), booleanValueHolder);
+        return true;
     }
 
 
@@ -289,7 +286,7 @@ public class RenderEasyQueryTemplate {
         renderTemplate(Template.getTemplateContent("AnonymousTypeTemplate.java"), context, anonymousName, velocityEngine, templateMap, anonymousParseContext.getModelPackage(), "", factory, project, module);
         ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
         booleanValueHolder.setValue(true);
-        flush(project, templateMap,true,booleanValueHolder);
+        flush(project, templateMap, true, booleanValueHolder);
         for (Map.Entry<PsiDirectory, List<PsiElement>> entry : templateMap.entrySet()) {
             PsiDirectory psiDirectory = entry.getKey();
             List<PsiElement> value = entry.getValue();
@@ -297,11 +294,12 @@ public class RenderEasyQueryTemplate {
                 PsiFile psiFile = (PsiFile) psiElement;
                 PsiFile file = psiDirectory.findFile(psiFile.getName());
                 VirtualFile virtualFile = file.getVirtualFile();
-                PsiJavaFileUtil.createAptCurrentFile(virtualFile,project);
+                PsiJavaFileUtil.createAptCurrentFile(virtualFile, project);
             }
         }
     }
-    public static String getAnonymousLambdaTemplate(AnonymousParseContext anonymousParseContext){
+
+    public static String getAnonymousLambdaTemplate(AnonymousParseContext anonymousParseContext) {
 
         VelocityEngine velocityEngine = new VelocityEngine();
         VelocityContext context = new VelocityContext();
@@ -315,16 +313,16 @@ public class RenderEasyQueryTemplate {
         return sw.toString();
     }
 
-    private static void override(Project project, Map<PsiDirectory, List<PsiElement>> templateMap,ValueHolder<Boolean> valueHolder) {
+    private static void override(Project project, Map<PsiDirectory, List<PsiElement>> templateMap, ValueHolder<Boolean> valueHolder) {
 
         DumbService.getInstance(project).runWhenSmart(() -> {
             WriteCommandAction.runWriteCommandAction(project, () -> {
                 for (Map.Entry<PsiDirectory, List<PsiElement>> entry : templateMap.entrySet()) {
                     List<PsiElement> list = entry.getValue();
                     for (PsiElement psiFileElement : list) {
-                        if(psiFileElement instanceof PsiFile){
+                        if (psiFileElement instanceof PsiFile) {
                             PsiFile psiFile = (PsiFile) psiFileElement;
-                            PsiClassOwner newFile = (PsiClassOwner)psiFile ;
+                            PsiClassOwner newFile = (PsiClassOwner) psiFile;
                             PsiClass[] classes = newFile.getClasses();
                             if (classes.length == 0) {
                                 Messages.showErrorDialog("未找到对应类，文件：" + psiFile.getName(), "错误");
@@ -338,31 +336,32 @@ public class RenderEasyQueryTemplate {
             });
         });
     }
-    private static void flush(Project project, Map<PsiDirectory, List<PsiElement>> templateMap,boolean deleteIfExists,ValueHolder<Boolean> valueHolder) {
+
+    private static void flush(Project project, Map<PsiDirectory, List<PsiElement>> templateMap, boolean deleteIfExists, ValueHolder<Boolean> valueHolder) {
 
         DumbService.getInstance(project).runWhenSmart(() -> {
             WriteCommandAction.runWriteCommandAction(project, () -> {
                 for (Map.Entry<PsiDirectory, List<PsiElement>> entry : templateMap.entrySet()) {
                     List<PsiElement> list = entry.getValue();
                     PsiDirectory directory = entry.getKey();
-                    if(deleteIfExists){
+                    if (deleteIfExists) {
                         // 删除原有文件
                         for (PsiElement psiFile : list) {
                             if (psiFile instanceof PsiFile) {
                                 PsiFile file = (PsiFile) psiFile;
                                 VirtualFile virtualFile = file.getVirtualFile();
-                                if(virtualFile!=null){
+                                if (virtualFile != null) {
 
                                     PsiFile psiFile1 = VirtualFileUtils.getPsiFile(project, virtualFile);
-                                    if(psiFile1!=null){
-                                        PsiClassOwner newFile = (PsiClassOwner)psiFile1 ;
+                                    if (psiFile1 != null) {
+                                        PsiClassOwner newFile = (PsiClassOwner) psiFile1;
                                         PsiClass[] classes = newFile.getClasses();
                                         if (classes.length == 0) {
                                             continue;
                                         }
                                         PsiClass psiClass = classes[0];
                                         PsiAnnotation easyAnonymous = psiClass.getAnnotation("com.easy.query.core.annotation.EasyAnonymous");
-                                        if(easyAnonymous==null){
+                                        if (easyAnonymous == null) {
                                             continue;
                                         }
                                     }
@@ -397,7 +396,7 @@ public class RenderEasyQueryTemplate {
         });
     }
 
-    public static void assembleData(List<TableMetadata> selectedTableInfo, EasyQueryConfig config, @NotNull Project project, Module module,boolean override) {
+    public static void assembleData(List<TableMetadata> selectedTableInfo, EasyQueryConfig config, @NotNull Project project, Module module, boolean override) {
 
         VelocityEngine velocityEngine = new VelocityEngine();
         // 修复因velocity.log拒绝访问，导致Velocity初始化失败
@@ -450,10 +449,10 @@ public class RenderEasyQueryTemplate {
         }
         ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
         booleanValueHolder.setValue(true);
-        if(override){
-            override(project,templateMap,booleanValueHolder);
-        }else{
-            flush(project, templateMap,false,booleanValueHolder);
+        if (override) {
+            override(project, templateMap, booleanValueHolder);
+        } else {
+            flush(project, templateMap, false, booleanValueHolder);
         }
         //
         // // 生成代码之后，重新构建
@@ -473,16 +472,16 @@ public class RenderEasyQueryTemplate {
      * 渲染模板
      */
     private static void renderTemplate(
-            String template,
-            VelocityContext context,
-            String className,
-            VelocityEngine velocityEngine,
-            Map<PsiDirectory, List<PsiElement>> templateMap,
-            String _package,
-            String suffix,
-            PsiFileFactory factory,
-            Project project,
-            Module module
+        String template,
+        VelocityContext context,
+        String className,
+        VelocityEngine velocityEngine,
+        Map<PsiDirectory, List<PsiElement>> templateMap,
+        String _package,
+        String suffix,
+        PsiFileFactory factory,
+        Project project,
+        Module module
     ) {
 
         StringWriter sw = new StringWriter();

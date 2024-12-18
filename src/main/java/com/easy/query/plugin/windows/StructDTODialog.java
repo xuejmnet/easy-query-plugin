@@ -216,25 +216,34 @@ public class StructDTODialog extends JDialog {
             dtoClassName = StrUtil.subAfter(structDTOApp.getEntityName(), ".", true) + "DTO";
         }
 
-        Messages.InputDialog dialog = new Messages.InputDialog("请输入DTO名称", "提示名称", Messages.getQuestionIcon(),
-            dtoClassName, new InputAnyValidatorImpl());
-        dialog.show();
-        if (dialog.isOK()) {
-            String dtoName = dialog.getInputString();
-            if (StrUtil.isBlank(dtoName)) {
-                Messages.showErrorDialog(structDTOContext.getProject(), "输入的dto名称为空", "错误提示");
+        if (Objects.nonNull(structDTOContext.getDtoPsiClass())) {
+            // 传递了DTO PsiClass 说明是修改, 保留原来的DTO名称
+            entityDTOName = dtoClassName;
+        } else {
+            // 不是修改, 需要弹出DTO类名确认
+            Messages.InputDialog dialog = new Messages.InputDialog("请输入DTO名称", "提示名称", Messages.getQuestionIcon(),
+                dtoClassName, new InputAnyValidatorImpl());
+            dialog.show();
+            if (dialog.isOK()) {
+                String dtoName = dialog.getInputString();
+                if (StrUtil.isBlank(dtoName)) {
+                    Messages.showErrorDialog(structDTOContext.getProject(), "输入的dto名称为空", "错误提示");
+                    return;
+                }
+                entityDTOName = dtoName;
+            } else {
                 return;
             }
-            entityDTOName = dtoName;
-        } else {
-            return;
         }
+
 
         RenderStructDTOContext renderContext = new RenderStructDTOContext(structDTOContext.getProject(),
             structDTOContext.getPath(), structDTOContext.getPackageName(), entityDTOName, structDTOApp,
             structDTOContext.getModule());
-        // 设置一下rootPsiClass
-        renderContext.setRootPsiClass(appNode.getClassNode().getPsiClass());
+        // 设置一下rootEntityPsiClass
+        renderContext.setRootEntityPsiClass(appNode.getClassNode().getPsiClass());
+        // 设置一下 rootDtoPsiClass
+        renderContext.setRootDtoPsiClass(structDTOContext.getDtoPsiClass());
 
         renderContext.setData(dataCheck.isSelected());
         // 传递import

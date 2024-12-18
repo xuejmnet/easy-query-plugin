@@ -28,7 +28,12 @@ public class RenderStructDTOContext {
     /** 需要一个 rootPsiClass, 是顶级DTO对应的实体 */
     @Getter
     @Setter
-    private PsiClass rootPsiClass;
+    private PsiClass rootEntityPsiClass;
+
+    /** 顶级DTO的 psiClass, 修改时不为null, 方便用于替换 */
+    @Getter
+    @Setter
+    private PsiClass rootDtoPsiClass;
 
     @Setter
     private String dtoName;
