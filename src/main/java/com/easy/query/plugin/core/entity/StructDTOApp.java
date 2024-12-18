@@ -1,12 +1,8 @@
 package com.easy.query.plugin.core.entity;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import lombok.Getter;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -15,15 +11,20 @@ import java.util.stream.Collectors;
  *
  * @author xuejiaming
  */
-public class StructDTOApp implements PropAppendable{
+public class StructDTOApp implements PropAppendable {
+    @Getter
     private final String entityName;
+    @Getter
     private final String ownerEntityName;
+    @Getter
     private final String packageName;
+    @Getter
     private final int sort;
-    private final Map<String,StructDTOProp> props;
+    private final Map<String, StructDTOProp> props;
+    @Getter
     private final Set<String> imports;
 
-    public StructDTOApp(String entityName,String ownerEntityName,String packageName,int sort){
+    public StructDTOApp(String entityName, String ownerEntityName, String packageName, int sort) {
         this.entityName = entityName;
         this.ownerEntityName = ownerEntityName;
         this.packageName = packageName;
@@ -33,8 +34,8 @@ public class StructDTOApp implements PropAppendable{
     }
 
     @Override
-    public void addProp(StructDTOProp prop){
-        this.props.putIfAbsent(prop.getPropName(),prop);
+    public void addProp(StructDTOProp prop) {
+        this.props.putIfAbsent(prop.getPropName(), prop);
     }
 
     @Override
@@ -50,26 +51,6 @@ public class StructDTOApp implements PropAppendable{
     @Override
     public List<StructDTOProp> getProps() {
         return props.values().stream().sorted(Comparator.comparingInt(StructDTOProp::getSort)).collect(Collectors.toList());
-    }
-
-    public String getEntityName() {
-        return entityName;
-    }
-
-    public String getOwnerEntityName() {
-        return ownerEntityName;
-    }
-
-    public String getPackageName() {
-        return packageName;
-    }
-
-    public int getSort() {
-        return sort;
-    }
-
-    public Set<String> getImports() {
-        return imports;
     }
 
     @Override

@@ -1,6 +1,8 @@
 package com.easy.query.plugin.core.entity;
 
-import java.util.ArrayList;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,22 +15,42 @@ import java.util.stream.Collectors;
  *
  * @author xuejiaming
  */
-public class StructDTOProp implements PropAppendable{
+public class StructDTOProp implements PropAppendable {
+
     private final String propName;
-    private  String propText;
+    /** 属性文本, 生成的时候, 实际输出的是这里面的内容 */
+    @Setter
+    @Getter
+    private String propText;
+
+    @Getter
     private final String owner;
+    @Getter
     private final boolean entity;
     private final String selfEntityType;
+
+    @Getter
     private final int sort;
     private final int pathCount;
+
+    @Getter
     private final String ownerFullName;
+
+    @Getter
     private final String selfFullEntityType;
-    private  String dtoName;
-    private  ClassNode classNode;
+
+    @Setter
+    @Getter
+    private String dtoName;
+
+    @Setter
+    @Getter
+    private ClassNode classNode;
 
 
-    private final Map<String,StructDTOProp> props;
-    public StructDTOProp(String propName, String propText,String owner,boolean entity,String selfEntityType,int sort,int pathCount,String ownerFullName,String selfFullEntityType){
+    private final Map<String, StructDTOProp> props;
+
+    public StructDTOProp(String propName, String propText, String owner, boolean entity, String selfEntityType, int sort, int pathCount, String ownerFullName, String selfFullEntityType) {
 
         this.propName = propName;
         this.propText = propText;
@@ -41,9 +63,10 @@ public class StructDTOProp implements PropAppendable{
         this.selfFullEntityType = selfFullEntityType;
         this.props = new LinkedHashMap<>();
     }
+
     @Override
-    public void addProp(StructDTOProp prop){
-        this.props.putIfAbsent(prop.getPropName(),prop);
+    public void addProp(StructDTOProp prop) {
+        this.props.putIfAbsent(prop.getPropName(), prop);
     }
 
     @Override
@@ -56,37 +79,9 @@ public class StructDTOProp implements PropAppendable{
         return propName;
     }
 
-    public String getPropText() {
-        return propText;
-    }
-
-    public int getSort() {
-        return sort;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public boolean isEntity() {
-        return entity;
-    }
-
     @Override
     public String getSelfEntityType() {
         return selfEntityType;
-    }
-
-    public String getDtoName() {
-        return dtoName;
-    }
-
-    public void setPropText(String propText) {
-        this.propText = propText;
-    }
-
-    public void setDtoName(String dtoName) {
-        this.dtoName = dtoName;
     }
 
     @Override
@@ -94,19 +89,4 @@ public class StructDTOProp implements PropAppendable{
         return pathCount;
     }
 
-    public ClassNode getClassNode() {
-        return classNode;
-    }
-
-    public void setClassNode(ClassNode classNode) {
-        this.classNode = classNode;
-    }
-
-    public String getOwnerFullName(){
-        return ownerFullName;
-    }
-
-    public String getSelfFullEntityType() {
-        return selfFullEntityType;
-    }
 }

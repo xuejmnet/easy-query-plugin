@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.73"
+version = "0.0.75"
 
 repositories {
     maven {
@@ -30,11 +30,18 @@ dependencies {
 //    implementation("com.intellij:forms_rt:7.0.3")
     implementation("cn.hutool:hutool-core:5.8.22")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.41")
+
+    // 引入 lombok
+    compileOnly("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    testCompileOnly("org.projectlombok:lombok:1.18.34")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
+
 
 tasks {
     // Set the JVM compatibility versions

@@ -3,6 +3,9 @@ package com.easy.query.plugin.core.entity.struct;
 import com.easy.query.plugin.core.entity.ClassNode;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiClass;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -15,6 +18,7 @@ import java.util.Set;
  *
  * @author xuejiaming
  */
+@Getter
 public class StructDTOContext {
     private final Project project;
     private final String path;
@@ -22,7 +26,15 @@ public class StructDTOContext {
     private final Module module;
     private final Map<String, Map<String,ClassNode>> entityProps;
     private final Set<String> imports;
+    @Setter
     private boolean success;
+
+    /** 修改DTO的时候选中的DTO类名 */
+    @Setter
+    private String dtoClassName;
+    /** 修改DTO的时候选中的dto PsiClass */
+    @Setter
+    private PsiClass dtoPsiClass;
 
     public StructDTOContext(Project project, String path, String packageName, Module module, Map<String, Map<String,ClassNode>> entityProps) {
         this.project = project;
@@ -34,35 +46,4 @@ public class StructDTOContext {
         this.imports=new LinkedHashSet<>();
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public String getPackageName() {
-        return packageName;
-    }
-
-    public Project getProject() {
-        return project;
-    }
-
-    public Module getModule() {
-        return module;
-    }
-
-    public Set<String> getImports() {
-        return imports;
-    }
-
-    public Map<String, Map<String,ClassNode>> getEntityProps() {
-        return entityProps;
-    }
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
 }

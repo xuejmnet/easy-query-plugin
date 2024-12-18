@@ -2,6 +2,11 @@ package com.easy.query.plugin.core.entity;
 
 import com.easy.query.plugin.core.enums.BeanPropTypeEnum;
 import com.easy.query.plugin.core.util.StrUtil;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiField;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,6 +46,38 @@ public class ClassNode {
     private String relationType;
     private String conversion;
     private String columnValue;
+
+    /** Column complexPropType */
+    @Getter
+    @Setter
+    private String complexPropType;
+
+
+
+    // 补充一些其他字段
+    @Getter
+    @Setter
+    private PsiClass psiClass;
+    @Getter
+    @Setter
+    private PsiField psiField;
+
+    // 补充常用的注解信息
+
+    /** eq 的 Column 注解信息 */
+    @Getter
+    @Setter
+    private PsiAnnotation psiAnnoColumn;
+
+    @Getter
+    @Setter
+    private PsiAnnotation psiAnnoNavigate;
+
+    @Getter
+    @Setter
+    private PsiAnnotation psiAnnoNavigateFlat;
+
+
 
     public ClassNode(String name, String owner, int sort, boolean primary, boolean entity, String selfEntityType, String ownerPropertyName, String ownerFullName, String selfFullEntityType, BeanPropTypeEnum beanPropType) {
 

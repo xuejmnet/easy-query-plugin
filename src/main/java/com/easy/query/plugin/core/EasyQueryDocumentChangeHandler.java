@@ -261,6 +261,10 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         if (Objects.isNull(currentFile) || currentFile instanceof LightVirtualFile) {
             return false;
         }
+        // 增加判断如果当前文件不合法, 则不触发
+        if (!currentFile.isValid()) {
+            return false;
+        }
         PsiManager psiManager = PsiManager.getInstance(project);
         PsiFile psiFile = psiManager.findFile(currentFile);
         // 支持java和kotlin

@@ -213,14 +213,14 @@ public class JCheckBoxTree extends JTree {
         };
         // Calling checking mechanism on mouse click
         this.addMouseListener(new MouseListener() {
-            public void mouseClicked(MouseEvent arg0) {
-                TreePath tp = selfPointer.getPathForLocation(arg0.getX(), arg0.getY());
-                if (tp == null) {
+            public void mouseClicked(MouseEvent mouseEvent) {
+                TreePath treePath = selfPointer.getPathForLocation(mouseEvent.getX(), mouseEvent.getY());
+                if (treePath == null) {
                     return;
                 }
-                boolean checkMode = !nodesCheckingState.get(tp).isSelected;
-                checkSubTree(tp, checkMode);
-                updatePredecessorsWithCheckMode(tp, checkMode);
+                boolean checkMode = !nodesCheckingState.get(treePath).isSelected;
+                checkSubTree(treePath, checkMode);
+                updatePredecessorsWithCheckMode(treePath, checkMode);
                 // Firing the check change event
                 fireCheckChangeEvent(new CheckChangeEvent(new Object()));
                 // Repainting tree after the data structures were updated
@@ -275,19 +275,30 @@ public class JCheckBoxTree extends JTree {
         updatePredecessorsWithCheckMode(parentPath, check);
     }
 
-    // Recursively checks/unchecks a subtree
-    protected void checkSubTree(TreePath tp, boolean check) {
-        CheckedNode cn = nodesCheckingState.get(tp);
+    /** 勾选指定路径 不触发子节点的变化 */
+    public void checkTreeItem(TreePath treePath, boolean check){
+        CheckedNode cn = nodesCheckingState.get(treePath);
         cn.isSelected = check;
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) tp.getLastPathComponent();
+        if (check) {
+            checkedPaths.add(treePath);
+        } else {
+            checkedPaths.remove(treePath);
+        }
+    }
+
+    // Recursively checks/unchecks a subtree
+    public void checkSubTree(TreePath treePath, boolean check) {
+        CheckedNode cn = nodesCheckingState.get(treePath);
+        cn.isSelected = check;
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
         for (int i = 0; i < node.getChildCount(); i++) {
-            checkSubTree(tp.pathByAddingChild(node.getChildAt(i)), check);
+            checkSubTree(treePath.pathByAddingChild(node.getChildAt(i)), check);
         }
         cn.allChildrenSelected = check;
         if (check) {
-            checkedPaths.add(tp);
+            checkedPaths.add(treePath);
         } else {
-            checkedPaths.remove(tp);
+            checkedPaths.remove(treePath);
         }
     }
 

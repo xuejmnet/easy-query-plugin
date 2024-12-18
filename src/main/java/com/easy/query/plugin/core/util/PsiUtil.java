@@ -2,31 +2,12 @@ package com.easy.query.plugin.core.util;
 
 import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiAnnotationMemberValue;
-import com.intellij.psi.PsiArrayType;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassOwner;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiComment;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.kotlin.psi.KtFile;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,52 +20,57 @@ import java.util.regex.Pattern;
 public class PsiUtil {
 
     public static PsiClass getClassByFullName(Project project, String fullClassName) {
-        PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.projectScope(project));
+        PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName,
+            GlobalSearchScope.projectScope(project));
         if (psiClass != null) {
             return psiClass;
         }
         return JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.allScope(project));
     }
-    public static FileTypeEnum getFileType(PsiClassOwner psiFile){
-        if(psiFile instanceof PsiJavaFile){
+
+    public static FileTypeEnum getFileType(PsiClassOwner psiFile) {
+        if (psiFile instanceof PsiJavaFile) {
             return FileTypeEnum.Java;
         }
-        if(psiFile instanceof KtFile){
+        if (psiFile instanceof KtFile) {
             return FileTypeEnum.Kotlin;
         }
         return FileTypeEnum.Unknown;
     }
-    public static Set<String> getPsiAnnotationValues(PsiAnnotation annotation, String attr,Set<String> values){
+
+    public static Set<String> getPsiAnnotationValues(PsiAnnotation annotation, String attr, Set<String> values) {
         String psiAnnotationValue = getPsiAnnotationValueIfEmpty(annotation, attr, null);
-        if(Objects.nonNull(psiAnnotationValue)){
-            if(psiAnnotationValue.startsWith("{")&&psiAnnotationValue.endsWith("}")){
-                psiAnnotationValue=psiAnnotationValue.substring(1,psiAnnotationValue.length()-1);
+        if (Objects.nonNull(psiAnnotationValue)) {
+            if (psiAnnotationValue.startsWith("{") && psiAnnotationValue.endsWith("}")) {
+                psiAnnotationValue = psiAnnotationValue.substring(1, psiAnnotationValue.length() - 1);
             }
             String[] split = psiAnnotationValue.split(",");
             Collections.addAll(values, split);
         }
         return values;
     }
-    public static String getPsiAnnotationValueIfEmpty(PsiAnnotation annotation, String attr, String def){
+
+    public static String getPsiAnnotationValueIfEmpty(PsiAnnotation annotation, String attr, String def) {
         String psiAnnotationValue = getPsiAnnotationValue(annotation, attr, "");
-        if(StrUtil.isBlank(psiAnnotationValue)){
+        if (StrUtil.isBlank(psiAnnotationValue)) {
             return def;
         }
         return psiAnnotationValue;
     }
-    public static String getPsiAnnotationValue(PsiAnnotation annotation, String attr, String def){
-        if(!Objects.isNull(annotation)){
+
+    public static String getPsiAnnotationValue(PsiAnnotation annotation, String attr, String defaultVal) {
+        if (!Objects.isNull(annotation)) {
             PsiAnnotationMemberValue value = annotation.findAttributeValue(attr);
-            if(Objects.nonNull(value)){
+            if (Objects.nonNull(value)) {
                 String text = value.getText();
-                if(Objects.nonNull(text)){
+                if (Objects.nonNull(text)) {
                     return text.replace("\"", "");
                 }
             }
         }
-
-        return def;
+        return defaultVal;
     }
+
     private static String removeStarsAndTrim(String text) {
         // 定义正则表达式来匹配星号字符和首尾空白字符
         String regex = "(?s)/\\*\\*|\\*|\\s*(\\*?/|$)";
@@ -94,25 +80,27 @@ public class PsiUtil {
         // 使用替换移除匹配的字符
         return matcher.replaceAll("").trim();
     }
-    public static String getPsiFieldClearComment(PsiField field){
+
+    public static String getPsiFieldClearComment(PsiField field) {
 
         String psiFieldComment = getPsiFieldComment(field, null);
-        if(Objects.isNull(psiFieldComment)){
+        if (Objects.isNull(psiFieldComment)) {
             return "/**";
         }
         return "/**\n" +
-               "     * "+removeStarsAndTrim(psiFieldComment);
+            "     * " + removeStarsAndTrim(psiFieldComment);
     }
-    public static String getPsiFieldOnlyComment(PsiField field){
+
+    public static String getPsiFieldOnlyComment(PsiField field) {
 
         String psiFieldComment = getPsiFieldComment(field, null);
-        if(Objects.isNull(psiFieldComment)){
+        if (Objects.isNull(psiFieldComment)) {
             return "";
         }
         return removeStarsAndTrim(psiFieldComment);
     }
 
-    public static String getPsiFieldComment(PsiField field, String def){
+    public static String getPsiFieldComment(PsiField field, String def) {
         // 获取该字段的注释
         PsiElement[] children = field.getChildren();
         for (PsiElement child : children) {
@@ -133,36 +121,40 @@ public class PsiUtil {
         }
         return def;
     }
-    public static String getPsiFieldPropertyType(PsiField field,boolean isInclude){
+
+    public static String getPsiFieldPropertyType(PsiField field, boolean isInclude) {
         // 获取属性类型
         PsiType fieldType = field.getType();
-//        if(fieldType instanceof PsiArrayType){
-//            return getPsiArrayFieldPropertyType((PsiArrayType) fieldType,isInclude);
-//        }else
-            if(fieldType instanceof  PsiClassType){
-            return getPsiClassFieldPropertyType((PsiClassType)fieldType,isInclude);
+        // if(fieldType instanceof PsiArrayType){
+        // return getPsiArrayFieldPropertyType((PsiArrayType) fieldType,isInclude);
+        // }else
+        if (fieldType instanceof PsiClassType) {
+            return getPsiClassFieldPropertyType((PsiClassType) fieldType, isInclude);
         }
         return fieldType.getCanonicalText();
     }
-    public static String getPsiClassFieldPropertyType(PsiClassType fieldType,boolean isInclude){
-        if(fieldType.resolve() instanceof PsiTypeParameter){
+
+    public static String getPsiClassFieldPropertyType(PsiClassType fieldType, boolean isInclude) {
+        if (fieldType.resolve() instanceof PsiTypeParameter) {
             return "java.lang.Object";
         }
         String canonicalText = fieldType.getCanonicalText();
-        if(isInclude){
+        if (isInclude) {
             return parseGenericType(canonicalText);
         }
-//        if (canonicalText.contains("<") && canonicalText.contains(">")){
-//            return "java.lang.Object";
-//        }
+        // if (canonicalText.contains("<") && canonicalText.contains(">")){
+        // return "java.lang.Object";
+        // }
         return canonicalText;
     }
-    public static String getPsiArrayFieldPropertyType(PsiArrayType fieldType,boolean isInclude){
+
+    public static String getPsiArrayFieldPropertyType(PsiArrayType fieldType, boolean isInclude) {
         System.out.println("1");
         return "java.lang.Object";
     }
+
     public static String parseGenericType(String genericTypeString) {
-        if(genericTypeString.contains(",")){
+        if (genericTypeString.contains(",")) {
             return genericTypeString;
         }
         // 正则表达式用于匹配泛型类型字符串
@@ -178,13 +170,13 @@ public class PsiUtil {
         }
     }
 
-
     public static Collection<PsiField> getAllFields(PsiClass psiClass) {
         LinkedHashMap<String, PsiField> fields = getAllFields0(psiClass);
         return fields.values();
     }
-    private static LinkedHashMap<String,PsiField> getAllFields0(PsiClass psiClass) {
-        LinkedHashMap<String,PsiField> fields = new LinkedHashMap<>();
+
+    private static LinkedHashMap<String, PsiField> getAllFields0(PsiClass psiClass) {
+        LinkedHashMap<String, PsiField> fields = new LinkedHashMap<>();
         // 递归获取父类的所有Field
         PsiClass superClass = psiClass.getSuperClass();
         if (superClass != null) {
@@ -193,7 +185,7 @@ public class PsiUtil {
         }
         // 获取当前类的所有Field
         for (PsiField declaredField : psiClass.getAllFields()) {
-            fields.put(declaredField.getName(),declaredField);
+            fields.put(declaredField.getName(), declaredField);
         }
         return fields;
     }

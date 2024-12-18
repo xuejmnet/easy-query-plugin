@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -55,8 +56,9 @@ public class EntitySelectDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-
-        setSize(800, 900);
+// 获取屏幕的大小
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        setSize(Math.min(800,(int) screenSize.getWidth() -50), (int) Math.min(900,(int)(screenSize.getHeight()*0.9)));
         setTitle("Struct DTO Entity Select");
         DialogUtil.centerShow(this);
         Project project = structDTOEntityContext.getProject();
@@ -259,7 +261,7 @@ public class EntitySelectDialog extends JDialog {
         dispose();
     }
 
-    private boolean ok0(String entityName) {
+    public boolean ok0(String entityName) {
         Project project = structDTOEntityContext.getProject();
         Map<String, PsiClass> entityClass = structDTOEntityContext.getEntityClass();
         PsiClass psiClass = entityClass.get(entityName);
@@ -276,6 +278,13 @@ public class EntitySelectDialog extends JDialog {
         StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, new HashSet<>());
         StructDTOContext structDTOContext = new StructDTOContext(project, structDTOEntityContext.getPath(), structDTOEntityContext.getPackageName(), structDTOEntityContext.getModule(), entityProps);
         structDTOContext.getImports().addAll(imports);
+
+        // 传递 DTO className 到下一个窗口上下文
+        String dtoClassName = structDTOEntityContext.getDtoClassName();
+        PsiClass dtoPsiClass = structDTOEntityContext.getDtoPsiClass();
+        structDTOContext.setDtoClassName(dtoClassName);
+        structDTOContext.setDtoPsiClass(dtoPsiClass);
+
         StructDTODialog structDTODialog = new StructDTODialog(structDTOContext, classNodes);
 
         structDTODialog.setVisible(true);

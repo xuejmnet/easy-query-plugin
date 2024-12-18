@@ -259,7 +259,7 @@ public class RenderEasyQueryTemplate {
         renderTemplate(Template.getTemplateContent("StructDTOTemplate.java"), context, renderStructDTOContext.getDtoName(), velocityEngine, templateMap, renderStructDTOContext.getPackageName(), "", factory, project, module);
         ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
         booleanValueHolder.setValue(true);
-        flush(project, templateMap,false,booleanValueHolder);
+        flush(project, templateMap,renderStructDTOContext.getDeleteExistsFile(),booleanValueHolder);
         return booleanValueHolder.getValue();
     }
 

@@ -4,6 +4,8 @@ import com.easy.query.plugin.core.entity.ClassNode;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -16,13 +18,28 @@ import java.util.Set;
  * @author xuejiaming
  */
 public class StructDTOEntityContext {
+    @Getter
     private final Project project;
+    @Getter
     private final String path;
+    @Getter
     private final String packageName;
+    @Getter
     private final Module module;
+    @Getter
     private final Map<String, PsiClass> entityClass;
 
-    public StructDTOEntityContext(Project project, String path, String packageName, Module module, Map<String, PsiClass> entityClass) {
+    /** 修改的时候的 dtoClassName 保存的时候用于回填 */
+    @Getter
+    @Setter
+    private String dtoClassName;
+
+    @Getter
+    @Setter
+    private PsiClass dtoPsiClass;
+
+    public StructDTOEntityContext(Project project, String path, String packageName, Module module,
+            Map<String, PsiClass> entityClass) {
         this.project = project;
 
         this.path = path;
@@ -31,23 +48,4 @@ public class StructDTOEntityContext {
         this.entityClass = entityClass;
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public String getPackageName() {
-        return packageName;
-    }
-
-    public Project getProject() {
-        return project;
-    }
-
-    public Module getModule() {
-        return module;
-    }
-
-    public Map<String, PsiClass> getEntityClass() {
-        return entityClass;
-    }
 }
