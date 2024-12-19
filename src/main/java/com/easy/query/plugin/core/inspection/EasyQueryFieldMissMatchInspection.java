@@ -14,6 +14,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -31,6 +32,11 @@ import java.util.stream.Collectors;
 
 public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInspectionTool {
 
+
+    @Override
+    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getDisplayName() {
+        return "EasyQuery DTO 字段检测";
+    }
 
     @Override
     public boolean runForWholeFile() {
@@ -199,7 +205,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 PsiField[] entityFields = linkClass.getAllFields();
 
                 // entityFields 转 map
-                Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).collect(Collectors.toMap(PsiField::getName, Function.identity()));
+                Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).collect(Collectors.toMap(PsiField::getName, Function.identity(),(a,b)->a));
 
 
                 for (PsiField dtoField : dtoFields) {
