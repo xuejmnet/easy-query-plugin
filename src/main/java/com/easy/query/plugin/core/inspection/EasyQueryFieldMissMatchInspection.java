@@ -4,6 +4,7 @@ package com.easy.query.plugin.core.inspection;
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
+import com.easy.query.plugin.core.util.PsiUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.codeInspection.*;
@@ -209,6 +210,10 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
 
                 for (PsiField dtoField : dtoFields) {
+                    boolean isStatic = PsiUtil.fieldIsStatic(dtoField);
+                    if(isStatic){
+                        continue;
+                    }
                     if (!entityFieldMap.containsKey(dtoField.getName())) {
 
                         //如果是navigateFlat或者NavigateJoin那么应该忽略

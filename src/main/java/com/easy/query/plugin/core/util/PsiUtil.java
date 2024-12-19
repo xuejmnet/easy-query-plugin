@@ -49,7 +49,10 @@ public class PsiUtil {
         }
         return values;
     }
-
+    public static boolean fieldIsStatic(PsiField field) {
+        // 检查字段是否是 static
+        return field.hasModifierProperty("static");
+    }
     public static String getPsiAnnotationValueIfEmpty(PsiAnnotation annotation, String attr, String def) {
         String psiAnnotationValue = getPsiAnnotationValue(annotation, attr, "");
         if (StrUtil.isBlank(psiAnnotationValue)) {
