@@ -205,7 +205,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 PsiField[] entityFields = linkClass.getAllFields();
 
                 // entityFields 转 map
-                Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).collect(Collectors.toMap(PsiField::getName, Function.identity(),(a,b)->a));
+                Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).collect(Collectors.toMap(PsiField::getName, Function.identity(), (a, b) -> a));
 
 
                 for (PsiField dtoField : dtoFields) {
@@ -223,9 +223,26 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         PsiJavaCodeReferenceElement entityFieldTypeRef = ((PsiClassReferenceType) entityField.getType()).getReference();
                         String entityTypeRefName = entityFieldTypeRef.getQualifiedName();
                         if (!StrUtil.equals(dtoTypeRefName, entityTypeRefName)) {
-                            // 类型不一致
-                            holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName, ProblemHighlightType.ERROR);
-                            continue;
+                            if (StrUtil.startWithAny(dtoTypeRefName, "java.")) { // 常见包下面的视作基础类型
+                                // 类型不一致
+                                holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName+ " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                continue;
+
+                            } else {
+                                // 复杂类型的, 需要进一步比对
+                                PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(PsiJavaFileUtil.getPsiClass(currentClass.getProject(), dtoTypeRefName));
+                                if (Objects.isNull(linkPsiClass)) {
+                                    // 没有找到对应的类, 无法比对， 视为不一致
+                                    holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                    continue;
+                                }
+                                String linkPsiClassName = linkPsiClass.getQualifiedName();
+                                if (!StrUtil.equals(linkPsiClassName, entityTypeRefName)) {
+                                    // 类型不一致
+                                    holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName+ " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                    continue;
+                                }
+                            }
                         }
 
                         // 外围的一致，尝试匹配泛型
