@@ -28,8 +28,11 @@ intellij {
 }
 dependencies {
 //    implementation("com.intellij:forms_rt:7.0.3")
-    implementation("cn.hutool:hutool-core:5.8.22")
+    implementation("cn.hutool:hutool-core:5.8.25")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.41")
+
+    implementation ("ch.qos.logback:logback-classic:1.4.12") // Logback 依赖
+    implementation ("org.slf4j:slf4j-api:1.7.30") // SLF4J API 依赖
 
     // 引入 lombok
     compileOnly("org.projectlombok:lombok:1.18.34")
