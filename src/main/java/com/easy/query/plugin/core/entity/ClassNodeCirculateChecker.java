@@ -13,8 +13,14 @@ import java.util.Set;
  * @author xuejiaming
  */
 public class ClassNodeCirculateChecker {
+
+    /** 允许的路径重复次数 */
+    private static final Integer REPEAT_LIMIT = 1;
+    /** root 元素重复次数 */
+    private Integer rootClassPathRepeatCount = 0;
+
     private final String rootClass;
-    private Map<ClassNodePropPath,ClassNodePropPath> classNodePropPaths = new HashMap<>();
+    private final Map<ClassNodePropPath,ClassNodePropPath> classNodePropPaths = new HashMap<>();
     public ClassNodeCirculateChecker(String rootClass){
 
         this.rootClass = rootClass;
@@ -22,7 +28,14 @@ public class ClassNodeCirculateChecker {
 
     public boolean pathRepeat(ClassNodePropPath classNodePropPath) {
         if(Objects.equals(rootClass,classNodePropPath.getTo())){
-            return true;
+
+            if (rootClassPathRepeatCount >=REPEAT_LIMIT ) {
+                // 超过次数限定判断为重复
+                return true;
+            }
+            // 没有超过次数， 判定为允许
+            rootClassPathRepeatCount++;
+            return false;
         }
         ClassNodePropPath oldPath = classNodePropPaths.get(classNodePropPath);
         if(oldPath==null){
