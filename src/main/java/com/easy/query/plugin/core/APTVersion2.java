@@ -130,6 +130,10 @@ public class APTVersion2 {
             AptFileCompiler aptFileCompiler = new AptFileCompiler(packageName, entityName, proxyEntityName, new AptSelectorInfo(proxyEntityName + "Fetcher"), psiFile instanceof KtFile);
             aptFileCompiler.addImports(entityFullName);
             for (PsiField field : fields) {
+                boolean isStatic = PsiUtil.fieldIsStatic(field);
+                if(isStatic){
+                    continue;
+                }
                 PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
                 if (columnIgnore != null) {
                     continue;
@@ -264,6 +268,10 @@ public class APTVersion2 {
         String entityName = fieldValueObjectClass.getName();
         aptFileCompiler.addImports(fieldValueObjectClass.getQualifiedName());
         for (PsiField field : allFields) {
+            boolean isStatic = PsiUtil.fieldIsStatic(field);
+            if(isStatic){
+                continue;
+            }
             PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
             if (columnIgnore != null) {
                 continue;
