@@ -150,11 +150,11 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                                 List<JvmAnnotationAttribute> columnAttrList = linkFieldColumn.getAttributes().stream()
-                                        // 排除掉一些不要的属性,剩下的均传递到新的注解上
-                                        .filter(attr -> !StrUtil.equalsAny(attr.getAttributeName(), "primaryKey", "generatedKey", "primaryKeyGenerator"))
-                                        // 过滤下值为空的
-                                        .filter(attr -> Objects.nonNull(attr.getAttributeValue()))
-                                        .collect(Collectors.toList());
+                                    // 排除掉一些不要的属性,剩下的均传递到新的注解上
+                                    .filter(attr -> !StrUtil.equalsAny(attr.getAttributeName(), "primaryKey", "generatedKey", "primaryKeyGenerator"))
+                                    // 过滤下值为空的
+                                    .filter(attr -> Objects.nonNull(attr.getAttributeValue()))
+                                    .collect(Collectors.toList());
                                 // 过滤后的属性值拼接起来
                                 String attrText = columnAttrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText()).sorted().collect(Collectors.joining(", "));
                                 // 再拼成 @Column 注解文本
@@ -210,6 +210,17 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                 for (PsiField dtoField : dtoFields) {
                     if (!entityFieldMap.containsKey(dtoField.getName())) {
+
+                        //如果是navigateFlat或者NavigateJoin那么应该忽略
+                        PsiAnnotation navigateFlat = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateFlat");
+                        if (navigateFlat != null) {
+                            continue;
+                        }
+                        PsiAnnotation navigateJoin = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateJoin");
+                        if (navigateJoin != null) {
+                            continue;
+                        }
+
                         // 这个字段不在实体类中, 需要警告
                         holder.registerProblem(dtoField, "当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在", ProblemHighlightType.WARNING);
                         continue;
@@ -225,7 +236,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         if (!StrUtil.equals(dtoTypeRefName, entityTypeRefName)) {
                             if (StrUtil.startWithAny(dtoTypeRefName, "java.")) { // 常见包下面的视作基础类型
                                 // 类型不一致
-                                holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName+ " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
                                 continue;
 
                             } else {
@@ -239,7 +250,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 String linkPsiClassName = linkPsiClass.getQualifiedName();
                                 if (!StrUtil.equals(linkPsiClassName, entityTypeRefName)) {
                                     // 类型不一致
-                                    holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName+ " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
                                     continue;
                                 }
                             }

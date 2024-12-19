@@ -27,9 +27,13 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.76</h3>
+    <ul>
+    <li>优化dto生成相关代码</li>
+    </ul>
     <h3>0.0.75</h3>
     <ul>
-    <li>实现structDTO modify (作者:https://github.com/link2fun)feat: 优化DTO生成 初始化上下文的时候将顶级实体的 psiClass 也缓存起来, 方便后续生成使用 feat: 优化DTO生成 提升修改DTO 识别顶级实体的兼容性 feat: 部分getter setter 采用 lombok 注解 feat: 优化DTO生成， DTO上手动增加的方法在修改的时候默认保留 代海波 Yesterday 10:16 </li>
+    <li>实现structDTO modify (作者:https://github.com/link2fun)feat: 优化DTO生成 初始化上下文的时候将顶级实体的 psiClass 也缓存起来, 方便后续生成使用 feat: 优化DTO生成 提升修改DTO 识别顶级实体的兼容性 feat: 部分getter setter 采用 lombok 注解 feat: 优化DTO生成， DTO上手动增加的方法在修改的时候默认保留</li>
     </ul>
     <h3>0.0.74</h3>
     <ul>

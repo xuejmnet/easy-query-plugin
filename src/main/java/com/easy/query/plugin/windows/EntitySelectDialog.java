@@ -14,7 +14,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.util.SlowOperations;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +41,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EntitySelectDialog extends JDialog {
-    private final StructDTOEntityContext structDTOEntityContext;
+    private  StructDTOEntityContext structDTOEntityContext;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
