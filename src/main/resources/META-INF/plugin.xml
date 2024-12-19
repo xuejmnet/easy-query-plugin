@@ -171,10 +171,11 @@
 
         <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
 
-        <localInspection groupPath="Java" language="JAVA" shortName="MissingAnnotationColumnProp" bundle="messages.InspectionGadgetsBundle"
-                         key="missing.easyquery.annotation.column.prop" groupBundle="messages.InspectionsBundle"
+        <localInspection groupPath="Java" language="JAVA" shortName="EasyQueryFieldMissMatch"
+                         bundle="messages.InspectionGadgetsBundle"
+                         groupBundle="messages.InspectionsBundle"
                          groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
-                         implementationClass="com.easy.query.plugin.core.inspection.DtoAnnoColumnInspection"/>
+                         implementationClass="com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection"/>
 
     </extensions>
     <actions>

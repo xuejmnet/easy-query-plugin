@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  *
  * @author xuejiaming
  */
-public class StrUtil {
+public class StrUtil extends cn.hutool.core.util.StrUtil {
     public static String replaceBlank(String str) {
         String dest = "";
         if (str!=null) {
