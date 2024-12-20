@@ -3,6 +3,7 @@ package com.easy.query.plugin.core.inspection;
 
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
+import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.google.common.collect.Lists;
@@ -226,8 +227,76 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                             continue;
                         }
 
+                        // 尝试生成 quickFix
+
+                        // 1. 抑制警告， 在字段上添加 @SuppressWarnings("EasyQueryFieldMissMatch")
+                        @NotNull LocalQuickFix quickFixMethod1 = new LocalQuickFix() {
+                            @Override
+                            public @IntentionFamilyName @NotNull String getFamilyName() {
+                                return "1. 抑制警告， 在字段上添加 @SuppressWarnings(\"EasyQueryFieldMissMatch\")";
+                            }
+
+                            @Override
+                            public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
+                                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                                PsiAnnotation annotation = elementFactory.createAnnotationFromText("@SuppressWarnings(\"EasyQueryFieldMissMatch\")", problemDescriptor.getPsiElement());
+
+                                problemDescriptor.getPsiElement().addAfter(annotation, ((PsiField)problemDescriptor.getPsiElement()).getDocComment());
+                            }
+                        };
+
+                        // 2. 注释字段， 注释当前 field
+                        @NotNull LocalQuickFix quickFixMethod2 = new LocalQuickFix() {
+                            @Override
+                            public @IntentionFamilyName @NotNull String getFamilyName() {
+                                return "2. 注释字段， 注释当前 field";
+                            }
+
+                            @Override
+                            public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
+                                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+
+                                List<String> lines = StrUtil.split(problemDescriptor.getPsiElement().getText(), "\n");
+                                // 生成注释
+                                lines.stream().map(line -> "// " + line).map(comment->elementFactory.createCommentFromText(comment,null)).collect(Collectors.toList())
+                                        .forEach(comment->problemDescriptor.getPsiElement().addBefore(comment,problemDescriptor.getPsiElement()));
+
+                                problemDescriptor.getPsiElement().delete();
+                            }
+                        };
+
+                        List<LocalQuickFix> localQuickFixes = Lists.newArrayList();
+                        localQuickFixes.add(quickFixMethod1);
+                        localQuickFixes.add(quickFixMethod2);
+
+                        // 3. 可能是其他相近的字段，目前只提示忽略大小写的情况
+                        for (PsiField entityField : entityFields) {
+                            if (StrUtil.similar(dtoField.getName().toLowerCase(), entityField.getName().toLowerCase())>0.8) {
+                                // 忽略大小写相同， 可能是这个字段
+                                @NotNull LocalQuickFix quickFixMethod3 = new LocalQuickFix() {
+                                    @Override
+                                    public @IntentionFamilyName @NotNull String getFamilyName() {
+                                        return "推测可能是 "+entityField.getName()+" 字段, 进行更新";
+                                    }
+
+                                    @Override
+                                    public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
+                                        PsiField dtoField = PsiJavaFieldUtil.copyField(entityField);
+                                        // 拷贝过来的字段， 类型需要保持和之前DTO的一致， 不然转换的DTO转换的类型会不匹配
+                                        dtoField.getTypeElement().replace(((PsiField) problemDescriptor.getPsiElement()).getTypeElement());
+                                        problemDescriptor.getPsiElement().replace(dtoField);
+                                    }
+                                };
+                                localQuickFixes.add(quickFixMethod3);
+                            }
+                        }
+
+
+
+
                         // 这个字段不在实体类中, 需要警告
-                        holder.registerProblem(dtoField, "当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在", ProblemHighlightType.WARNING);
+
+                        holder.registerProblem(dtoField, "当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在", ProblemHighlightType.WARNING, localQuickFixes.toArray(new LocalQuickFix[0]));
                         continue;
                     }
                     // 现在是有这个字段, 需要比对类型
