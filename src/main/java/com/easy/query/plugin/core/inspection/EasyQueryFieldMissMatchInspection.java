@@ -225,6 +225,10 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         if (navigateJoin != null) {
                             continue;
                         }
+                        PsiAnnotation columnIgnore = dtoField.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
+                        if (columnIgnore != null) {
+                            continue;
+                        }
 
                         // 这个字段不在实体类中, 需要警告
                         holder.registerProblem(dtoField, "当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在", ProblemHighlightType.WARNING);
