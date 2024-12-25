@@ -1,10 +1,10 @@
 package com.easy.query.plugin.action;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.entity.struct.StructDTOEntityContext;
 import com.easy.query.plugin.core.util.MyModuleUtil;
+import com.easy.query.plugin.core.util.PsiJavaClassUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.windows.EntitySelectDialog;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -15,9 +15,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.impl.source.PsiJavaFileImpl;
-import com.intellij.psi.javadoc.PsiDocComment;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 
@@ -67,55 +65,19 @@ public class StructDTOModifyAction extends AnAction {
         }
 
         PsiClass dtoPsiClass = psiClasses[0];
-        // 获取当前的DTO 文档注释
-        String dtoClassDocComment = Optional.ofNullable(dtoPsiClass.getDocComment()).map(PsiDocComment::getText)
-            .orElse("");
-        // 尝试从 文档注释中获取 实体类名
-        if (!ReUtil.contains("\\{@link *(\\S+) *\\}", dtoClassDocComment)) {
-            Messages.showMessageDialog(project, "当前DTO类没有指定实体类", "错误", Messages.getErrorIcon());
+        PsiClass mainEntityClass = PsiJavaClassUtil.getLinkPsiClass(dtoPsiClass);
+        if (Objects.isNull(mainEntityClass)) {
+            Messages.showMessageDialog(project, "无法从当前DTO类的文档中提取 @link 信息", "错误", Messages.getErrorIcon());
             return;
         }
 
-        String mainEntityClass;
-        String mainEntityClassFromLink = ReUtil.getGroup1("\\{@link *(\\S+) *\\}", dtoClassDocComment);
-        // 如果 mainEntityClass 中不包含 . , 则需要通过 import 去进行二次匹配
-        if (!mainEntityClassFromLink.contains(".")) {
-            Set<String> importInfoSet = PsiJavaFileUtil.getQualifiedNameImportSet((PsiJavaFile) dtoPsiClass.getContainingFile());
-            mainEntityClass = importInfoSet
-                .stream().filter(s -> s.endsWith("." + mainEntityClassFromLink))
-                .findFirst().orElseGet(() -> {
-                    // 说明是一个包下面的
-                    String samePackageEntityClass = ((PsiJavaFile) dtoPsiClass.getParent()).getPackageName() + "." + mainEntityClassFromLink;
-                    // 看看这个 samePackageEntityClass 是否存在
-                    if (Objects.isNull(PsiJavaFileUtil.getPsiClass(project, samePackageEntityClass))) {
-                        // 说明不是同一个包下面的, 那就可能是 import xx.xx.* 里面带着的
-                        for (String packageName : importInfoSet) {
-                            if (packageName.endsWith("*")) {
-                                // 说明是通配符导入, 需要去掉 *
-                                packageName = packageName.substring(0, packageName.length() - 1);
-                                // 看看这个包下面有没有这个类
-                                String entityClass = packageName +  mainEntityClassFromLink;
-                                if (Objects.nonNull(PsiJavaFileUtil.getPsiClass(project, entityClass))) {
-                                    return entityClass;
-                                }
-                            }
-                        }
-
-                    }
-                    return samePackageEntityClass;
-                });
-
-
-        } else {
-            mainEntityClass = mainEntityClassFromLink;
-        }
 
         Collection<PsiClass> entityClass = PsiJavaFileUtil.getAnnotationPsiClass(project,
-            "com.easy.query.core.annotation.Table");
+                "com.easy.query.core.annotation.Table");
         Map<String, PsiClass> entityWithClass = new HashMap<>();
 
         for (PsiClass entityPsiClass : entityClass) {
-            if (StrUtil.equals(entityPsiClass.getQualifiedName(), mainEntityClass)) {
+            if (StrUtil.equals(entityPsiClass.getQualifiedName(), mainEntityClass.getQualifiedName())) {
                 entityWithClass.put(entityPsiClass.getQualifiedName(), entityPsiClass);
             }
         }
@@ -150,7 +112,7 @@ public class StructDTOModifyAction extends AnAction {
         SwingUtilities.invokeLater(() -> {
 //            entitySelectDialog.setVisible(true);
             // 跳过选择实体窗口, 直接进入字段选择
-            entitySelectDialog.ok0(mainEntityClass);
+            entitySelectDialog.ok0(mainEntityClass.getQualifiedName());
             entitySelectDialog.dispose();
         });
 

@@ -173,6 +173,9 @@
                                 id="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"
                                 implementationClass="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"/>
 
+        <completion.contributor language="any" implementationClass="com.easy.query.plugin.core.completion.DtoFieldAutoCompletion"/>
+        <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.easy.query.plugin.core.provider.NavToEntityFieldRelatedItemLineMarkerProvider"/>
+
         <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
 
         <localInspection groupPath="Java" language="JAVA" shortName="EasyQueryFieldMissMatch"
