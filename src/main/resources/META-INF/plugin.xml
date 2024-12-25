@@ -27,6 +27,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.0.77</h3>
+    <ul>
+    <li>优化dto属性检测提示和修复功能(作者:https://github.com/link2fun)</li>
+    </ul>
     <h3>0.0.76</h3>
     <ul>
     <li>优化dto生成相关代码</li>
