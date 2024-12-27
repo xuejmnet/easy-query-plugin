@@ -7,6 +7,7 @@ import com.easy.query.plugin.core.contributor.java.EasySelectContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtEntitySetColumnsContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtGroupContributor;
+import com.easy.query.plugin.core.contributor.kt.EasyKtGroupTableContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtIncludeContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtIncludesContributor;
 import com.easy.query.plugin.core.contributor.kt.EasyKtOrderContributor;
@@ -45,6 +46,7 @@ public class BaseKotlinEasyQueryApiCompletionContributor {
             new EasyKtOrderContributor("orderBy", "orderBy"),
 //            new EasyOrderContributor("orderBy", "orderBy_code_block", true),
             new EasyKtGroupContributor("groupBy", "groupBy"),
+            new EasyKtGroupTableContributor("groupBy", "groupByTable"),
             new EasyKtEntitySetColumnsContributor("setColumns", "setColumns"),
             new EasyKtSelectorContributor("select", "selector"),
             new EasyKtWhereColumnsContributor("whereColumns", "whereColumns"),

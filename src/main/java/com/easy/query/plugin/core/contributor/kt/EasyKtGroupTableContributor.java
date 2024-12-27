@@ -1,7 +1,5 @@
 package com.easy.query.plugin.core.contributor.kt;
 
-import cn.hutool.core.util.StrUtil;
-import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.entity.QueryType;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,16 +11,20 @@ import java.util.Collection;
  *
  * @author xuejiaming
  */
-public class EasyKtGroupContributor extends EasyKtContributor {
+public class EasyKtGroupTableContributor extends EasyKtContributor {
 
-    public EasyKtGroupContributor(@NotNull String insertWord, @NotNull String tipWord) {
+    public EasyKtGroupTableContributor(@NotNull String insertWord, @NotNull String tipWord) {
         super(insertWord, tipWord);
     }
 
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
-        return "GroupKeys.of()";
+        return String.format("GroupKeys.TABLE%s.of()", queries.size());
+//        if(blockCode){
+//            return StrUtil.format("{ %s };",groupExpression);
+//        }
 
+//        return groupExpression;
     }
 
     @Override
@@ -33,10 +35,5 @@ public class EasyKtGroupContributor extends EasyKtContributor {
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
         return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable");
-    }
-
-    @Override
-    public String getDesc() {
-        return "2.3.4+";
     }
 }

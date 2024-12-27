@@ -4,6 +4,7 @@ import com.easy.query.plugin.core.contributor.java.EasyAnonymousContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.contributor.java.EasyEntitySetColumnsContributor;
 import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
+import com.easy.query.plugin.core.contributor.java.EasyGroupTableContributor;
 import com.easy.query.plugin.core.contributor.java.EasyIncludeContributor;
 import com.easy.query.plugin.core.contributor.java.EasyIncludesContributor;
 import com.easy.query.plugin.core.contributor.java.EasyOrderContributor;
@@ -37,6 +38,7 @@ public class BaseEasyQueryApiCompletionContributor {
             new EasyOrderContributor("orderBy", "orderBy", false),
             new EasyOrderContributor("orderBy", "orderBy_code_block", true),
             new EasyGroupContributor("groupBy", "groupBy", false),
+            new EasyGroupTableContributor("groupBy", "groupByTable", false),
             new EasySelectDraftContributor("select", "selectDraft", false),
             new EasySelectContributor("having", "having", false),
             new EasySelectContributor("having", "having_code_block", true),

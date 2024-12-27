@@ -93,4 +93,7 @@ public class EasyKtContributor {
     public boolean accept(String beforeMethodReturnTypeName) {
         return true;
     }
+    public String getDesc(){
+        return "";
+    }
 }

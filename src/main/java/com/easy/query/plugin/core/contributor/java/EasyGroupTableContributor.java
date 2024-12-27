@@ -12,15 +12,20 @@ import java.util.Collection;
  *
  * @author xuejiaming
  */
-public class EasyGroupContributor  extends EasyContributor {
+public class EasyGroupTableContributor extends EasyContributor {
 
-    public EasyGroupContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
+    public EasyGroupTableContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);
     }
 
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
-        return "GroupKeys.of()";
+        String groupExpression = String.format("GroupKeys.TABLE%s.of()", queries.size());
+        if(blockCode){
+            return StrUtil.format("{ %s };",groupExpression);
+        }
+
+        return groupExpression;
     }
 
     @Override
@@ -34,9 +39,5 @@ public class EasyGroupContributor  extends EasyContributor {
                 beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.select.ClientQueryable") ||
                 beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.select.Queryable") ||
                 beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.select.KtQueryable");
-    }
-    @Override
-    public String getDesc() {
-        return "2.3.4+";
     }
 }

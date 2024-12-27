@@ -282,26 +282,26 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyContributor easyContributor : ON_METHODS) {
                 LookupElementBuilder elementBuilder = LookupElementBuilder.create(easyContributor.getTipWord())
-                        .withTypeText("EasyQueryPlugin", true)
-                        .withInsertHandler((context, item) -> {
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
+                    .withInsertHandler((context, item) -> {
 
-                            try {
-                                PsiElement elementAt = psiFile.findElementAt(offset);
-                                if (elementAt == null) {
-                                    return;
-                                }
-                                List<QueryType> queryTypes = parseQueryable(elementAt);
-                                if (CollUtil.isEmpty(queryTypes)) {
-                                    return;
-                                }
+                        try {
+                            PsiElement elementAt = psiFile.findElementAt(offset);
+                            if (elementAt == null) {
+                                return;
+                            }
+                            List<QueryType> queryTypes = parseQueryable(elementAt);
+                            if (CollUtil.isEmpty(queryTypes)) {
+                                return;
+                            }
 //                                QueryType joinFirstParameterType = getJoinFirstParameterType(project, queryTypes.size(), queryTypes.size() + 1, psiMethodCallExpression);
 //                                queryTypes.add(joinFirstParameterType);
 
-                                easyContributor.insertString(context, queryTypes, false);
-                            } catch (Exception ex) {
-                                System.out.println(ex.getMessage());
-                            }
-                        }).withIcon(Icons.EQ);
+                            easyContributor.insertString(context, queryTypes, false);
+                        } catch (Exception ex) {
+                            System.out.println(ex.getMessage());
+                        }
+                    }).withIcon(Icons.EQ);
                 completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
         } catch (Exception e) {
@@ -313,32 +313,32 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyContributor easyContributor : compareMethods) {
                 LookupElementBuilder elementBuilder = LookupElementBuilder.create(easyContributor.getTipWord())
-                        .withTypeText("EasyQueryPlugin", true)
-                        .withInsertHandler((context, item) -> {
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
+                    .withInsertHandler((context, item) -> {
 
-                            try {
-                                PsiElement elementAt = psiFile.findElementAt(offset);
-                                if (elementAt == null) {
-                                    return;
-                                }
-                                PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
-                                if (psiMethodCallExpression == null) {
-                                    return;
-                                }
-                                PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
-                                PsiElement lastChild = methodExpression.getLastChild();
-                                if (lastChild == null) {
-                                    return;
-                                }
-                                String joinText = lastChild.getText();
-                                if (!PREDICATE_METHODS.contains(joinText)) {
-                                    return;
-                                }
-                                easyContributor.insertString(context, Collections.emptyList(), false);
-                            } catch (Exception ex) {
-                                System.out.println(ex.getMessage());
+                        try {
+                            PsiElement elementAt = psiFile.findElementAt(offset);
+                            if (elementAt == null) {
+                                return;
                             }
-                        }).withIcon(Icons.EQ);
+                            PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
+                            if (psiMethodCallExpression == null) {
+                                return;
+                            }
+                            PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
+                            PsiElement lastChild = methodExpression.getLastChild();
+                            if (lastChild == null) {
+                                return;
+                            }
+                            String joinText = lastChild.getText();
+                            if (!PREDICATE_METHODS.contains(joinText)) {
+                                return;
+                            }
+                            easyContributor.insertString(context, Collections.emptyList(), false);
+                        } catch (Exception ex) {
+                            System.out.println(ex.getMessage());
+                        }
+                    }).withIcon(Icons.EQ);
                 completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
         } catch (Exception e) {
@@ -350,32 +350,32 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyContributor easyContributor : compareMethods) {
                 LookupElementBuilder elementBuilder = LookupElementBuilder.create(easyContributor.getTipWord())
-                        .withTypeText("EasyQueryPlugin", true)
-                        .withInsertHandler((context, item) -> {
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
+                    .withInsertHandler((context, item) -> {
 
-                            try {
-                                PsiElement elementAt = psiFile.findElementAt(offset);
-                                if (elementAt == null) {
-                                    return;
-                                }
-                                PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
-                                if (psiMethodCallExpression == null) {
-                                    return;
-                                }
-                                PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
-                                PsiElement lastChild = methodExpression.getLastChild();
-                                if (lastChild == null) {
-                                    return;
-                                }
-                                String childText = lastChild.getText();
-                                if (!"select".contains(childText) && !"setColumns".contains(childText) && !"adapter".contains(childText)) {
-                                    return;
-                                }
-                                easyContributor.insertString(context, Collections.emptyList(), false);
-                            } catch (Exception ex) {
-                                System.out.println(ex.getMessage());
+                        try {
+                            PsiElement elementAt = psiFile.findElementAt(offset);
+                            if (elementAt == null) {
+                                return;
                             }
-                        }).withIcon(Icons.EQ);
+                            PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
+                            if (psiMethodCallExpression == null) {
+                                return;
+                            }
+                            PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
+                            PsiElement lastChild = methodExpression.getLastChild();
+                            if (lastChild == null) {
+                                return;
+                            }
+                            String childText = lastChild.getText();
+                            if (!"select".contains(childText) && !"setColumns".contains(childText) && !"adapter".contains(childText)) {
+                                return;
+                            }
+                            easyContributor.insertString(context, Collections.emptyList(), false);
+                        } catch (Exception ex) {
+                            System.out.println(ex.getMessage());
+                        }
+                    }).withIcon(Icons.EQ);
                 completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
         } catch (Exception e) {
@@ -387,45 +387,45 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyContributor easyContributor : ANONYMOUS_METHODS) {
                 LookupElementBuilder elementBuilder = LookupElementBuilder.create(easyContributor.getTipWord())
-                        .withTypeText("EasyQueryPlugin", true)
-                        .withInsertHandler((context, item) -> {
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
+                    .withInsertHandler((context, item) -> {
 
-                            try {
+                        try {
 
-                                PsiElement elementAt = psiFile.findElementAt(offset);
-                                if (elementAt == null) {
-                                    return;
-                                }
-                                PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
-                                if (psiMethodCallExpression == null) {
-                                    return;
-                                }
-                                PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
-                                PsiElement lastChild = methodExpression.getLastChild();
-                                if (lastChild == null) {
-                                    return;
-                                }
-                                String joinText = lastChild.getText();
-                                if (!"select".contains(joinText)) {
-                                    return;
-                                }
-                                PsiExpression qualifierExpression = methodExpression.getQualifierExpression();
-                                if (qualifierExpression == null) {
-                                    return;
-                                }
-                                PsiType returnType = qualifierExpression.getType();
-                                if (returnType == null) {
-                                    return;
-                                }
-                                String canonicalText = returnType.getCanonicalText();
-                                if (!isQueryable(canonicalText)) {
-                                    return;
-                                }
-                                easyContributor.insertString(context, Collections.emptyList(), false);
-                            } catch (Exception ex) {
-                                System.out.println(ex.getMessage());
+                            PsiElement elementAt = psiFile.findElementAt(offset);
+                            if (elementAt == null) {
+                                return;
                             }
-                        }).withIcon(Icons.EQ);
+                            PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
+                            if (psiMethodCallExpression == null) {
+                                return;
+                            }
+                            PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
+                            PsiElement lastChild = methodExpression.getLastChild();
+                            if (lastChild == null) {
+                                return;
+                            }
+                            String joinText = lastChild.getText();
+                            if (!"select".contains(joinText)) {
+                                return;
+                            }
+                            PsiExpression qualifierExpression = methodExpression.getQualifierExpression();
+                            if (qualifierExpression == null) {
+                                return;
+                            }
+                            PsiType returnType = qualifierExpression.getType();
+                            if (returnType == null) {
+                                return;
+                            }
+                            String canonicalText = returnType.getCanonicalText();
+                            if (!isQueryable(canonicalText)) {
+                                return;
+                            }
+                            easyContributor.insertString(context, Collections.emptyList(), false);
+                        } catch (Exception ex) {
+                            System.out.println(ex.getMessage());
+                        }
+                    }).withIcon(Icons.EQ);
 
                 completionResultSet.addElement(PrioritizedLookupElement.withPriority(elementBuilder, Integer.MAX_VALUE));
             }
@@ -534,12 +534,12 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             if (type != null) {
                 String canonicalText = type.getCanonicalText();
                 if (
-                        canonicalText.startsWith("com.easy.query.core.expression.parser.core.base.WherePredicate<") ||
-                                canonicalText.startsWith("com.easy.query.core.expression.parser.core.base.WhereAggregatePredicate<") ||
-                                canonicalText.startsWith("com.easy.query.api4j.sql.SQLWherePredicate<") ||
-                                canonicalText.startsWith("com.easy.query.api4j.sql.SQLWhereAggregatePredicate<") ||
-                                canonicalText.startsWith("com.easy.query.api4kt.sql.SQLKtWherePredicate<") ||
-                                canonicalText.startsWith("com.easy.query.api4kt.sql.SQLKtWhereAggregatePredicate<")) {
+                    canonicalText.startsWith("com.easy.query.core.expression.parser.core.base.WherePredicate<") ||
+                        canonicalText.startsWith("com.easy.query.core.expression.parser.core.base.WhereAggregatePredicate<") ||
+                        canonicalText.startsWith("com.easy.query.api4j.sql.SQLWherePredicate<") ||
+                        canonicalText.startsWith("com.easy.query.api4j.sql.SQLWhereAggregatePredicate<") ||
+                        canonicalText.startsWith("com.easy.query.api4kt.sql.SQLKtWherePredicate<") ||
+                        canonicalText.startsWith("com.easy.query.api4kt.sql.SQLKtWhereAggregatePredicate<")) {
                     return true;
                 } else {
                     PsiElement parent1 = parent.getParent().getParent();
@@ -581,39 +581,39 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                     continue;
                 }
                 LookupElementBuilder apiPlugin = LookupElementBuilder.create(easyContributor.getTipWord())
-                        .withTypeText("EasyQueryPlugin", true)
-                        .withInsertHandler((context, item) -> {
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
+                    .withInsertHandler((context, item) -> {
 
-                            try {
+                        try {
 
-                                PsiElement elementAt = psiFile.findElementAt(offset);
-                                if (elementAt == null) {
-                                    return;
-                                }
-
-                                List<QueryType> queryTypes = parseQueryable(elementAt);
-                                if (CollUtil.isEmpty(queryTypes)) {
-                                    return;
-                                }
-                                easyContributor.insertString(context, queryTypes, true);
-
-                                if (easyContributor instanceof EasyKtGroupContributor) {
-
-                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
-                                    if (newClass != null) {
-                                        WriteCommandAction.runWriteCommandAction(project, () -> {
-                                            if (psiFile instanceof PsiJavaFile) {
-                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
-                                            }
-                                        });
-                                    }
-
-                                }
-                            } catch (Exception e) {
-                                System.out.println(e.getMessage());
+                            PsiElement elementAt = psiFile.findElementAt(offset);
+                            if (elementAt == null) {
+                                return;
                             }
-                        })
-                        .withIcon(Icons.EQ);
+
+                            List<QueryType> queryTypes = parseQueryable(elementAt);
+                            if (CollUtil.isEmpty(queryTypes)) {
+                                return;
+                            }
+                            easyContributor.insertString(context, queryTypes, true);
+
+                            if (easyContributor instanceof EasyKtGroupContributor) {
+
+                                PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
+                                if (newClass != null) {
+                                    WriteCommandAction.runWriteCommandAction(project, () -> {
+                                        if (psiFile instanceof PsiJavaFile) {
+                                            javaImport(project, (PsiJavaFile) psiFile, newClass);
+                                        }
+                                    });
+                                }
+
+                            }
+                        } catch (Exception e) {
+                            System.out.println(e.getMessage());
+                        }
+                    })
+                    .withIcon(Icons.EQ);
 
                 completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, Integer.MAX_VALUE));
 
@@ -630,39 +630,39 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyKtContributor easyContributor : API_METHODS) {
                 LookupElementBuilder apiPlugin = LookupElementBuilder.create(easyContributor.getTipWord())
-                        .withTypeText("EasyQueryPlugin", true)
-                        .withInsertHandler((context, item) -> {
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
+                    .withInsertHandler((context, item) -> {
 
-                            try {
+                        try {
 
-                                PsiElement elementAt = psiFile.findElementAt(offset);
-                                if (elementAt == null) {
-                                    return;
-                                }
-
-                                List<QueryType> queryTypes = parseQueryable(elementAt);
-                                if (CollUtil.isEmpty(queryTypes)) {
-                                    return;
-                                }
-                                easyContributor.insertString(context, queryTypes, true);
-
-                                if (easyContributor instanceof EasyKtGroupContributor) {
-
-                                    PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
-                                    if (newClass != null) {
-                                        WriteCommandAction.runWriteCommandAction(project, () -> {
-                                            if (psiFile instanceof PsiJavaFile) {
-                                                javaImport(project, (PsiJavaFile) psiFile, newClass);
-                                            }
-                                        });
-                                    }
-
-                                }
-                            } catch (Exception e) {
-                                System.out.println(e.getMessage());
+                            PsiElement elementAt = psiFile.findElementAt(offset);
+                            if (elementAt == null) {
+                                return;
                             }
-                        })
-                        .withIcon(Icons.EQ);
+
+                            List<QueryType> queryTypes = parseQueryable(elementAt);
+                            if (CollUtil.isEmpty(queryTypes)) {
+                                return;
+                            }
+                            easyContributor.insertString(context, queryTypes, true);
+
+                            if (easyContributor instanceof EasyKtGroupContributor) {
+
+                                PsiClass newClass = JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.proxy.sql.GroupKeys", GlobalSearchScope.allScope(project));
+                                if (newClass != null) {
+                                    WriteCommandAction.runWriteCommandAction(project, () -> {
+                                        if (psiFile instanceof PsiJavaFile) {
+                                            javaImport(project, (PsiJavaFile) psiFile, newClass);
+                                        }
+                                    });
+                                }
+
+                            }
+                        } catch (Exception e) {
+                            System.out.println(e.getMessage());
+                        }
+                    })
+                    .withIcon(Icons.EQ);
 
                 completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, Integer.MAX_VALUE));
 
@@ -687,10 +687,10 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
 //    private static final String QUERYABLE_4KT = "com.easy.query.api4kt.select.KtQueryable";
 
     private static final List<String> ENTITY_QUERY_RETURN_TYPE_MATCH = Arrays.asList(
-            "com.easy.query.api.proxy.entity.select.EntityQueryable",
-            "com.easy.query.api.proxy.entity.update.ExpressionUpdatable",
-            "com.easy.query.api.proxy.entity.update.EntityUpdatable",
-            "com.easy.query.api.proxy.entity.delete.ExpressionDeletable"
+        "com.easy.query.api.proxy.entity.select.EntityQueryable",
+        "com.easy.query.api.proxy.entity.update.ExpressionUpdatable",
+        "com.easy.query.api.proxy.entity.update.EntityUpdatable",
+        "com.easy.query.api.proxy.entity.delete.ExpressionDeletable"
     );
     private static final String QUERYABLE_END = ">";
 
@@ -720,13 +720,13 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                             if ("value".equals(string)) {
                                 String aliasName = nameConstantValueEntry.getValue().toString().replaceAll("\"", "");
                                 Integer i = nameCountMap.get(aliasName);
-                                if(i==null){
+                                if (i == null) {
                                     QueryCountType queryCountType = new QueryCountType(aliasName, 1);
-                                    nameCountMap.put(aliasName,1);
+                                    nameCountMap.put(aliasName, 1);
                                     return queryCountType;
-                                }else{
+                                } else {
                                     QueryCountType queryCountType = new QueryCountType(aliasName, i + 1);
-                                    nameCountMap.put(aliasName,queryCountType.getIndex());
+                                    nameCountMap.put(aliasName, queryCountType.getIndex());
                                     return queryCountType;
                                 }
                             }
@@ -737,7 +737,7 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
                 System.out.println(constructor);
             }
         }
-        return new QueryCountType("it" + (index == 0 ? "" : index),index+1);
+        return new QueryCountType("it" + (index == 0 ? "" : index), index + 1);
     }
 
     //获取注解没有就返回单一对象o有就用他的
@@ -767,16 +767,16 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
             HashMap<String, Integer> nameCountMap = new HashMap<>();
             for (int j = 1; j <= i; j++) {
                 TypeProjection typeProjection = arguments.get(j * 2 - 1);
-                QueryCountType queryType1 = getQueryType(typeProjection, j - 1,nameCountMap);
+                QueryCountType queryType1 = getQueryType(typeProjection, j - 1, nameCountMap);
                 queryCountTypes.add(queryType1);
             }
             ArrayList<QueryType> queryTypes = new ArrayList<>();
             for (QueryCountType queryCountType : queryCountTypes) {
                 Integer i1 = nameCountMap.get(queryCountType.getShortName());
-                if(i1==null||i1<=1){
-                    queryTypes.add(new QueryType(queryCountType.getShortName(),queryCountType.isGroup()));
-                }else{
-                    queryTypes.add(new QueryType(queryCountType.getShortName()+queryCountType.getIndex(),queryCountType.isGroup()));
+                if (i1 == null || i1 <= 1) {
+                    queryTypes.add(new QueryType(queryCountType.getShortName(), queryCountType.isGroup()));
+                } else {
+                    queryTypes.add(new QueryType(queryCountType.getShortName() + queryCountType.getIndex(), queryCountType.isGroup()));
                 }
             }
             return queryTypes;

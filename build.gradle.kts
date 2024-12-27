@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.77"
+version = "0.0.79"
 
 repositories {
     maven {
@@ -39,6 +39,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.34")
     testCompileOnly("org.projectlombok:lombok:1.18.34")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
+
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_17

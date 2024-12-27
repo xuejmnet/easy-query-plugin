@@ -94,6 +94,10 @@ public class EasyContributor {
         }
     }
 
+    public String getDesc(){
+        return "";
+    }
+
     public boolean accept(String beforeMethodReturnTypeName){
         return true;
     }
