@@ -191,9 +191,15 @@
                          groupBundle="messages.InspectionsBundle"
                          groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
                          implementationClass="com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection"/>
+        <customJavadocTagProvider implementation="com.easy.query.plugin.core.provider.EasyQueryJavaDocTagProvider"/>
 
     </extensions>
     <actions>
+        <group id="com.easy.query.plugin.ToolGroup" text="EasyQuery" description="EasyQuery工具" popup="true" icon="/icons/eq.svg">
+            <add-to-group
+                    group-id="ToolsMenu"/>
+
+        </group>
 <!--        <action id="com.easy.query.plugin.action.AutoProxyAvailableAction" class="com.easy.query.plugin.action.AutoProxyAvailableAction"-->
 <!--                text="AnonymousMap123">-->
 <!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
@@ -208,36 +214,36 @@
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.AnonymousMapAction"
                 text="AnonymousMap">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="last"/>
         </action>
-        <action id="com.easy.query.plugin.action.QuickTipSettingAction"
-                icon="/icons/eq.svg"
-                class="com.easy.query.plugin.action.QuickTipSettingAction"
-                text="QuickTipSetting">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="com.easy.query.plugin.action.QuickTipSettingAction"
+                    icon="/icons/eq.svg"
+                    class="com.easy.query.plugin.action.QuickTipSettingAction"
+                    text="QuickTipSetting">
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
         </action>
         <action id="com.easy.query.plugin.action.AutoCompileAction"
                 class="com.easy.query.plugin.action.AutoCompileAction" text="AutoCompile"
                 icon="/icons/eq.svg">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
         <action id="com.easy.query.plugin.action.StructDTOModifyAction"
                 class="com.easy.query.plugin.action.StructDTOModifyAction" text="StructDTOModify"
                 icon="/icons/eq.svg">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
         <action id="com.easy.query.plugin.action.NavigatePathAction"
                 class="com.easy.query.plugin.action.NavigatePathAction" text="NavigatePathGenerate"
                 icon="/icons/eq.svg">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
-        </action>
+            </action>
         <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"
                 text="SQLFormatPreview" icon="/icons/eq.svg">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="ConsoleEditorPopupMenu" anchor="before" relative-to-action="ConsoleView.ClearAll"/>
         </action>
         <action id="com.easy.query.plugin.action.CompileCurrentFileAction"
