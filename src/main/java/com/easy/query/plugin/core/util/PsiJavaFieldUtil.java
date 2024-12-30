@@ -71,7 +71,7 @@ public class PsiJavaFieldUtil {
         // 移除 MyBatisPlus 等其他ORM的注解
         for (int i = dtoField.getAnnotations().length - 1; i >= 0; i--) {
             String qualifiedName = dtoField.getAnnotations()[i].getQualifiedName();
-            if (StrUtil.startWithAny(qualifiedName, "com.baomidou.mybatisplus.annotation", "javax.persistence", "org.hibernate.annotations")) {
+            if (StrUtil.startWithAny(qualifiedName, "com.baomidou.mybatisplus.annotation", "javax.persistence","javax.validation", "org.hibernate.annotations")) {
                 dtoField.getAnnotations()[i].delete();
             }
         }

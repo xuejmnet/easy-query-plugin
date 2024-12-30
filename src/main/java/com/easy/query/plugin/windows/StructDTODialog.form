@@ -99,17 +99,20 @@
                       <text value="内部类"/>
                     </properties>
                   </component>
-                  <hspacer id="e09fa">
-                    <constraints>
-                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                  </hspacer>
                   <component id="59186" class="javax.swing.JCheckBox" binding="dataCheck">
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="@Data"/>
+                    </properties>
+                  </component>
+                  <component id="b166f" class="javax.swing.JCheckBox" binding="removeValidationCk">
+                    <constraints>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="移除Validation"/>
                     </properties>
                   </component>
                 </children>
