@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.entity.QueryType;
 import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.openapi.editor.Document;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
  * @author xuejiaming
  */
 public class EasyContributor {
+    @Getter
     protected final String tipWord;
     protected final String insertWord;
     protected final boolean blockCode;
@@ -25,10 +27,6 @@ public class EasyContributor {
         this.insertWord = insertWord;
         this.tipWord = tipWord;
         this.blockCode = blockCode;
-    }
-
-    public String getTipWord() {
-        return tipWord;
     }
 
     public void insertString(InsertionContext context, Collection<QueryType> queries, boolean failBracket){

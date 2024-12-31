@@ -217,17 +217,8 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                     }
                     if (!entityFieldMap.containsKey(dtoField.getName())) {
 
-                        //如果是navigateFlat或者NavigateJoin那么应该忽略
-                        PsiAnnotation navigateFlat = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateFlat");
-                        if (navigateFlat != null) {
-                            continue;
-                        }
-                        PsiAnnotation navigateJoin = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateJoin");
-                        if (navigateJoin != null) {
-                            continue;
-                        }
-                        PsiAnnotation columnIgnore = dtoField.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
-                        if (columnIgnore != null) {
+                        // 判断是否应该保留字段, 忽略警告
+                        if (PsiJavaFieldUtil.keepField(dtoField,false)) {
                             continue;
                         }
 

@@ -42,6 +42,9 @@ public class PsiJavaClassUtil {
      * @return {@code String}
      */
     public static String getLinkPsiClassQualifiedName(PsiClass currentClass) {
+        if (currentClass == null) {
+            return "";
+        }
         PsiDocComment docComment = currentClass.getDocComment();
         if (Objects.isNull(docComment)) {
             return ""; // 当前类上没有文档注释, 无法校验
@@ -134,5 +137,39 @@ public class PsiJavaClassUtil {
                 .filter(StrUtil::isNotBlank) // 过滤掉空行
                 .collect(Collectors.toList());
     }
+
+
+    public static boolean hasAnnoTable(PsiClass psiClass) {
+        if (psiClass == null) {
+            return false;
+        }
+        return psiClass.getAnnotation("com.easy.query.core.annotation.Table") != null;
+    }
+
+
+    /**
+     * 元素父级需要是 class 而不是method
+     * @param element
+     */
+    public static boolean isElementRelatedToClass(PsiElement element) {
+        if (element == null) {
+            return false;
+        }
+        PsiElement parent = element.getParent();
+        while (!(parent instanceof PsiClass)) {
+            if (parent instanceof PsiMethod) {
+                return false;
+            }
+            if (parent instanceof PsiReferenceExpression) {
+                return false;
+            }
+            parent = parent.getParent();
+        }
+
+        return true;
+    }
+
+
+
 
 }

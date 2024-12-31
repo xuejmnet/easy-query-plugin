@@ -181,7 +181,7 @@
                                 id="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"
                                 implementationClass="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"/>
 
-        <completion.contributor language="any" implementationClass="com.easy.query.plugin.core.completion.DtoFieldAutoCompletion"/>
+        <completion.contributor language="JAVA" implementationClass="com.easy.query.plugin.core.completion.DtoFieldAutoCompletion"/>
         <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.easy.query.plugin.core.provider.NavToEntityFieldRelatedItemLineMarkerProvider"/>
 
         <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
@@ -192,6 +192,10 @@
                          groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
                          implementationClass="com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection"/>
         <customJavadocTagProvider implementation="com.easy.query.plugin.core.provider.EasyQueryJavaDocTagProvider"/>
+
+        <applicationConfigurable instance="com.easy.query.plugin.core.config.AppSettingsConfigurable"/>
+        <applicationService
+                serviceImplementation="com.easy.query.plugin.core.config.AppSettings"/>
 
     </extensions>
     <actions>
