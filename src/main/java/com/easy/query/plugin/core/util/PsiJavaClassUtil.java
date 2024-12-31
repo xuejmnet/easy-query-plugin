@@ -160,6 +160,9 @@ public class PsiJavaClassUtil {
             if (parent instanceof PsiMethod) {
                 return false;
             }
+            if (parent instanceof PsiReferenceExpression) {
+                return false;
+            }
             parent = parent.getParent();
         }
 
