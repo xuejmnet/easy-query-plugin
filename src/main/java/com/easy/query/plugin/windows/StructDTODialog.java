@@ -8,6 +8,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
+import com.easy.query.plugin.core.config.AppSettings;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.*;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
@@ -15,6 +16,7 @@ import com.easy.query.plugin.core.entity.struct.StructDTOContext;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.DialogUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
+import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.easy.query.plugin.windows.ui.dto2ui.JCheckBoxTree;
@@ -25,7 +27,6 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightMethodBuilder;
 import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -44,10 +45,11 @@ public class StructDTODialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JCheckBoxTree entityProps;
-    private JCheckBox combineCk;
-    private JCheckBox dataCheck;
     private JPanel dynamicBtnPanel;
-    private JCheckBox removeValidationCk;
+    private JRadioButton dtoSchemaNormal;
+    private JRadioButton dtoSchemaRequest;
+    private JRadioButton dtoSchemaResponse;
+    private JRadioButton dtoSchemaExcel;
     private Map<String, String> buttonMaps;
 
     private TreeModel initTree(List<ClassNode> classNodes) {
@@ -110,8 +112,6 @@ public class StructDTODialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        dataCheck.setSelected(true);
-        combineCk.setSelected(true); // 默认内部类也勾选上
         BoxLayout boxLayout = new BoxLayout(dynamicBtnPanel, BoxLayout.LINE_AXIS);
         dynamicBtnPanel.setLayout(boxLayout);
         dynamicIgnoreButtons(structDTOContext.getProject());
@@ -248,7 +248,7 @@ public class StructDTODialog extends JDialog {
         // 设置一下 rootDtoPsiClass
         renderContext.setRootDtoPsiClass(structDTOContext.getDtoPsiClass());
 
-        renderContext.setData(dataCheck.isSelected());
+        renderContext.setData(true);
         // 传递import
         renderContext.getImports().addAll(structDTOContext.getImports());
         // 获取 app 里面的 import , 那里面的 Imports 也要传递进来
@@ -267,6 +267,12 @@ public class StructDTODialog extends JDialog {
 
         // 如果传入了DTO ClassName 说明是来自修改, 此时需要删除源文件
         renderContext.setDeleteExistsFile(StrUtil.isNotBlank(structDTOContext.getDtoClassName()));
+
+
+        // 从配置中加载需要移除的注解
+        AppSettings.State appSetting = AppSettings.getInstance().getState();
+        List<String> removeAnnoList = appSetting.getRemoveAnnoList(dtoSchemaNormal, dtoSchemaRequest, dtoSchemaResponse, dtoSchemaExcel);
+
 
         PropAppendable base = structDTOApp;
         int i = 0;
@@ -396,18 +402,10 @@ public class StructDTODialog extends JDialog {
                 PsiAnnotation[] annotationArr = psiField.getAnnotations();
                 for (PsiAnnotation annotation : annotationArr) {
                     String qualifiedName = annotation.getQualifiedName();
-                    if (StrUtil.startWithAny(qualifiedName,
-                            "com.baomidou.mybatisplus.annotation" // 移除 MyBatisPlus 的注解
-                            //
-                    )) {
+                    if (removeAnnoList.contains(qualifiedName)) {
                         structDTOProp.setPropText(structDTOProp.getPropText().replace(annotation.getText(), ""));
                     }
-                    if (removeValidationCk.isSelected()) {
-                        // 勾选上了移除验证注解
-                        if (StrUtil.startWithAny(qualifiedName, "javax.validation", "org.noear.solon.validation.annotation")) {
-                            structDTOProp.setPropText(structDTOProp.getPropText().replace(annotation.getText(), ""));
-                        }
-                    }
+
                 }
                 // 处理完了之后可能会出现多个换行符连一起, 需要替换成一个 \n \n -> \n
                 structDTOProp.setPropText(structDTOProp.getPropText().replaceAll("\n\\s+\n", "\n"));
@@ -432,7 +430,7 @@ public class StructDTODialog extends JDialog {
             // 处理自身的字段
             PsiField[] dtoFields = dtoPsiClass.getFields();
             for (PsiField dtoField : dtoFields) {
-                Boolean keepField = keepField(dtoField);
+                Boolean keepField = PsiJavaFieldUtil.keepField(dtoField);
                 if (keepField == null) continue;
 
                 if (keepField) {
@@ -484,7 +482,7 @@ public class StructDTODialog extends JDialog {
 
                 PsiField[] innerFields = innerClass.getFields();
                 for (PsiField dtoField : innerFields) {
-                    boolean keepField = keepField(dtoField);
+                    boolean keepField = PsiJavaFieldUtil.keepField(dtoField);
 
                     if (keepField) {
                         // 保留字段
@@ -545,6 +543,7 @@ public class StructDTODialog extends JDialog {
 
         // innerDTOClass 进行一次排序, 以免生成的DTO 顺序错乱,导致不好比对代码
         renderContext.getEntities().sort(Comparator.comparing(PropAppendable::getPropName));
+        renderContext.setAuthor(appSetting.getAuthor());
 
         boolean b = RenderEasyQueryTemplate.renderStructDTOType(renderContext);
         if (!b) {
@@ -553,43 +552,6 @@ public class StructDTODialog extends JDialog {
         NotificationUtils.notifySuccess("生成成功", structDTOContext.getProject());
         structDTOContext.setSuccess(true);
         dispose();
-    }
-
-    /**
-     * 是否保留 DTO 上的字段 <br/>
-     * 1. 如果 SuppressWarnings EasyQueryFieldMissMatch 则认定为自定义的DTO字段, 修改DTO的时候保留
-     * @param dtoField DTO的字段
-     * @return 是否保留
-     */
-    private static Boolean keepField(PsiField dtoField) {
-        // 看看字段上是否有 java.lang.SuppressWarnings 注解
-        PsiAnnotation suppressWarnings = dtoField.getAnnotation("java.lang.SuppressWarnings");
-        // 如果有的话,获取一下 value
-        if (suppressWarnings == null) {
-            // 没有这个注解, 说明不是自定义字段
-            return false;
-        }
-        JvmAnnotationAttribute attrValue = suppressWarnings.getAttributes().stream().filter(attr -> attr.getAttributeName().equals("value")).findFirst().orElse(null);
-        if (!(attrValue instanceof PsiNameValuePairImpl)) {
-            return false;
-        }
-
-        boolean keepField = false;
-        if (((PsiNameValuePairImpl) attrValue).getDetachedValue() instanceof PsiArrayInitializerMemberValue) {
-            // 如果是数组的话, 依次判断
-            PsiArrayInitializerMemberValue attributeValue = (PsiArrayInitializerMemberValue) ((PsiNameValuePairImpl) attrValue).getDetachedValue();
-            if (attributeValue == null) {
-                return false;
-            }
-            PsiAnnotationMemberValue[] initializers = attributeValue.getInitializers();
-            for (PsiAnnotationMemberValue initializer : initializers) {
-                keepField = keepField || initializer.getText().equals("\"EasyQueryFieldMissMatch\"");
-            }
-
-        } else if (((PsiNameValuePair) attrValue).getLiteralValue() != null) {
-            keepField = ((PsiNameValuePair) attrValue).getLiteralValue().equals("EasyQueryFieldMissMatch");
-        }
-        return keepField;
     }
 
     private void onCancel() {

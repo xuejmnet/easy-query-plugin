@@ -25,6 +25,9 @@ public class RenderStructDTOContext {
     private final String path;
     private final String packageName;
 
+    @Setter
+    private String author;
+
     /** 需要一个 rootPsiClass, 是顶级DTO对应的实体 */
     @Getter
     @Setter
