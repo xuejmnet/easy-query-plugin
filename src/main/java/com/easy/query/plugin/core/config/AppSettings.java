@@ -37,6 +37,17 @@ public class AppSettings implements PersistentStateComponent<AppSettings.State> 
         private String responseDtoAnnoRemove;
         private String excelDtoAnnoRemove;
 
+        public List<String> getRemoveAnnoList(String schema) {
+            if ("request".equals(schema)) {
+                return StrUtil.split(requestDtoAnnoRemove,"\n",true,true);
+            }else if ("response".equals(schema)) {
+                return StrUtil.split(responseDtoAnnoRemove, "\n", true, true);
+            }else if ("excel".equals(schema)) {
+                return StrUtil.split(excelDtoAnnoRemove, "\n", true, true);
+            }
+            return StrUtil.split(normalDtoAnnoRemove, "\n", true, true);
+        }
+
         public List<String> getRemoveAnnoList(JRadioButton dtoSchemaNormal, JRadioButton dtoSchemaRequest, JRadioButton dtoSchemaResponse, JRadioButton dtoSchemaExcel) {
             if (dtoSchemaRequest.isSelected()) {
                 return StrUtil.split(requestDtoAnnoRemove,"\n",true,true);

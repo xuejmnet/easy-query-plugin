@@ -14,10 +14,7 @@ import com.easy.query.plugin.core.entity.*;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
-import com.easy.query.plugin.core.util.DialogUtil;
-import com.easy.query.plugin.core.util.NotificationUtils;
-import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
-import com.easy.query.plugin.core.util.PsiJavaFileUtil;
+import com.easy.query.plugin.core.util.*;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.easy.query.plugin.windows.ui.dto2ui.JCheckBoxTree;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
@@ -115,6 +112,26 @@ public class StructDTODialog extends JDialog {
         BoxLayout boxLayout = new BoxLayout(dynamicBtnPanel, BoxLayout.LINE_AXIS);
         dynamicBtnPanel.setLayout(boxLayout);
         dynamicIgnoreButtons(structDTOContext.getProject());
+
+        //region 从DTO类注释上加载 schema
+        PsiClass dtoPsiClass = structDTOContext.getDtoPsiClass();
+        if (Objects.isNull(dtoPsiClass)) {
+            // 没有传入DTO, 应该是新增, 默认选中 normal
+            dtoSchemaNormal.setSelected(true);
+        }else {
+            String dtoSchema = PsiJavaClassUtil.getDtoSchema(dtoPsiClass);
+            if (StrUtil.equalsAny(dtoSchema, "request")) {
+                dtoSchemaRequest.setSelected(true);
+            } else if (StrUtil.equalsAny(dtoSchema, "response")) {
+                dtoSchemaResponse.setSelected(true);
+            } else if (StrUtil.equalsAny(dtoSchema, "excel")) {
+                dtoSchemaExcel.setSelected(true);
+            } else {
+                dtoSchemaNormal.setSelected(true);
+            }
+        }
+        //endregion
+
     }
 
     private void dynamicIgnoreButtons(Project project) {
@@ -247,6 +264,9 @@ public class StructDTODialog extends JDialog {
         renderContext.setRootEntityPsiClass(appNode.getClassNode().getPsiClass());
         // 设置一下 rootDtoPsiClass
         renderContext.setRootDtoPsiClass(structDTOContext.getDtoPsiClass());
+
+        // 设置一下 DTO Schema
+        renderContext.setDtoSchema(dtoSchemaNormal, dtoSchemaRequest, dtoSchemaResponse, dtoSchemaExcel);
 
         renderContext.setData(true);
         // 传递import

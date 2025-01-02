@@ -2,6 +2,7 @@ package com.easy.query.plugin.core.completion;
 
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
+import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
@@ -22,7 +23,9 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
             return;
         }
 
+
         PsiElement position = parameters.getPosition();
+        PsiClass topLevelDtoClass = PsiTreeUtil.getTopmostParentOfType(position, PsiClass.class);
         if (!PsiJavaClassUtil.isElementRelatedToClass(position)) {
             // 只处理类下面的直接元素, 方法内的不处理
             return;
@@ -41,6 +44,9 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
         PsiField[] dtoFields = currentPsiClass.getAllFields();
         PsiField[] psiFields = linkPsiClass.getAllFields();
 
+        String dtoSchema = PsiJavaClassUtil.getDtoSchema(topLevelDtoClass);
+
+
         // 找到 psiFields 不在 dtoFields 中的字段
         for (PsiField entityFieldRaw : psiFields) {
             boolean isExist = false;
@@ -51,15 +57,15 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                 }
             }
             if (!isExist) {
-                PsiElement newField = entityFieldRaw.copy();
-                // todo 是否有必要 按照常规DTO移除 字段上的注解
 
 
                 LookupElement lookupElementWithoutEq = PrioritizedLookupElement.withPriority(
                         LookupElementBuilder.create(entityFieldRaw.getName())
                                 .withTypeText(entityFieldRaw.getType().getPresentableText())
                                 .withInsertHandler((context, item) -> {
-                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), newField.getText());
+
+                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
                                 })
                                 .withIcon(Icons.EQ),
                         400d);
@@ -70,7 +76,8 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                         LookupElementBuilder.create("EQ实体字段:" + entityFieldRaw.getName())
                                 .withTypeText(entityFieldRaw.getType().getPresentableText())
                                 .withInsertHandler((context, item) -> {
-                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), newField.getText());
+                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
                                 })
                                 .withIcon(Icons.EQ),
                         400d);

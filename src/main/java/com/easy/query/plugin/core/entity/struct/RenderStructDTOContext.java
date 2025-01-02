@@ -8,6 +8,7 @@ import com.intellij.psi.PsiClass;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,6 +41,11 @@ public class RenderStructDTOContext {
 
     @Setter
     private String dtoName;
+
+    @Getter
+    @Setter
+    private String dtoSchema;
+
     private final StructDTOApp dtoApp;
     private final Module module;
     @Setter
@@ -71,4 +77,15 @@ public class RenderStructDTOContext {
         return dtoApp.getEntityName();
     }
 
+    public void setDtoSchema(JRadioButton dtoSchemaNormal, JRadioButton dtoSchemaRequest, JRadioButton dtoSchemaResponse, JRadioButton dtoSchemaExcel) {
+        if (dtoSchemaRequest.isSelected()) {
+            setDtoSchema("request");
+        }else if (dtoSchemaResponse.isSelected()) {
+            setDtoSchema("response");
+        }else if (dtoSchemaExcel.isSelected()) {
+            setDtoSchema("excel");
+        }else {
+            setDtoSchema("normal");
+        }
+    }
 }

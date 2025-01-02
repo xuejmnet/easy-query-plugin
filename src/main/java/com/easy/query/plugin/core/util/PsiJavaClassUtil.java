@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiJavaFileImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
+import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiInlineDocTag;
 import lombok.extern.slf4j.Slf4j;
 
@@ -168,6 +169,36 @@ public class PsiJavaClassUtil {
 
         return true;
     }
+
+
+    /**
+     * 获取DTO上面的 schema 配置<br/>
+     * eg: @easy-query-dto schema: normal -> normal
+     */
+    public static String getDtoSchema(PsiClass psiClass) {
+        if (psiClass == null) {
+            return "";
+        }
+        PsiDocComment docComment = psiClass.getDocComment();
+        if (Objects.isNull(docComment)) {
+            return ""; // 当前类上没有文档注释, 无法校验
+        }
+
+        // 有文档注释, 尝试提取
+        PsiDocTag schemaDocEle = Arrays.stream(docComment.getTags())
+                .map(ele -> (PsiDocTag) ele)
+                .filter(ele -> "easy-query-dto".equals(ele.getName()))
+                .findFirst()
+                .orElse(null);
+        if (Objects.isNull(schemaDocEle)) {
+            return ""; // 没有找到 @easy-query-dto, 无法校验
+        }
+
+        // 有 @easy-query-dto 尝试提取
+        String schema = ReUtil.getGroup1("schema: *(\\S+)", schemaDocEle.getText());
+        return StrUtil.isBlank(schema) ? "normal" : schema;
+    }
+
 
 
 

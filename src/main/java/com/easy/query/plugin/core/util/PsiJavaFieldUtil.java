@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.util;
 
 import cn.hutool.core.collection.CollectionUtil;
+import com.easy.query.plugin.core.config.AppSettings;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
@@ -13,6 +14,18 @@ import java.util.stream.Collectors;
  * @author link2fun
  */
 public class PsiJavaFieldUtil {
+
+    /**
+     * 从实体复制字段, 并根据dtoSchema 进行精简
+     * @param entityField 实体字段
+     * @param dtoSchema DTO schema
+     * @return
+     */
+    public static PsiField copyAndPureFieldBySchema(PsiField entityField, String dtoSchema) {
+        PsiField dtoField = copyField(entityField);
+        pureFieldBySchema(dtoField, dtoSchema);
+        return dtoField;
+    }
 
 
     /**
@@ -50,28 +63,28 @@ public class PsiJavaFieldUtil {
                     .filter(attr -> !cn.hutool.core.util.StrUtil.equalsAny(attr.getAttributeName(), "primaryKey","generatedKey","generatedSQLColumnGenerator","primaryKeyGenerator"))
                     .collect(Collectors.toList());
 
+
+
             // 如果 attrList 为空， 则不添加这个注解了
             if (CollectionUtil.isEmpty(attrList)){
                 psiAnnoColumn.delete();
             }else{
-                String attrText = attrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
-                        .collect(Collectors.joining(", "));
-                // 再拼成 @Navigate 注解文本
-                String replacement = "@Column(" + attrText + ")";
-                PsiElementFactory elementFactory = PsiElementFactory.getInstance(entityField.getProject());
-                PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
-                psiAnnoColumn.replace(newAnno);
+                // 如果只有 value , 则不需要保留
+                if (attrList.size() == 1 && cn.hutool.core.util.StrUtil.equalsAny(attrList.get(0).getAttributeName(), "value")) {
+                    psiAnnoColumn.delete();
+                }else{
+                    String attrText = attrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+                            .collect(Collectors.joining(", "));
+                    // 再拼成 @Navigate 注解文本
+                    String replacement = "@Column(" + attrText + ")";
+                    PsiElementFactory elementFactory = PsiElementFactory.getInstance(entityField.getProject());
+                    PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
+                    psiAnnoColumn.replace(newAnno);
+                }
+
             }
 
 
-        }
-
-        // 移除 MyBatisPlus 等其他ORM的注解
-        for (int i = dtoField.getAnnotations().length - 1; i >= 0; i--) {
-            String qualifiedName = dtoField.getAnnotations()[i].getQualifiedName();
-            if (StrUtil.startWithAny(qualifiedName, "com.baomidou.mybatisplus.annotation", "javax.persistence","javax.validation", "org.hibernate.annotations")) {
-                dtoField.getAnnotations()[i].delete();
-            }
         }
 
 
@@ -154,5 +167,32 @@ public class PsiJavaFieldUtil {
             keepField = ((PsiNameValuePair) attrValue).getLiteralValue().equals("EasyQueryFieldMissMatch");
         }
         return keepField;
+    }
+
+    /**
+     * 通过不同类型的 schema 精简 DTO 字段
+     * @param dtoField DTO字段， 在原字段上修改， 如果是从实体来的字段, 请先 copy()
+     * @param dtoSchema DTO schema normal/request/response/excel
+     */
+    public static void pureFieldBySchema(PsiField dtoField, String dtoSchema) {
+
+        AppSettings.State appSettings = AppSettings.getInstance().getState();
+        if (appSettings == null) {
+            return;
+        }
+        PsiAnnotation[] annotations = dtoField.getAnnotations();
+        List<String> removeAnnoList = appSettings.getRemoveAnnoList(dtoSchema);
+        if (CollectionUtil.isEmpty(removeAnnoList)) {
+            return;
+        }
+        for (PsiAnnotation annotation : annotations) {
+            String annotationQualifiedName = annotation.getQualifiedName();
+            if (removeAnnoList.contains(annotationQualifiedName)) {
+                annotation.delete();
+            }
+
+            // 针对一些注解需要进行精简
+            // @Nav
+        }
     }
 }

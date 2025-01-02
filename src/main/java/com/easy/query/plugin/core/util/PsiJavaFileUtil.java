@@ -1,7 +1,6 @@
 package com.easy.query.plugin.core.util;
 
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
-import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
@@ -147,5 +146,6 @@ public class PsiJavaFileUtil {
             EasyQueryDocumentChangeHandler.createAptFile(Collections.singletonList(virtualFile),project,false);
         }
     }
+
 
 }
