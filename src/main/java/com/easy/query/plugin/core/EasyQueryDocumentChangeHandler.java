@@ -271,16 +271,17 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {
             return false;
         }
-        Set<String> importSet = new HashSet<>();
-        if (psiFile instanceof KtFile) {
-            KtFile ktFile = (KtFile) psiFile;
-            importSet = KtFileUtil.getImportSet(ktFile);
-        }
-        if (psiFile instanceof PsiJavaFile) {
-            PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
-            importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
-        }
-        return importSet.contains("com.easy.query.core.annotation.EntityProxy") || importSet.contains("com.easy.query.core.annotation.*") || importSet.contains("com.easy.query.core.annotation.EntityFileProxy");
+        String text = psiFile.getText();
+//        Set<String> importSet = new HashSet<>();
+//        if (psiFile instanceof KtFile) {
+//            KtFile ktFile = (KtFile) psiFile;
+//            importSet = KtFileUtil.getImportSet(ktFile);
+//        }
+//        if (psiFile instanceof PsiJavaFile) {
+//            PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
+//            importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
+//        }
+        return text.contains("com.easy.query.core.annotation.EntityProxy") || text.contains("com.easy.query.core.annotation.*") || text.contains("com.easy.query.core.annotation.EntityFileProxy");
     }
 
     @Override
