@@ -212,13 +212,13 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                 for (PsiField dtoField : dtoFields) {
                     boolean isStatic = PsiUtil.fieldIsStatic(dtoField);
-                    if(isStatic){
+                    if (isStatic) {
                         continue;
                     }
                     if (!entityFieldMap.containsKey(dtoField.getName())) {
 
                         // 判断是否应该保留字段, 忽略警告
-                        if (PsiJavaFieldUtil.keepField(dtoField,false)) {
+                        if (PsiJavaFieldUtil.keepField(dtoField, false)) {
                             continue;
                         }
 
@@ -235,8 +235,8 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                             public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
                                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                                 PsiAnnotation annotation = elementFactory.createAnnotationFromText("@SuppressWarnings(\"EasyQueryFieldMissMatch\")", problemDescriptor.getPsiElement());
-
-                                problemDescriptor.getPsiElement().addAfter(annotation, ((PsiField)problemDescriptor.getPsiElement()).getDocComment());
+//                                PsiElement newLine = PsiParserFacade.getInstance(project).createWhiteSpaceFromText("\n\n");
+                                problemDescriptor.getPsiElement().addAfter(annotation, ((PsiField) problemDescriptor.getPsiElement()).getDocComment());
                             }
                         };
 
@@ -253,8 +253,8 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                                 List<String> lines = StrUtil.split(problemDescriptor.getPsiElement().getText(), "\n");
                                 // 生成注释
-                                lines.stream().map(line -> "// " + line).map(comment->elementFactory.createCommentFromText(comment,null)).collect(Collectors.toList())
-                                        .forEach(comment->problemDescriptor.getPsiElement().addBefore(comment,problemDescriptor.getPsiElement()));
+                                lines.stream().map(line -> "// " + line).map(comment -> elementFactory.createCommentFromText(comment, null)).collect(Collectors.toList())
+                                    .forEach(comment -> problemDescriptor.getPsiElement().addBefore(comment, problemDescriptor.getPsiElement()));
 
                                 problemDescriptor.getPsiElement().delete();
                             }
@@ -266,12 +266,12 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                         // 3. 可能是其他相近的字段，目前只提示忽略大小写的情况
                         for (PsiField entityField : entityFields) {
-                            if (StrUtil.similar(dtoField.getName().toLowerCase(), entityField.getName().toLowerCase())>0.8) {
+                            if (StrUtil.similar(dtoField.getName().toLowerCase(), entityField.getName().toLowerCase()) > 0.8) {
                                 // 忽略大小写相同， 可能是这个字段
                                 @NotNull LocalQuickFix quickFixMethod3 = new LocalQuickFix() {
                                     @Override
                                     public @IntentionFamilyName @NotNull String getFamilyName() {
-                                        return "推测可能是 "+entityField.getName()+" 字段, 进行更新";
+                                        return "推测可能是 " + entityField.getName() + " 字段, 进行更新";
                                     }
 
                                     @Override
@@ -285,8 +285,6 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 localQuickFixes.add(quickFixMethod3);
                             }
                         }
-
-
 
 
                         // 这个字段不在实体类中, 需要警告

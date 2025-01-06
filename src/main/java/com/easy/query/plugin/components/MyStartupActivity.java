@@ -6,7 +6,7 @@ import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.ProjectActivity;
+//import com.intellij.openapi.startup.ProjectActivity;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
@@ -23,7 +23,7 @@ import java.util.Collections;
  *
  * @author xuejiaming
  */
-public class MyStartupActivity implements StartupActivity,FileEditorManagerListener, ProjectActivity {
+public class MyStartupActivity implements StartupActivity,FileEditorManagerListener {
     private static final Logger log = Logger.getInstance(MyStartupActivity.class);
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
@@ -51,11 +51,11 @@ public class MyStartupActivity implements StartupActivity,FileEditorManagerListe
         messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
 
     }
-
-    @Override
-    public @Nullable Object execute(@NotNull Project project, @NotNull Continuation<? super Unit> continuation) {
-        return null;
-    }
+//
+//    @Override
+//    public @Nullable Object execute(@NotNull Project project, @NotNull Continuation<? super Unit> continuation) {
+//        return null;
+//    }
 
 //    @Override
 //    public void projectClosed() {
