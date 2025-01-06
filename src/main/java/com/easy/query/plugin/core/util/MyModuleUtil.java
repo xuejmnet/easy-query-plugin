@@ -12,6 +12,7 @@ import com.intellij.psi.*;
 import com.intellij.util.ArrayUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
+import org.jetbrains.jps.model.java.JavaSourceRootType;
 
 import javax.swing.*;
 import java.util.*;
@@ -155,6 +156,34 @@ public class MyModuleUtil {
         });
         return path.get();
     }
+
+    /**
+     * 获取模块下的 source root 路径
+     */
+    public static Set<String> getModuleSourceRoot(Module module,Set<JavaSourceRootType> sourceRootTypes) {
+        List<VirtualFile> sourceRoots = ModuleRootManager.getInstance(module).getSourceRoots(sourceRootTypes);
+        return sourceRoots.stream().map(VirtualFile::getCanonicalPath).collect(Collectors.toSet());
+    }
+
+    /** 判断某个路径是否在模块下 */
+    public static boolean isPathInModule(Module module, String path) {
+        Set<String> moduleSourceRoot = getModuleSourceRoot(module, JavaModuleSourceRootTypes.SOURCES);
+        return moduleSourceRoot.stream().anyMatch(path::startsWith);
+    }
+
+    /** 从项目中找到文件对应的模块 */
+    public static Module getModuleForFile(Project project, VirtualFile virtualFile) {
+        Module[] modules = ModuleManager.getInstance(project).getModules();
+        for (Module module : modules) {
+            ModuleFileIndex fileIndex = ModuleRootManager.getInstance(module).getFileIndex();
+            if (fileIndex.isInContent(virtualFile)) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+
 
 
     public static PsiDirectory getModuleDirectory(Module module, Set javaResourceRootTypes) {

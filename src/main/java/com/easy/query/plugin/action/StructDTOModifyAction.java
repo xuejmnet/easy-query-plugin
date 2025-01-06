@@ -87,11 +87,7 @@ public class StructDTOModifyAction extends AnAction {
             return;
         }
 
-        Module[] modules = MyModuleUtil.getModules(project);
-        Module module = Arrays.stream(modules).filter(o -> {
-            String modulePath = MyModuleUtil.getModulePath(o, JavaModuleSourceRootTypes.SOURCES);
-            return StringUtils.isNotBlank(modulePath) && path.startsWith(modulePath);
-        }).findFirst().orElse(null);
+        Module module = MyModuleUtil.getModuleForFile(project, psiElement.getContainingFile().getVirtualFile());
         if (module == null) {
             Messages.showErrorDialog(project, "无法找到对应模块", "错误提示");
             return;
