@@ -236,7 +236,14 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                                 PsiAnnotation annotation = elementFactory.createAnnotationFromText("@SuppressWarnings(\"EasyQueryFieldMissMatch\")", problemDescriptor.getPsiElement());
 //                                PsiElement newLine = PsiParserFacade.getInstance(project).createWhiteSpaceFromText("\n\n");
-                                problemDescriptor.getPsiElement().addAfter(annotation, ((PsiField) problemDescriptor.getPsiElement()).getDocComment());
+
+                                PsiField psiFieldElement = (PsiField) problemDescriptor.getPsiElement();
+                                problemDescriptor.getPsiElement().addAfter(annotation, psiFieldElement.getDocComment());
+//                                if(psiFieldElement.getDocComment()!=null){
+//                                }else{
+//                                    problemDescriptor.getPsiElement().addBefore(annotation, psiFieldElement);
+//                                }
+
                             }
                         };
 
