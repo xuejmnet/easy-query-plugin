@@ -1,5 +1,7 @@
 package com.easy.query.plugin.core.util;
 
+import java.util.function.Function;
+
 /**
  * create time 2024/1/31 17:18
  * 文件说明
@@ -42,5 +44,11 @@ public class MyStringUtil {
             temp.append(Character.toUpperCase(chars[i]));
         }
         return temp.toString();
+    }
+    public static <T> String nullToDefault(T val, Function<T, String> create, String def) {
+        if (val == null) {
+            return def;
+        }
+        return create.apply(val);
     }
 }

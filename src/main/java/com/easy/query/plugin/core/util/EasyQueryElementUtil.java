@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.util;
 
 
+import cn.hutool.core.util.ObjUtil;
 import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.entity.InspectionResult;
 import com.google.common.collect.Lists;
@@ -51,6 +52,12 @@ public class EasyQueryElementUtil {
 
         if (entityAnnoColumn == null && dtoAnnoColumn == null) {
             // 实体上和 DTO上都没有 @Column 注解, 应该也是无需判断的
+            return InspectionResult.noProblem();
+        }
+        String entityColumnName = PsiUtil.getPsiAnnotationValue(entityAnnoColumn, "value", "");
+        String dtoColumnName = PsiUtil.getPsiAnnotationValue(dtoAnnoColumn, "value", "");
+        if(StrUtil.isBlank(entityColumnName)&&StrUtil.isBlank(dtoColumnName)){
+            // 实体上和 DTO上的 @Column 注解 的 value属性, 应该也是无需判断的
             return InspectionResult.noProblem();
         }
 

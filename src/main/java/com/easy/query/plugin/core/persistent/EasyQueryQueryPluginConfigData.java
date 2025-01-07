@@ -27,10 +27,10 @@ import java.util.Objects;
  */
 @Service
 @State(
-        name = "PluginEQSettings",
-        storages = {
-                @Storage("pluginEQSettings.xml")
-        }
+    name = "PluginEQSettings",
+    storages = {
+        @Storage("pluginEQSettings.xml")
+    }
 )
 public final class EasyQueryQueryPluginConfigData implements PersistentStateComponent<EasyQueryQueryPluginConfigData.State> {
 
@@ -42,9 +42,8 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
 
     @Override
     public void loadState(@NotNull State state) {
-        this.myState=state;
+        this.myState = state;
     }
-
 
 
     public static EasyQueryQueryPluginConfigData getInstance() {
@@ -65,24 +64,29 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
 //        });
 //        return eqConfigMap.getOrDefault(project.getName(), new EasyQueryConfig());
 //    }
-    private static final String QUICK_TIP_SETTING_KEY="QUICK_TIP_SETTING_KEY";
-    private static final String STRUCT_DTO_IGNORE_COLUMNS_KEY="STRUCT_DTO_IGNORE_COLUMNS_KEY";
+    private static final String QUICK_TIP_SETTING_KEY = "QUICK_TIP_SETTING_KEY";
+    private static final String STRUCT_DTO_IGNORE_COLUMNS_KEY = "STRUCT_DTO_IGNORE_COLUMNS_KEY";
 
-    public static boolean isHiddenConfigKey(String configKey){
-        return Objects.equals(QUICK_TIP_SETTING_KEY,configKey)||Objects.equals(STRUCT_DTO_IGNORE_COLUMNS_KEY,configKey);
+
+    public static boolean isHiddenConfigKey(String configKey) {
+        return Objects.equals(QUICK_TIP_SETTING_KEY, configKey)
+            || Objects.equals(STRUCT_DTO_IGNORE_COLUMNS_KEY, configKey);
     }
 
-    public static EasyQueryConfig getAllEnvQuickSetting(EasyQueryConfig def){
-        return getProjectSinceMap().getOrDefault(QUICK_TIP_SETTING_KEY,def);
+    public static EasyQueryConfig getAllEnvQuickSetting(EasyQueryConfig def) {
+        return getProjectSinceMap().getOrDefault(QUICK_TIP_SETTING_KEY, def);
     }
-    public static void saveAllEnvProjectQuickSetting(EasyQueryConfig config){
-        saveConfigSince(QUICK_TIP_SETTING_KEY,config);
+
+    public static void saveAllEnvProjectQuickSetting(EasyQueryConfig config) {
+        saveConfigSince(QUICK_TIP_SETTING_KEY, config);
     }
-    public static EasyQueryConfig getAllEnvStructDTOIgnore(EasyQueryConfig def){
-        return getProjectSinceMap().getOrDefault(STRUCT_DTO_IGNORE_COLUMNS_KEY,def);
+
+    public static EasyQueryConfig getAllEnvStructDTOIgnore(EasyQueryConfig def) {
+        return getProjectSinceMap().getOrDefault(STRUCT_DTO_IGNORE_COLUMNS_KEY, def);
     }
-    public static void saveAllEnvEnvStructDTOIgnore(EasyQueryConfig config){
-        saveConfigSince(STRUCT_DTO_IGNORE_COLUMNS_KEY,config);
+
+    public static void saveAllEnvEnvStructDTOIgnore(EasyQueryConfig config) {
+        saveConfigSince(STRUCT_DTO_IGNORE_COLUMNS_KEY, config);
     }
 
     public static LinkedHashMap<String, EasyQueryConfig> getProjectSinceMap() {
@@ -113,16 +117,17 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
 //        return JSONObject.parseObject(state.easyQueryConfig, new TypeReference<Map<String, EasyQueryConfig>>() {
 //        });
 //    }
-    
-    public static void saveConfigSince(String key,EasyQueryConfig config){
+
+    public static void saveConfigSince(String key, EasyQueryConfig config) {
         EasyQueryQueryPluginConfigData instance = getInstance();
         State state = instance.getState();
         LinkedHashMap<String, EasyQueryConfig> projectSinceMap = getProjectSinceMap();
-        projectSinceMap.put(key,config);
+        projectSinceMap.put(key, config);
         state.configSince = JSONObject.toJSONString(projectSinceMap);
         instance.loadState(state);
     }
-    public static void delConfigSince(String key){
+
+    public static void delConfigSince(String key) {
         EasyQueryQueryPluginConfigData instance = getInstance();
         State state = instance.getState();
         LinkedHashMap<String, EasyQueryConfig> projectSinceMap = getProjectSinceMap();
@@ -136,6 +141,7 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
         FileUtil.writeString(JSONObject.toJSONString(projectSinceMap), new File(targetPath + File.separator + "EasyQueryData.json"), "UTF-8");
         Messages.showDialog("导出成功，请到选择的目录查看", "提示", new String[]{"确定"}, -1, Messages.getInformationIcon());
     }
+
     public static void importConfig(String path) {
         File file = new File(path);
         if (!file.exists()) {
@@ -162,6 +168,7 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
         state.configSince = JSONObject.toJSONString(config);
         instance.loadState(state);
     }
+
     public static class State {
 //        /**
 //         * 当前项目配置（项目隔离）
@@ -169,7 +176,7 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
 //        public String easyQueryConfig = "{}";
         /**
          * 生成配置（项目隔离）
-                */
+         */
         public String configSince = "{}";
         /**
          * 列类型和字段类型映射（通用）
@@ -179,6 +186,7 @@ public final class EasyQueryQueryPluginConfigData implements PersistentStateComp
         public String typeMappings = "{}";
 
     }
+
     private State myState = new State();
 
 
