@@ -54,12 +54,12 @@ public class EasyQueryElementUtil {
             // 实体上和 DTO上都没有 @Column 注解, 应该也是无需判断的
             return InspectionResult.noProblem();
         }
-        String entityColumnName = PsiUtil.getPsiAnnotationValue(entityAnnoColumn, "value", "");
-        String dtoColumnName = PsiUtil.getPsiAnnotationValue(dtoAnnoColumn, "value", "");
-        if (StrUtil.isBlank(entityColumnName) && StrUtil.isBlank(dtoColumnName)) {
-            // 实体上和 DTO上的 @Column 注解 的 value属性, 应该也是无需判断的
-            return InspectionResult.noProblem();
-        }
+//        String entityColumnName = PsiUtil.getPsiAnnotationValue(entityAnnoColumn, "value", "");
+//        String dtoColumnName = PsiUtil.getPsiAnnotationValue(dtoAnnoColumn, "value", "");
+//        if (StrUtil.isBlank(entityColumnName) && StrUtil.isBlank(dtoColumnName)) {
+//            // 实体上和 DTO上的 @Column 注解 的 value属性, 应该也是无需判断的
+//            return InspectionResult.noProblem();
+//        }
 
         if (!featureKeepDtoColumnAnnotation) {
             if (Objects.isNull(dtoAnnoColumn)) {
