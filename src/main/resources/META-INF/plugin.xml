@@ -178,6 +178,12 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <projectConfigurable
+                instance="com.easy.query.plugin.core.config.ProjectSettingsConfigurable"
+                id="com.easy.query.plugin.core.config.ProjectSettingsConfigurable"
+                displayName="EasyQuery Project Settings"
+                nonDefaultProject="true"/>
+
         <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"
                                id="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"/>
 
@@ -233,6 +239,13 @@
         </action>
         <action id="com.easy.query.plugin.action.AutoCompileAction"
                 class="com.easy.query.plugin.action.AutoCompileAction" text="AutoCompile"
+                icon="/icons/eq.svg">
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+        </action>
+<!--        MyBatisPlusToEasyQueryAction-->
+        <action id="com.easy.query.plugin.action.MyBatisPlusToEasyQueryAction"
+                class="com.easy.query.plugin.action.MyBatisPlusToEasyQueryAction" text="MyBatisPlus -> EasyQuery"
                 icon="/icons/eq.svg">
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>

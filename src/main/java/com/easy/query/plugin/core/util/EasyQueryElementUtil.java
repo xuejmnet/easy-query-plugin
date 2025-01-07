@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.util;
 
 
+import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.entity.InspectionResult;
 import com.google.common.collect.Lists;
 import com.intellij.codeInspection.LocalQuickFix;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * EasyQuery 相关元素工具类
@@ -27,16 +29,20 @@ public class EasyQueryElementUtil {
     /**
      * 检查DTO上的 @Column 注解是否需要更新
      *
-     * @param dtoField    DTO上的字段
-     * @param entityField 实体上的字段
+     * @param projectSettings 项目级别的设置
+     * @param dtoField        DTO上的字段
+     * @param entityField     实体上的字段
      * @return InspectionResult 检查结果
      */
-    public static InspectionResult inspectionColumnAnnotation(PsiField dtoField, PsiField entityField) {
+    public static InspectionResult inspectionColumnAnnotation(ProjectSettings projectSettings, PsiField dtoField, PsiField entityField) {
 
         if (Objects.isNull(dtoField) || Objects.isNull(entityField)) {
             // 任意一个字段为空, 应该是没法检查的, 直接当做没有问题
             return InspectionResult.noProblem();
         }
+
+        // 项目设置, 是否保留DTO上的@Column注解
+        Boolean featureKeepDtoColumnAnnotation = Optional.ofNullable(projectSettings).map(ProjectSettings::getState).map(ProjectSettings.State::getFeatureKeepDtoColumnAnnotation).orElse(true);
 
         // 获取DTO上的 @Column 注解
         PsiAnnotation dtoAnnoColumn = dtoField.getAnnotation("com.easy.query.core.annotation.Column");
@@ -48,8 +54,34 @@ public class EasyQueryElementUtil {
             return InspectionResult.noProblem();
         }
 
+        if (!featureKeepDtoColumnAnnotation ) {
+            if (Objects.isNull(dtoAnnoColumn)) {
+                // 不需要保留, 且DTO上没有, 那么也是无需判断的
+                return InspectionResult.noProblem();
+            }
+            // 设置了不保留DTO上的@Column注解, 但是DTO上有, 那么应该移除掉
+            LocalQuickFix removeDtoAnnoColumn = new LocalQuickFix() {
+                @Override
+                public @IntentionFamilyName @NotNull String getFamilyName() {
+                    //noinspection DialogTitleCapitalization
+                    return "依照 EasyQuery 项目配置 不保留DTO上 @Column 注解";
+                }
+
+                @Override
+                public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
+                    problemDescriptor.getPsiElement().delete();
+                }
+            };
+
+            return InspectionResult.newResult().addProblem(dtoAnnoColumn, "依照 EasyQuery 项目配置 不保留DTO上 @Column 注解", ProblemHighlightType.ERROR,
+                    Lists.newArrayList(removeDtoAnnoColumn)
+            );
+
+        }
+
+
         if (entityAnnoColumn == null) {
-            // 实体上有, 但是DTO上没有, 那么DTO上的应该移除掉
+            // 实体上没有有, 但是DTO上有, 那么DTO上的应该移除掉
 
 
             LocalQuickFix removeDtoAnnoColumn = new LocalQuickFix() {

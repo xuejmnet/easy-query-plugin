@@ -2,23 +2,22 @@ package com.easy.query.plugin.core.inspection;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.entity.InspectionResult;
 import com.easy.query.plugin.core.util.*;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.intellij.codeInspection.*;
 import com.intellij.codeInspection.util.IntentionFamilyName;
-import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
-import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
-import com.intellij.psi.javadoc.PsiDocComment;
-import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -84,6 +83,8 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 // entityFields 转 map
                 Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).collect(Collectors.toMap(PsiField::getName, Function.identity(), (a, b) -> a));
 
+
+                ProjectSettings projectSettings = ProjectSettings.getInstance(currentClass.getProject());
 
                 for (PsiField dtoField : dtoFields) {
                     boolean isStatic = PsiUtil.fieldIsStatic(dtoField);
@@ -254,10 +255,10 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                     //endregion
 
 
-                    InspectionResult annoColumnInspectionResult = EasyQueryElementUtil.inspectionColumnAnnotation(dtoField, entityField);
+                    InspectionResult annoColumnInspectionResult = EasyQueryElementUtil.inspectionColumnAnnotation(projectSettings, dtoField, entityField);
                     if (annoColumnInspectionResult.hasProblem()) {
                         for (InspectionResult.Problem problem : annoColumnInspectionResult.getProblemList()) {
-                            holder.registerProblem(problem.getPsiElement(),problem.getDescriptionTemplate(),problem.getHighlightType(),problem.getFixes().toArray(new LocalQuickFix[0]));
+                            holder.registerProblem(problem.getPsiElement(), problem.getDescriptionTemplate(), problem.getHighlightType(), problem.getFixes().toArray(new LocalQuickFix[0]));
                         }
                     }
 
