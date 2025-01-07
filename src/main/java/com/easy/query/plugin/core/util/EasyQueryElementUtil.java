@@ -56,12 +56,12 @@ public class EasyQueryElementUtil {
         }
         String entityColumnName = PsiUtil.getPsiAnnotationValue(entityAnnoColumn, "value", "");
         String dtoColumnName = PsiUtil.getPsiAnnotationValue(dtoAnnoColumn, "value", "");
-        if(StrUtil.isBlank(entityColumnName)&&StrUtil.isBlank(dtoColumnName)){
+        if (StrUtil.isBlank(entityColumnName) && StrUtil.isBlank(dtoColumnName)) {
             // 实体上和 DTO上的 @Column 注解 的 value属性, 应该也是无需判断的
             return InspectionResult.noProblem();
         }
 
-        if (!featureKeepDtoColumnAnnotation ) {
+        if (!featureKeepDtoColumnAnnotation) {
             if (Objects.isNull(dtoAnnoColumn)) {
                 // 不需要保留, 且DTO上没有, 那么也是无需判断的
                 return InspectionResult.noProblem();
@@ -81,7 +81,7 @@ public class EasyQueryElementUtil {
             };
 
             return InspectionResult.newResult().addProblem(dtoAnnoColumn, "依照 EasyQuery 项目配置 不保留DTO上 @Column 注解", ProblemHighlightType.ERROR,
-                    Lists.newArrayList(removeDtoAnnoColumn)
+                Lists.newArrayList(removeDtoAnnoColumn)
             );
 
         }
@@ -104,8 +104,8 @@ public class EasyQueryElementUtil {
                 }
             };
 
-            return InspectionResult.newResult().addProblem(dtoAnnoColumn, "实体上没有@Column注解,DTO上的@Column应移除", ProblemHighlightType.ERROR,
-                    Lists.newArrayList(removeDtoAnnoColumn)
+            return InspectionResult.newResult().addProblem(dtoAnnoColumn, "实体上没有@Column注解,DTO上的@Column应移除或保证Column.value的值两者一样", ProblemHighlightType.ERROR,
+                Lists.newArrayList(removeDtoAnnoColumn)
             );
         }
 
@@ -168,9 +168,9 @@ public class EasyQueryElementUtil {
                 }
             };
             return InspectionResult.newResult()
-                    .addProblem(dtoField, "需要在DTO上添加 @Column 注解", ProblemHighlightType.ERROR,
-                            Lists.newArrayList(addColumnAnnoToDTO)
-                    );
+                .addProblem(dtoField, "需要在DTO上添加 @Column 注解", ProblemHighlightType.ERROR,
+                    Lists.newArrayList(addColumnAnnoToDTO)
+                );
         }
 
         // 现在是直接需要更新的
@@ -195,9 +195,9 @@ public class EasyQueryElementUtil {
 
 
         return InspectionResult.newResult()
-                .addProblem(dtoAnnoColumn, "@Column 注解需要更新: " + StrUtil.join("\n", errInfoList), ProblemHighlightType.ERROR,
-                        Lists.newArrayList(updateDtoAnnoColumn)
-                );
+            .addProblem(dtoAnnoColumn, "@Column 注解需要更新: " + StrUtil.join("\n", errInfoList), ProblemHighlightType.ERROR,
+                Lists.newArrayList(updateDtoAnnoColumn)
+            );
     }
 
 
