@@ -10,6 +10,7 @@ import com.alibaba.fastjson2.TypeReference;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.config.AppSettings;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
+import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.entity.*;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
@@ -118,7 +119,7 @@ public class StructDTODialog extends JDialog {
         if (Objects.isNull(dtoPsiClass)) {
             // 没有传入DTO, 应该是新增, 默认选中 normal
             dtoSchemaNormal.setSelected(true);
-        }else {
+        } else {
             String dtoSchema = PsiJavaClassUtil.getDtoSchema(dtoPsiClass);
             if (StrUtil.equalsAny(dtoSchema, "request")) {
                 dtoSchemaRequest.setSelected(true);
@@ -294,6 +295,10 @@ public class StructDTODialog extends JDialog {
         List<String> removeAnnoList = appSetting.getRemoveAnnoList(dtoSchemaNormal, dtoSchemaRequest, dtoSchemaResponse, dtoSchemaExcel);
 
 
+        // 项目设置, 是否保留DTO上的@Column注解
+        Boolean featureKeepDtoColumnAnnotation = Optional.ofNullable(ProjectSettings.getInstance(structDTOContext.getProject())).map(ProjectSettings::getState).map(ProjectSettings.State::getFeatureKeepDtoColumnAnnotation).orElse(true);
+
+
         PropAppendable base = structDTOApp;
         int i = 0;
 
@@ -384,38 +389,44 @@ public class StructDTODialog extends JDialog {
                 renderContext.getEntities().add(structDTOProp);
             }
             if (psiAnnoColumn != null) {
+                if (!featureKeepDtoColumnAnnotation) {
+                    // 将原本的注解文本中的 @Column 替换为新的
+                    String newPropText = structDTOProp.getPropText().replace(psiAnnoColumn.getText(), "");
+                    structDTOProp.setPropText(newPropText);
+                } else {
 
-                // 从注解上获取 Column 的 value , conversion,complexPropType
-                List<JvmAnnotationAttribute> columnAttrList = psiAnnoColumn.getAttributes().stream()
-                        // 排除掉一些不要的属性,剩下的均传递到新的注解上
-                        .filter(attr -> !StrUtil.equalsAny(attr.getAttributeName(), "primaryKey", "generatedKey",
-                                "primaryKeyGenerator"))
-                        // 过滤下值为空的
-                        .filter(attr -> Objects.nonNull(attr.getAttributeValue()))
-                        .collect(Collectors.toList());
+                    // 从注解上获取 Column 的 value , conversion,complexPropType
+                    List<JvmAnnotationAttribute> columnAttrList = psiAnnoColumn.getAttributes().stream()
+                            // 排除掉一些不要的属性,剩下的均传递到新的注解上
+                            .filter(attr -> !StrUtil.equalsAny(attr.getAttributeName(), "primaryKey", "generatedKey",
+                                    "primaryKeyGenerator"))
+                            // 过滤下值为空的
+                            .filter(attr -> Objects.nonNull(attr.getAttributeValue()))
+                            .collect(Collectors.toList());
 
-                String replacement;
-                if (CollectionUtil.isEmpty(columnAttrList)) {
-                    replacement = "";
-                }
-                // 如果 Column 上只有一个 value 属性, 那么也没必要保留 FIXME @Column value 当前版本需要始终保留, 因为DTO 关联的是数据库字段, 不可删除, 等后续支持 关联属性再增加设置来匹配
+                    String replacement;
+                    if (CollectionUtil.isEmpty(columnAttrList)) {
+                        replacement = "";
+                    }
+                    // 如果 Column 上只有一个 value 属性, 那么也没必要保留 FIXME @Column value 当前版本需要始终保留, 因为DTO 关联的是数据库字段, 不可删除, 等后续支持 关联属性再增加设置来匹配
 //                else if (CollectionUtil.size(columnAttrList) == 1 && CollectionUtil.getFirst(columnAttrList).getAttributeName().equals("value")) {
 //                    replacement = "";
 //                }
 
-                else {
-                    // 过滤后的属性值拼接起来
-                    String attrText = columnAttrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText()).sorted()
-                            .collect(Collectors.joining(", "));
-                    // 再拼成 @Column 注解文本
-                    replacement = StrUtil.isBlank(attrText) ? "" : "@Column(" + attrText + ")";
-                }
+                    else {
+                        // 过滤后的属性值拼接起来
+                        String attrText = columnAttrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText()).sorted()
+                                .collect(Collectors.joining(", "));
+                        // 再拼成 @Column 注解文本
+                        replacement = StrUtil.isBlank(attrText) ? "" : "@Column(" + attrText + ")";
+                    }
 
 
-                if (!StrUtil.equalsAny(psiAnnoColumn.getText(), replacement)) {
-                    // 将原本的注解文本中的 @Navigate 替换为新的
-                    String newPropText = structDTOProp.getPropText().replace(psiAnnoColumn.getText(), replacement);
-                    structDTOProp.setPropText(newPropText);
+                    if (!StrUtil.equalsAny(psiAnnoColumn.getText(), replacement)) {
+                        // 将原本的注解文本中的 @Column 替换为新的
+                        String newPropText = structDTOProp.getPropText().replace(psiAnnoColumn.getText(), replacement);
+                        structDTOProp.setPropText(newPropText);
+                    }
                 }
             }
 
