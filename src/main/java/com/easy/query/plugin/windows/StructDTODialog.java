@@ -398,10 +398,12 @@ public class StructDTODialog extends JDialog {
                 if (CollectionUtil.isEmpty(columnAttrList)) {
                     replacement = "";
                 }
-                // 如果 Column 上只有一个 value 属性, 那么也没必要保留
-                else if (CollectionUtil.size(columnAttrList) == 1 && CollectionUtil.getFirst(columnAttrList).getAttributeName().equals("value")) {
-                    replacement = "";
-                } else {
+                // 如果 Column 上只有一个 value 属性, 那么也没必要保留 FIXME @Column value 当前版本需要始终保留, 因为DTO 关联的是数据库字段, 不可删除, 等后续支持 关联属性再增加设置来匹配
+//                else if (CollectionUtil.size(columnAttrList) == 1 && CollectionUtil.getFirst(columnAttrList).getAttributeName().equals("value")) {
+//                    replacement = "";
+//                }
+
+                else {
                     // 过滤后的属性值拼接起来
                     String attrText = columnAttrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText()).sorted()
                             .collect(Collectors.joining(", "));
