@@ -11,14 +11,16 @@ import java.util.stream.Collectors;
 
 /**
  * PsiJavaField 工具类
+ *
  * @author link2fun
  */
 public class PsiJavaFieldUtil {
 
     /**
      * 从实体复制字段, 并根据dtoSchema 进行精简
+     *
      * @param entityField 实体字段
-     * @param dtoSchema DTO schema
+     * @param dtoSchema   DTO schema
      * @return
      */
     public static PsiField copyAndPureFieldBySchema(PsiField entityField, String dtoSchema) {
@@ -30,6 +32,7 @@ public class PsiJavaFieldUtil {
 
     /**
      * copy field from entity
+     *
      * @param entityField entity field
      * @return dtoField
      */
@@ -60,27 +63,26 @@ public class PsiJavaFieldUtil {
             // 这个注解移除主键相关信息
 
             List<JvmAnnotationAttribute> attrList = psiAnnoColumn.getAttributes().stream()
-                    .filter(attr -> !cn.hutool.core.util.StrUtil.equalsAny(attr.getAttributeName(), "primaryKey","generatedKey","generatedSQLColumnGenerator","primaryKeyGenerator"))
+                    .filter(attr -> !cn.hutool.core.util.StrUtil.equalsAny(attr.getAttributeName(), "primaryKey", "generatedKey", "generatedSQLColumnGenerator", "primaryKeyGenerator"))
                     .collect(Collectors.toList());
 
 
-
             // 如果 attrList 为空， 则不添加这个注解了
-            if (CollectionUtil.isEmpty(attrList)){
+            if (CollectionUtil.isEmpty(attrList)) {
                 psiAnnoColumn.delete();
-            }else{
-                // 如果只有 value , 则不需要保留
-                if (attrList.size() == 1 && cn.hutool.core.util.StrUtil.equalsAny(attrList.get(0).getAttributeName(), "value")) {
-                    psiAnnoColumn.delete();
-                }else{
-                    String attrText = attrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
-                            .collect(Collectors.joining(", "));
-                    // 再拼成 @Navigate 注解文本
-                    String replacement = "@Column(" + attrText + ")";
-                    PsiElementFactory elementFactory = PsiElementFactory.getInstance(entityField.getProject());
-                    PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
-                    psiAnnoColumn.replace(newAnno);
-                }
+            } else {
+                // 如果只有 value , 则不需要保留, // FIXME @Column value 当前版本需要始终保留, 因为DTO 关联的是数据库字段, 不可删除, 等后续支持 关联属性再增加设置来匹配
+//                if (attrList.size() == 1 && cn.hutool.core.util.StrUtil.equalsAny(attrList.get(0).getAttributeName(), "value")) {
+//                    psiAnnoColumn.delete();
+//                }else{
+                String attrText = attrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+                        .collect(Collectors.joining(", "));
+                // 再拼成 @Navigate 注解文本
+                String replacement = "@Column(" + attrText + ")";
+                PsiElementFactory elementFactory = PsiElementFactory.getInstance(entityField.getProject());
+                PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
+                psiAnnoColumn.replace(newAnno);
+//                }
 
             }
 
@@ -90,7 +92,6 @@ public class PsiJavaFieldUtil {
 
         PsiAnnotation psiAnnoColumnIgnore = dtoField.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
         PsiAnnotation psiAnnoNavigateFlat = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateFlat");
-
 
 
         return dtoField;
@@ -105,6 +106,7 @@ public class PsiJavaFieldUtil {
      * 1. 如果是静态字段<br/>
      * 2. 如果有一些特殊的注解, NavigateFlat NavigateJoin ColumnIgnore
      * 3. 如果 SuppressWarnings EasyQueryFieldMissMatch 则认定为自定义的DTO字段, 修改DTO的时候保留<br?
+     *
      * @param dtoField DTO的字段
      * @return 是否保留
      */
@@ -135,8 +137,6 @@ public class PsiJavaFieldUtil {
         if (!keepSuppressWarningsField) {
             return false;
         }
-
-
 
 
         // 看看字段上是否有 java.lang.SuppressWarnings 注解
@@ -171,7 +171,8 @@ public class PsiJavaFieldUtil {
 
     /**
      * 通过不同类型的 schema 精简 DTO 字段
-     * @param dtoField DTO字段， 在原字段上修改， 如果是从实体来的字段, 请先 copy()
+     *
+     * @param dtoField  DTO字段， 在原字段上修改， 如果是从实体来的字段, 请先 copy()
      * @param dtoSchema DTO schema normal/request/response/excel
      */
     public static void pureFieldBySchema(PsiField dtoField, String dtoSchema) {
