@@ -1,8 +1,9 @@
 package com.easy.query.plugin.core.util;
 
 
-import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import com.easy.query.plugin.core.config.ProjectSettings;
+import com.easy.query.plugin.core.entity.AnnoAttrCompareResult;
 import com.easy.query.plugin.core.entity.InspectionResult;
 import com.google.common.collect.Lists;
 import com.intellij.codeInspection.LocalQuickFix;
@@ -11,7 +12,6 @@ import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import groovy.lang.Tuple3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public class EasyQueryElementUtil {
             return InspectionResult.noProblem();
         }
 
-        // 项目设置, 是否保留DTO上的@Column注解
+        // 项目设置, 是否保留DTO上的@Column注解 value 值
         Boolean featureKeepDtoColumnAnnotation = Optional.ofNullable(projectSettings).map(ProjectSettings::getState).map(ProjectSettings.State::getFeatureKeepDtoColumnAnnotation).orElse(true);
 
         // 获取DTO上的 @Column 注解
@@ -61,29 +61,12 @@ public class EasyQueryElementUtil {
 //            return InspectionResult.noProblem();
 //        }
 
-        if (!featureKeepDtoColumnAnnotation) {
-            if (Objects.isNull(dtoAnnoColumn)) {
-                // 不需要保留, 且DTO上没有, 那么也是无需判断的
-                return InspectionResult.noProblem();
-            }
-            // 设置了不保留DTO上的@Column注解, 但是DTO上有, 那么应该移除掉
-            LocalQuickFix removeDtoAnnoColumn = new LocalQuickFix() {
-                @Override
-                public @IntentionFamilyName @NotNull String getFamilyName() {
-                    //noinspection DialogTitleCapitalization
-                    return "依照 EasyQuery 项目配置 不保留DTO上 @Column 注解";
-                }
+        AnnoAttrCompareResult attrCompareResult = compareColumnAnnoAttr(entityAnnoColumn, dtoAnnoColumn, featureKeepDtoColumnAnnotation);
 
-                @Override
-                public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
-                    problemDescriptor.getPsiElement().delete();
-                }
-            };
-
-            return InspectionResult.newResult().addProblem(dtoAnnoColumn, "依照 EasyQuery 项目配置 不保留DTO上 @Column 注解", ProblemHighlightType.ERROR,
-                Lists.newArrayList(removeDtoAnnoColumn)
-            );
-
+        List<String> errInfoList = attrCompareResult.getProblemMsgList();
+        if (CollectionUtil.isEmpty(errInfoList)) {
+            // 属性一致, 不需要更新
+            return InspectionResult.noProblem();
         }
 
 
@@ -93,8 +76,7 @@ public class EasyQueryElementUtil {
             LocalQuickFix removeDtoAnnoColumn = new LocalQuickFix() {
                 @Override
                 public @IntentionFamilyName @NotNull String getFamilyName() {
-                    //noinspection DialogTitleCapitalization
-                    return "移除DTO上的@Column注解";
+                    return "★★★移除DTO上的@Column注解";
                 }
 
                 @Override
@@ -103,24 +85,15 @@ public class EasyQueryElementUtil {
                 }
             };
 
+
             return InspectionResult.newResult().addProblem(dtoAnnoColumn, "实体上没有@Column注解,DTO上的@Column应移除", ProblemHighlightType.ERROR,
                 Lists.newArrayList(removeDtoAnnoColumn)
             );
         }
 
 
-        Map<String, PsiNameValuePair> entityAnnoColumnAttrMap = PsiJavaAnnotationUtil.attrToMap(entityAnnoColumn);
-        Map<String, PsiNameValuePair> dtoAnnoColumnAttrMap = PsiJavaAnnotationUtil.attrToMap(dtoAnnoColumn);
+        Map<String, PsiNameValuePair> newAttrMap = attrCompareResult.getFixedAttrMap();
 
-        String[] ignoredKeys = {"primaryKey", "generatedKey", "primaryKeyGenerator"};
-        Tuple3<Boolean, List<String>, Map<String, PsiNameValuePair>> annoColumnAttrCompareResult = PsiJavaAnnotationUtil.compareAttrMap(entityAnnoColumnAttrMap, dtoAnnoColumnAttrMap, ignoredKeys);
-
-        List<String> errInfoList = annoColumnAttrCompareResult.getV2();
-        Map<String, PsiNameValuePair> newAttrMap = annoColumnAttrCompareResult.getV3();
-        if (annoColumnAttrCompareResult.getV1()) {
-            // 属性一致, 不需要更新
-            return InspectionResult.noProblem();
-        }
 
         // 属性不一致
 
@@ -148,8 +121,7 @@ public class EasyQueryElementUtil {
             LocalQuickFix addColumnAnnoToDTO = new LocalQuickFix() {
                 @Override
                 public @IntentionFamilyName @NotNull String getFamilyName() {
-                    //noinspection DialogTitleCapitalization
-                    return "添加缺失的@Column注解";
+                    return "★★★添加缺失的@Column注解";
                 }
 
                 @Override
@@ -167,9 +139,9 @@ public class EasyQueryElementUtil {
                 }
             };
             return InspectionResult.newResult()
-                .addProblem(dtoField, "需要在DTO上添加 @Column 注解", ProblemHighlightType.ERROR,
-                    Lists.newArrayList(addColumnAnnoToDTO)
-                );
+                    .addProblem(dtoField, "需要在DTO上添加 @Column 注解", ProblemHighlightType.ERROR,
+                            Lists.newArrayList(addColumnAnnoToDTO)
+                    );
         }
 
         // 现在是直接需要更新的
@@ -180,23 +152,58 @@ public class EasyQueryElementUtil {
         LocalQuickFix updateDtoAnnoColumn = new LocalQuickFix() {
             @Override
             public @IntentionFamilyName @NotNull String getFamilyName() {
-                return "更新DTO上的 @Column 注解";
+                return "★★★更新DTO上的 @Column 注解";
             }
 
             @Override
             public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
                 if (newAnnoColumnPointer.getElement() != null) {
-
-                    problemDescriptor.getPsiElement().replace(newAnnoColumnPointer.getElement());
+                    if (CollectionUtil.isEmpty(((PsiAnnotation) newAnnoColumnPointer.getElement()).getAttributes())) {
+                        // 如果没有属性, 那么直接删除
+                        problemDescriptor.getPsiElement().delete();
+                    } else {
+                        problemDescriptor.getPsiElement().replace(newAnnoColumnPointer.getElement());
+                    }
                 }
             }
         };
 
 
         return InspectionResult.newResult()
-            .addProblem(dtoAnnoColumn, "@Column 注解需要更新: " + StrUtil.join("\n", errInfoList), ProblemHighlightType.ERROR,
-                Lists.newArrayList(updateDtoAnnoColumn)
-            );
+                .addProblem(dtoAnnoColumn, "@Column 注解需要更新: " + StrUtil.join("\n", errInfoList), ProblemHighlightType.ERROR,
+                        Lists.newArrayList(updateDtoAnnoColumn)
+                );
+    }
+
+    /**
+     * 比较 @Column 注解的属性
+     *
+     * @param entityAnnoColumn               实体上的Column注解
+     * @param dtoAnnoColumn                  DTO上的 @Column 注解
+     * @param featureKeepDtoColumnAnnotation 项目配置 是否保留DTO上的@Column注解 value 值
+     * @return 比较结果
+     */
+    public static AnnoAttrCompareResult compareColumnAnnoAttr(PsiAnnotation entityAnnoColumn, PsiAnnotation dtoAnnoColumn, Boolean featureKeepDtoColumnAnnotation) {
+        Map<String, PsiNameValuePair> entityAnnoColumnAttrMap = PsiJavaAnnotationUtil.attrToMap(entityAnnoColumn);
+        Map<String, PsiNameValuePair> dtoAnnoColumnAttrMap = PsiJavaAnnotationUtil.attrToMap(dtoAnnoColumn);
+
+        // 允许实体独有的属性
+        List<String> entityOnlyKeysPermit = Lists.newArrayList("primaryKey", "generatedKey", "primaryKeyGenerator");
+        // 允许DTO独有的属性
+        List<String> dtoOnlyKeysPermit = Lists.newArrayList("conversion");
+        List<String> dtoRemoveKeys = Lists.newArrayList();
+        if (!featureKeepDtoColumnAnnotation) {
+            // 不保留 value
+            entityOnlyKeysPermit.add("value");
+            dtoRemoveKeys.add("value");
+        }
+
+        ;
+        return AnnoAttrCompareResult.newCompare(entityAnnoColumnAttrMap, dtoAnnoColumnAttrMap)
+                .withEntityOnlyKeysPermit(entityOnlyKeysPermit)
+                .withDtoOnlyKeysPermit(dtoOnlyKeysPermit)
+                .withDtoRemoveKeys(dtoRemoveKeys)
+                .compare();
     }
 
 

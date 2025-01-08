@@ -11,13 +11,11 @@ import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -102,47 +100,10 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         // 尝试生成 quickFix
 
                         // 1. 抑制警告， 在字段上添加 @SuppressWarnings("EasyQueryFieldMissMatch")
-                        @NotNull LocalQuickFix quickFixMethod1 = new LocalQuickFix() {
-                            @Override
-                            public @IntentionFamilyName @NotNull String getFamilyName() {
-                                return "1. 抑制警告， 在字段上添加 @SuppressWarnings(\"EasyQueryFieldMissMatch\")";
-                            }
-
-                            @Override
-                            public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
-                                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-                                PsiAnnotation annotation = elementFactory.createAnnotationFromText("@SuppressWarnings(\"EasyQueryFieldMissMatch\")", problemDescriptor.getPsiElement());
-//                                PsiElement newLine = PsiParserFacade.getInstance(project).createWhiteSpaceFromText("\n\n");
-
-                                PsiField psiFieldElement = (PsiField) problemDescriptor.getPsiElement();
-                                problemDescriptor.getPsiElement().addAfter(annotation, psiFieldElement.getDocComment());
-//                                if(psiFieldElement.getDocComment()!=null){
-//                                }else{
-//                                    problemDescriptor.getPsiElement().addBefore(annotation, psiFieldElement);
-//                                }
-
-                            }
-                        };
+                        @NotNull LocalQuickFix quickFixMethod1 = createQuickFixForSuppressWarningField("EasyQueryFieldMissMatch");
 
                         // 2. 注释字段， 注释当前 field
-                        @NotNull LocalQuickFix quickFixMethod2 = new LocalQuickFix() {
-                            @Override
-                            public @IntentionFamilyName @NotNull String getFamilyName() {
-                                return "2. 注释字段， 注释当前 field";
-                            }
-
-                            @Override
-                            public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
-                                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-
-                                List<String> lines = StrUtil.split(problemDescriptor.getPsiElement().getText(), "\n");
-                                // 生成注释
-                                lines.stream().map(line -> "// " + line).map(comment -> elementFactory.createCommentFromText(comment, null)).collect(Collectors.toList())
-                                        .forEach(comment -> problemDescriptor.getPsiElement().addBefore(comment, problemDescriptor.getPsiElement()));
-
-                                problemDescriptor.getPsiElement().delete();
-                            }
-                        };
+                        @NotNull LocalQuickFix quickFixMethod2 = createQuickFixForCommentField();
 
                         List<LocalQuickFix> localQuickFixes = Lists.newArrayList();
                         localQuickFixes.add(quickFixMethod1);
@@ -258,12 +219,59 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                     InspectionResult annoColumnInspectionResult = EasyQueryElementUtil.inspectionColumnAnnotation(projectSettings, dtoField, entityField);
                     if (annoColumnInspectionResult.hasProblem()) {
                         for (InspectionResult.Problem problem : annoColumnInspectionResult.getProblemList()) {
-                            holder.registerProblem(problem.getPsiElement(), problem.getDescriptionTemplate(), problem.getHighlightType(), problem.getFixes().toArray(new LocalQuickFix[0]));
+
+                            // 补充quickFix
+                            ArrayList<LocalQuickFix> quickFixes = Lists.newArrayList(problem.getFixes());
+                            quickFixes.add(createQuickFixForSuppressWarningField("EasyQueryFieldMissMatch"));
+                            quickFixes.add(createQuickFixForCommentField());
+
+                            holder.registerProblem(problem.getPsiElement(), problem.getDescriptionTemplate(), problem.getHighlightType(), quickFixes.toArray(new LocalQuickFix[0]));
                         }
                     }
 
                 }
 
+            }
+        };
+    }
+
+
+
+    /** 创建字段抑制QuickFix */
+    public static LocalQuickFix createQuickFixForSuppressWarningField(String warningName) {
+        return new LocalQuickFix() {
+            @Override
+            public @IntentionFamilyName @NotNull String getFamilyName() {
+                return "★抑制警告， 在字段上添加 @SuppressWarnings(\"" + warningName + "\")";
+            }
+
+            @Override
+            public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
+                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                PsiAnnotation annotation = elementFactory.createAnnotationFromText("@SuppressWarnings(\"" + warningName + "\")", problemDescriptor.getPsiElement());
+                PsiField psiField = problemDescriptor.getPsiElement() instanceof PsiField ? (PsiField) problemDescriptor.getPsiElement() : PsiTreeUtil.getParentOfType(problemDescriptor.getPsiElement(), PsiField.class);
+                problemDescriptor.getPsiElement().addAfter(annotation, psiField.getDocComment());
+            }
+        };
+    }
+
+    /** 创建字段注释QuickFix */
+    public static LocalQuickFix createQuickFixForCommentField() {
+        return new LocalQuickFix() {
+            @Override
+            public @IntentionFamilyName @NotNull String getFamilyName() {
+                return "★注释字段， 注释当前 field";
+            }
+
+            @Override
+            public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
+                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                PsiField psiField = problemDescriptor.getPsiElement() instanceof PsiField ? (PsiField) problemDescriptor.getPsiElement() : PsiTreeUtil.getParentOfType(problemDescriptor.getPsiElement(), PsiField.class);
+                List<String> lines = StrUtil.split(psiField.getText(), "\n");
+                // 生成注释
+                lines.stream().map(line -> "// " + line).map(comment -> elementFactory.createCommentFromText(comment, null)).collect(Collectors.toList())
+                        .forEach(comment -> psiField.addBefore(comment, psiField));
+                psiField.delete();
             }
         };
     }
