@@ -90,7 +90,10 @@ public class EasyQueryElementUtil {
         if (entityAnnoColumn == null) {
             // 实体上没有有, 但是DTO上有, 那么DTO上的应该移除掉
 
-
+            String dtoColumnName = PsiUtil.getPsiAnnotationValue(dtoAnnoColumn, "value", "");
+            if(StrUtil.isBlank(dtoColumnName)){
+                return InspectionResult.noProblem();
+            }
             LocalQuickFix removeDtoAnnoColumn = new LocalQuickFix() {
                 @Override
                 public @IntentionFamilyName @NotNull String getFamilyName() {
@@ -104,7 +107,7 @@ public class EasyQueryElementUtil {
                 }
             };
 
-            return InspectionResult.newResult().addProblem(dtoAnnoColumn, "实体上没有@Column注解,DTO上的@Column应移除或保证Column.value的值两者一样", ProblemHighlightType.ERROR,
+            return InspectionResult.newResult().addProblem(dtoAnnoColumn, "实体上没有@Column注解,DTO上的@Column应移除", ProblemHighlightType.ERROR,
                 Lists.newArrayList(removeDtoAnnoColumn)
             );
         }
