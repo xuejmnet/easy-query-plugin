@@ -90,10 +90,6 @@ public class EasyQueryElementUtil {
         if (entityAnnoColumn == null) {
             // 实体上没有有, 但是DTO上有, 那么DTO上的应该移除掉
 
-            String dtoColumnName = PsiUtil.getPsiAnnotationValue(dtoAnnoColumn, "value", "");
-            if(StrUtil.isBlank(dtoColumnName)){
-                return InspectionResult.noProblem();
-            }
             LocalQuickFix removeDtoAnnoColumn = new LocalQuickFix() {
                 @Override
                 public @IntentionFamilyName @NotNull String getFamilyName() {
