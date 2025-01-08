@@ -1,12 +1,18 @@
 package com.easy.query.plugin.core.util;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.map.MapUtil;
 import com.easy.query.plugin.core.config.AppSettings;
+import com.easy.query.plugin.core.config.ProjectSettings;
+import com.easy.query.plugin.core.entity.AnnoAttrCompareResult;
+import com.google.common.collect.Maps;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +43,10 @@ public class PsiJavaFieldUtil {
      * @return dtoField
      */
     public static PsiField copyField(PsiField entityField) {
+        ProjectSettings projectSettings = ProjectSettings.getInstance(entityField.getProject());
+        // 项目设置, 是否保留DTO上的@Column注解 value 值
+        Boolean featureKeepDtoColumnAnnotation = Optional.ofNullable(projectSettings).map(ProjectSettings::getState).map(ProjectSettings.State::getFeatureKeepDtoColumnAnnotation).orElse(true);
+
         // 先拷贝一份
         PsiField dtoField = (PsiField) entityField.copy();
 
@@ -62,20 +72,20 @@ public class PsiJavaFieldUtil {
         if (psiAnnoColumn != null) {
             // 这个注解移除主键相关信息
 
-            List<JvmAnnotationAttribute> attrList = psiAnnoColumn.getAttributes().stream()
-                    .filter(attr -> !cn.hutool.core.util.StrUtil.equalsAny(attr.getAttributeName(), "primaryKey", "generatedKey", "generatedSQLColumnGenerator", "primaryKeyGenerator"))
-                    .collect(Collectors.toList());
+            AnnoAttrCompareResult attrCompareResult = EasyQueryElementUtil.compareColumnAnnoAttr(psiAnnoColumn, null, featureKeepDtoColumnAnnotation);
+
+            Map<String, PsiNameValuePair> fixedAttrMap = attrCompareResult.getFixedAttrMap();
 
 
             // 如果 attrList 为空， 则不添加这个注解了
-            if (CollectionUtil.isEmpty(attrList)) {
+            if (MapUtil.isEmpty(fixedAttrMap)) {
                 psiAnnoColumn.delete();
             } else {
                 // 如果只有 value , 则不需要保留, // FIXME @Column value 当前版本需要始终保留, 因为DTO 关联的是数据库字段, 不可删除, 等后续支持 关联属性再增加设置来匹配
 //                if (attrList.size() == 1 && cn.hutool.core.util.StrUtil.equalsAny(attrList.get(0).getAttributeName(), "value")) {
 //                    psiAnnoColumn.delete();
 //                }else{
-                String attrText = attrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+                String attrText = fixedAttrMap.values().stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
                         .collect(Collectors.joining(", "));
                 // 再拼成 @Navigate 注解文本
                 String replacement = "@Column(" + attrText + ")";

@@ -18,7 +18,7 @@ public class ProjectSettingsPanel {
     public ProjectSettingsPanel() {
         panel = new JPanel(new BorderLayout());
 
-        featureKeepDtoColumnAnnotationCheckBox = new JCheckBox("Keep @Column annotation in DTO classes");
+        featureKeepDtoColumnAnnotationCheckBox = new JCheckBox("DTO 上 @Column 只有 value 属性时 仍保留, 请确保当前项目映射关系为 PROPERTY_FIRST 或 PROPERTY_ONLY 时取消勾选");
         panel.add(featureKeepDtoColumnAnnotationCheckBox, BorderLayout.NORTH);
 
     }
