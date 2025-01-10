@@ -1,11 +1,14 @@
 package com.easy.query.plugin.action;
 
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.util.MyModuleUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.windows.SQLPreviewDialog;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.execution.*;
 import com.intellij.execution.application.ApplicationConfiguration;
@@ -36,9 +39,15 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.sql.dialects.base.SqlLanguageDialectBase;
+import com.intellij.sql.dialects.clickhouse.CHouseDialect;
+import com.intellij.sql.dialects.db2.Db2LUWDialect;
+import com.intellij.sql.dialects.generic.GenericDialect;
+import com.intellij.sql.dialects.h2.H2Dialect;
+import com.intellij.sql.dialects.mssql.MsDialect;
 import com.intellij.sql.dialects.mysql.MysqlDialect;
+import com.intellij.sql.dialects.postgres.PgDialect;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -50,21 +59,87 @@ import java.util.stream.Collectors;
 
 /**
  * 代码预览SQL入口
+ *
  * @author link2fun
  */
 @Slf4j
 public abstract class AbstractPreviewSqlAction extends AnAction {
 
+    /**
+     * 数据库类型、EQ配置、数据库方言三元组
+     */
+    public static final class DatabaseTuple {
+        private final String databaseType;
+        private final String eqConfig;
+        private final SqlLanguageDialectBase sqlDialect;
 
-    /** 运行模式, auto or manual
+        public DatabaseTuple(String databaseType, String eqConfig, SqlLanguageDialectBase sqlDialect) {
+            this.databaseType = databaseType;
+            this.eqConfig = eqConfig;
+            this.sqlDialect = sqlDialect;
+        }
+
+        public static DatabaseTuple of(String databaseType, String eqConfig, SqlLanguageDialectBase sqlDialect) {
+            return new DatabaseTuple(databaseType, eqConfig, sqlDialect);
+        }
+
+        public String getDatabaseType() {
+            return databaseType;
+        }
+
+        public String getEqConfig() {
+            return eqConfig;
+        }
+
+        public SqlLanguageDialectBase getSqlDialect() {
+            return sqlDialect;
+        }
+    }
+
+    public static final List<DatabaseTuple> DATABASE_TUPLES = Lists.newArrayList(
+            // com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration
+            DatabaseTuple.of("clickhouse", "com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration",
+                    CHouseDialect.INSTANCE),
+            // com.easy.query.db2.config.DB2DatabaseConfiguration
+            DatabaseTuple.of("db2", "com.easy.query.db2.config.DB2DatabaseConfiguration", Db2LUWDialect.INSTANCE),
+            // com.easy.query.dameng.config.DamengDatabaseConfiguration
+            DatabaseTuple.of("dameng", "com.easy.query.dameng.config.DamengDatabaseConfiguration",
+                    GenericDialect.INSTANCE),
+            // com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration
+            DatabaseTuple.of("default", "com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration",
+                    GenericDialect.INSTANCE),
+            // com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration
+            DatabaseTuple.of("gaussdb", "com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration",
+                    GenericDialect.INSTANCE),
+            // com.easy.query.h2.config.H2DatabaseConfiguration
+            DatabaseTuple.of("h2", "com.easy.query.h2.config.H2DatabaseConfiguration", H2Dialect.INSTANCE),
+            // com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration
+            DatabaseTuple.of("kingbase-es", "com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration",
+                    GenericDialect.INSTANCE),
+            // com.easy.query.mssql.config.MsSQLDatabaseConfiguration
+            DatabaseTuple.of("mssql", "com.easy.query.mssql.config.MsSQLDatabaseConfiguration", MsDialect.INSTANCE),
+            // com.easy.query.mysql.config.MySQLDatabaseConfiguration
+            DatabaseTuple.of("mysql", "com.easy.query.mysql.config.MySQLDatabaseConfiguration", MysqlDialect.INSTANCE),
+            // com.easy.query.oracle.config.OracleDatabaseConfiguration
+            DatabaseTuple.of("oracle", "com.easy.query.oracle.config.OracleDatabaseConfiguration",
+                    GenericDialect.INSTANCE),
+            // com.easy.query.pgsql.config.PgSQLDatabaseConfiguration
+            DatabaseTuple.of("pgsql", "com.easy.query.pgsql.config.PgSQLDatabaseConfiguration", PgDialect.INSTANCE),
+            // com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration
+            DatabaseTuple.of("sqllite", "com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration",
+                    GenericDialect.INSTANCE)
+
+    );
+
+    /**
+     * 运行模式, auto or manual
      * 参数的设置模式, auto 下 进行弹窗展示, manual 下 进行代码展示
-     * */
+     */
     private final String runMode;
 
     public AbstractPreviewSqlAction(String runMode) {
         this.runMode = runMode;
     }
-
 
     @Override
     public void update(@NotNull AnActionEvent e) {
@@ -74,10 +149,13 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
         PsiFile psiFile = e.getData(CommonDataKeys.PSI_FILE);
 
         // 设置菜单项是否可见
+        boolean enabled = project != null &&
+                psiFile != null &&
+                psiFile.getFileType().equals(JavaFileType.INSTANCE) &&
+                e.getData(CommonDataKeys.EDITOR) != null &&
+                e.getData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText() != null;
         e.getPresentation().setEnabledAndVisible(
-                project != null &&
-                        psiFile != null &&
-                        psiFile.getFileType().equals(JavaFileType.INSTANCE));
+                enabled);
     }
 
     @Override
@@ -162,9 +240,22 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
 
         // 修改类文件, 移除接口
         PsiReferenceList implementsList = psiClassCopied.getImplementsList();
-        for (PsiJavaCodeReferenceElement referenceElement : implementsList.getReferenceElements()) {
-            referenceElement.delete();
+        if (ArrayUtil.isNotEmpty(implementsList.getReferenceElements())) {
+
+            for (PsiJavaCodeReferenceElement referenceElement : implementsList.getReferenceElements()) {
+                referenceElement.delete();
+            }
         }
+
+        // 移除继承
+        PsiReferenceList extendsList = psiClassCopied.getExtendsList();
+        if (ArrayUtil.isNotEmpty(extendsList.getReferenceElements())) {
+            for (PsiJavaCodeReferenceElement referenceElement : extendsList.getReferenceElements()) {
+                referenceElement.delete();
+            }
+
+        }
+
 
         // 添加上新的接口 javax.sql.DataSource
         PsiJavaCodeReferenceElement dataSourceInterface = elementFactory.createReferenceFromText("javax.sql.DataSource",
@@ -190,9 +281,27 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
                 annotation.delete();
             }
         }
+        Project project = psiClassCopied.getProject();
+        // 从项目设置中获取数据库类型
+        ProjectSettings projectSettings = ProjectSettings.getInstance(project);
+        String databaseType = projectSettings.getState().getDatabaseType();
+
+        DatabaseTuple databaseTuple = DATABASE_TUPLES.stream()
+                .filter(tuple -> StrUtil.equals(tuple.getDatabaseType(), databaseType))
+                .findFirst()
+                .orElse(null);
+
+        if (databaseTuple == null) {
+            log.warn("数据库类型 {} 不存在", databaseType);
+            // 弹窗提示
+            JOptionPane.showMessageDialog(null,
+                    "数据库类型 " + databaseType + " 不存在, 请在Settings->EasyQuery Project Settings中配置", "错误",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         // 构建一个 Main 方法
-        Project project = psiClassCopied.getProject();
+
         PsiMethod mainMethod = JavaPsiFacade.getElementFactory(project)
                 .createMethodFromText("public static void main(String[] args) {\n" +
                         "        System.out.println(\"EasyQuery Preview SQL\");\n" +
@@ -207,7 +316,7 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
                         "        option.setKeepNativeStyle(true);\n" +
                         "      })\n" +
                         // " .useDatabaseConfigure(new MsSQLDatabaseConfiguration())\n" +
-                        "      .useDatabaseConfigure(new com.easy.query.mysql.config.MySQLDatabaseConfiguration())\n" +
+                        "      .useDatabaseConfigure(new " + databaseTuple.getEqConfig() + "())\n" +
                         "      .build();\n" +
                         "\n" +
                         "    EasyEntityQuery entityQuery = new DefaultEasyEntityQuery(queryClient);\n" +
@@ -242,8 +351,6 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
         // 替换类
         PsiTreeUtil.getStubChildOfType(psiJavaFileCopied, PsiClass.class).replace(psiClassCopied);
 
-        System.out.println(psiClassCopied.getText());
-        System.out.println(psiJavaFileCopied.getText());
 
         PsiDirectory containingDirectory = psiJavaFileSource.getContainingDirectory();
 
@@ -262,7 +369,7 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
 
             // 编译文件
             CompilerManager compilerManager = CompilerManager.getInstance(project);
-            compilerManager.compile(new VirtualFile[] { virtualFile }, new CompileStatusNotification() {
+            compilerManager.compile(new VirtualFile[]{virtualFile}, new CompileStatusNotification() {
                 @Override
                 public void finished(boolean aborted, int errors, int warnings,
                                      @NotNull CompileContext compileContext) {
@@ -336,7 +443,7 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
                                 CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(project);
                                 PsiFileFactory psiFileFactory = PsiFileFactory.getInstance(project);
                                 PsiFile sqlFile = psiFileFactory.createFileFromText(
-                                        "preview-easy-query.sql", MysqlDialect.INSTANCE, text, false, false);
+                                        "preview-easy-query.sql", databaseTuple.getSqlDialect(), text, false, false);
 
                                 PsiElement formattedElement = codeStyleManager.reformat(sqlFile, false);
                                 // 更新到 sqlFile
@@ -391,6 +498,7 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
                 // 判断是否是基本类型或包装类
                 boolean isPriType = type instanceof PsiPrimitiveType ||
                         Arrays.asList("java.lang.Integer", "java.lang.Long", "java.lang.Double",
+                                        "java.lang.String",
                                         "java.lang.Float", "java.lang.Boolean", "java.lang.Byte",
                                         "java.lang.Short", "java.lang.Character")
                                 .contains(varType);
@@ -400,7 +508,7 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
                 // 定义变量
                 String varDef;
                 if (isPriType) {
-                    varDef = varType + " " + varName + " = "+ getMockValue(varType) + ";";
+                    varDef = varType + " " + varName + " = " + getMockValue(varType) + ";";
                     varList.add(varDef);
                 } else {
                     // 处理复杂类型
@@ -503,10 +611,10 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
             String generics = typeName.substring(start + 1, end).trim();
             String[] types = generics.split(",");
             if (types.length == 2) {
-                return new String[] { types[0].trim(), types[1].trim() };
+                return new String[]{types[0].trim(), types[1].trim()};
             }
         }
-        return new String[] { "java.lang.Object", "java.lang.Object" };
+        return new String[]{"java.lang.Object", "java.lang.Object"};
     }
 
     /**
@@ -643,6 +751,5 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
         psiJavaFile.getImportList().add(elementFactory.createImportStatement(
                 PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.HashMap")));
     }
-
 
 }
