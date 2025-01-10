@@ -43,17 +43,27 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 预览SQL
- *
+ * 代码预览SQL入口
  * @author link2fun
  */
 @Slf4j
-public class PreviewSqlAction extends AnAction {
+public abstract class AbstractPreviewSqlAction extends AnAction {
+
+
+    /** 运行模式, auto or manual
+     * 参数的设置模式, auto 下 进行弹窗展示, manual 下 进行代码展示
+     * */
+    private final String runMode;
+
+    public AbstractPreviewSqlAction(String runMode) {
+        this.runMode = runMode;
+    }
 
 
     @Override
@@ -67,8 +77,7 @@ public class PreviewSqlAction extends AnAction {
         e.getPresentation().setEnabledAndVisible(
                 project != null &&
                         psiFile != null &&
-                        psiFile.getFileType().equals(JavaFileType.INSTANCE)
-        );
+                        psiFile.getFileType().equals(JavaFileType.INSTANCE));
     }
 
     @Override
@@ -99,8 +108,9 @@ public class PreviewSqlAction extends AnAction {
                 selectionModel.getSelectionStart(), selectionModel.getSelectionEnd(), PsiElement.class);
 
         // 很可能没选全, 这里获取最外围的方法调用
-//        PsiElement selectedElementsWhole = PsiTreeUtil.getTopmostParentOfType(selectedElementRaw,
-//                PsiMethodCallExpression.class);
+        // PsiElement selectedElementsWhole =
+        // PsiTreeUtil.getTopmostParentOfType(selectedElementRaw,
+        // PsiMethodCallExpression.class);
         PsiElement selectedElements = selectedElementRaw;
 
         // 移除最后一个方法调用, 最后一个一般是转换结果的
@@ -137,62 +147,11 @@ public class PreviewSqlAction extends AnAction {
                 })
                 .collect(Collectors.toList());
 
-
         updateGitignore(psiFile.getProject());
 
         PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(psiFile.getProject());
         // 需要把这些外部变量给定义了
-        Set<String> varRegistered = Sets.newHashSet();
-        List<String> varList = Lists.newArrayList();
-        for (PsiReferenceExpression varRef : refOrVarList) {
-            PsiElement varEle = varRef.resolve();
-            if (varEle instanceof PsiLocalVariable || varEle instanceof PsiParameter) {
-                PsiType type = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getType()
-                        : ((PsiParameter) varEle).getType();
-                String varName = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getName()
-                        : ((PsiParameter) varEle).getName();
-                String varType = type.getCanonicalText();
-                if (varRegistered.contains(varName)) {
-                    continue;
-                }
-                varRegistered.add(varName);
-
-                // 定义变量
-                String varDef;
-                if (StrUtil.equalsAny(varType, String.class.getCanonicalName())) {
-                    varDef = varType + " " + varName + " = \"" + RandomUtil.randomString(RandomUtil.randomInt(1, 10))
-                            + "\";";
-                } else if (StrUtil.equalsAny(varType, Long.class.getCanonicalName(),"long")) {
-                    varDef = varType + " " + varName + " = " + RandomUtil.randomLong() + "L;";
-                } else if (StrUtil.equalsAny(varType, Double.class.getCanonicalName(),"double")) {
-                    varDef = varType + " " + varName + " = " + RandomUtil.randomDouble() + "d;";
-                } else if (StrUtil.equalsAny(varType, Integer.class.getCanonicalName(),"int")) {
-                    varDef = varType + " " + varName + " = " + RandomUtil.randomInt() + ";";
-                }
-                // boolean
-                else if (StrUtil.equalsAny(varType, Boolean.class.getCanonicalName(),"boolean")) {
-                    varDef = varType + " " + varName + " = " + RandomUtil.randomBoolean() + ";";
-                }
-                // BigDecimal
-                else if (StrUtil.equalsAny(varType, "java.math.BigDecimal")) {
-                    varDef = varType + " " + varName + " = new " + varType + "(\"" + RandomUtil.randomDouble() + "\");";
-                }
-                // LocalDate
-                else if (StrUtil.equalsAny(varType, "java.time.LocalDate")) {
-                    varDef = varType + " " + varName + " = " + varType + ".now();";
-                }
-                // LocalDateTime
-                else if (StrUtil.equalsAny(varType, "java.time.LocalDateTime")) {
-                    varDef = varType + " " + varName + " = " + varType + ".now();";
-                } else {
-                    varDef = varType + " " + varName + " = new " + varType + "();";
-
-                }
-                PsiElement varDefEle = elementFactory.createStatementFromText(varDef, psiClassSource);
-                String varDefEleText = varDefEle.getText();
-                varList.add(varDefEleText);
-            }
-        }
+        List<String> varList = constructSearchReq(refOrVarList, elementFactory, psiClassSource);
 
         Module currentModule = MyModuleUtil.getModuleForFile(psiFile.getProject(), psiFile.getVirtualFile());
 
@@ -247,18 +206,18 @@ public class PreviewSqlAction extends AnAction {
                         "        option.setPrintSql(true); // 输出SQL\n" +
                         "        option.setKeepNativeStyle(true);\n" +
                         "      })\n" +
-//                        "      .useDatabaseConfigure(new MsSQLDatabaseConfiguration())\n" +
+                        // " .useDatabaseConfigure(new MsSQLDatabaseConfiguration())\n" +
                         "      .useDatabaseConfigure(new com.easy.query.mysql.config.MySQLDatabaseConfiguration())\n" +
                         "      .build();\n" +
                         "\n" +
                         "    EasyEntityQuery entityQuery = new DefaultEasyEntityQuery(queryClient);\n" +
 
-                        varList.stream().collect(Collectors.joining("\n")) +
+                        String.join("\n", varList) +
 
                         "String sql = " + selectedText + ".toSQL();" +
+                        // TODO 这里的SQL 需要格式化
                         "        System.out.println(sql);\n" +
 
-                        // TODO 这里加上全部的代码
                         "    }", psiClassCopied);
 
         // 添加 Main 方法
@@ -301,11 +260,9 @@ public class PreviewSqlAction extends AnAction {
             // 编辑器打开这个文件
             FileEditorManager.getInstance(project).openFile(virtualFile, true);
 
-
-
             // 编译文件
             CompilerManager compilerManager = CompilerManager.getInstance(project);
-            compilerManager.compile(new VirtualFile[]{virtualFile}, new CompileStatusNotification() {
+            compilerManager.compile(new VirtualFile[] { virtualFile }, new CompileStatusNotification() {
                 @Override
                 public void finished(boolean aborted, int errors, int warnings,
                                      @NotNull CompileContext compileContext) {
@@ -346,12 +303,10 @@ public class PreviewSqlAction extends AnAction {
                     }
                     ExecutionEnvironment environment = builder.build();
 
-                    Boolean usingRunConfiguration = false;
-                    if (usingRunConfiguration) {
+                    if (!StrUtil.equalsAny(runMode, "auto")) {
                         ProgramRunnerUtil.executeConfiguration(environment, true, true);
                         return;
                     }
-
 
                     JavaCommandLineState commandLineState = new JavaCommandLineState(environment) {
                         @Override
@@ -372,7 +327,8 @@ public class PreviewSqlAction extends AnAction {
                             @Override
                             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
                                 String text = event.getText();
-                                if (!StrUtil.startWithAnyIgnoreCase(text, "select", "insert", "update", "delete", "truncate")) {
+                                if (!StrUtil.startWithAnyIgnoreCase(text, "select", "insert", "update", "delete",
+                                        "truncate")) {
                                     System.out.println(text);
                                     return;
                                 }
@@ -380,15 +336,14 @@ public class PreviewSqlAction extends AnAction {
                                 CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(project);
                                 PsiFileFactory psiFileFactory = PsiFileFactory.getInstance(project);
                                 PsiFile sqlFile = psiFileFactory.createFileFromText(
-                                        "preview-easy-query.sql", MysqlDialect.INSTANCE, text, false, false
-                                );
+                                        "preview-easy-query.sql", MysqlDialect.INSTANCE, text, false, false);
 
                                 PsiElement formattedElement = codeStyleManager.reformat(sqlFile, false);
                                 // 更新到 sqlFile
-//                                String formattedSQL = extractFormattedSQL(formattedElement);
+                                // String formattedSQL = extractFormattedSQL(formattedElement);
                                 String formattedText = formattedElement.getText();
                                 System.out.println(formattedText);
-//                                System.out.println(formattedSQL);
+                                // System.out.println(formattedSQL);
                                 SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(formattedText);
                                 SwingUtilities.invokeLater(() -> {
                                     sqlPreviewDialog.setVisible(true);
@@ -418,6 +373,141 @@ public class PreviewSqlAction extends AnAction {
 
     }
 
+    private static @NotNull List<String> constructSearchReq(List<PsiReferenceExpression> refOrVarList,
+                                                            PsiElementFactory elementFactory, PsiClass psiClassSource) {
+        Set<String> varRegistered = Sets.newHashSet();
+        List<String> varList = Lists.newArrayList();
+        for (PsiReferenceExpression varRef : refOrVarList) {
+            PsiElement varEle = varRef.resolve();
+            if (varEle instanceof PsiLocalVariable || varEle instanceof PsiParameter) {
+                PsiType type = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getType()
+                        : ((PsiParameter) varEle).getType();
+                String varName = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getName()
+                        : ((PsiParameter) varEle).getName();
+                String varType = type.getCanonicalText();
+                if (varRegistered.contains(varName)) {
+                    continue;
+                }
+                // 判断是否是基本类型或包装类
+                boolean isPriType = type instanceof PsiPrimitiveType ||
+                        Arrays.asList("java.lang.Integer", "java.lang.Long", "java.lang.Double",
+                                        "java.lang.Float", "java.lang.Boolean", "java.lang.Byte",
+                                        "java.lang.Short", "java.lang.Character")
+                                .contains(varType);
+
+                varRegistered.add(varName);
+
+                // 定义变量
+                String varDef;
+                if (isPriType) {
+                    varDef = varType + " " + varName + " = "+ getMockValue(varType) + ";";
+                    varList.add(varDef);
+                } else {
+                    // 处理复杂类型
+                    varDef = varType + " " + varName + " = new " + varType + "();";
+                    PsiElement varDefEle = elementFactory.createStatementFromText(varDef, psiClassSource);
+                    String varDefEleText = varDefEle.getText();
+                    varList.add(varDefEleText);
+
+                    // 获取类型的所有setter方法并设置模拟值
+                    PsiClass targetClass = PsiJavaFileUtil.getPsiClass(psiClassSource.getProject(), varType);
+                    if (targetClass != null) {
+                        PsiMethod[] methods = targetClass.getMethods();
+                        for (PsiMethod method : methods) {
+                            if (method.getName().startsWith("set")) {
+                                PsiParameter[] parameters = method.getParameterList().getParameters();
+                                if (parameters.length == 1) {
+                                    PsiType paramType = parameters[0].getType();
+                                    String paramTypeName = paramType.getCanonicalText();
+                                    String mockValue = getMockValue(paramTypeName);
+                                    if (mockValue != null) {
+                                        varList.add(varName + "." + method.getName() + "(" + mockValue + ");");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+        return varList;
+    }
+
+    // 新增辅助方法生成模拟值
+    private static String getMockValue(String typeName) {
+        // 处理泛型集合类型
+        if (typeName.startsWith("java.util.List<") || typeName.startsWith("java.util.ArrayList<")) {
+            String genericType = extractGenericType(typeName);
+            return String.format("java.util.Arrays.asList(%s, %s)", getMockValue(genericType),
+                    getMockValue(genericType));
+        }
+
+        if (typeName.startsWith("java.util.Set<") || typeName.startsWith("java.util.HashSet<")) {
+            String genericType = extractGenericType(typeName);
+            return String.format("new java.util.HashSet<>(java.util.Arrays.asList(%s, %s))",
+                    getMockValue(genericType), getMockValue(genericType));
+        }
+
+        if (typeName.startsWith("java.util.Map<")) {
+            String[] genericTypes = extractMapGenericTypes(typeName);
+            String keyType = genericTypes[0];
+            String valueType = genericTypes[1];
+            return String.format("new java.util.HashMap<>() {{ put(%s, %s); put(%s, %s); }}",
+                    getMockValue(keyType), getMockValue(valueType),
+                    getMockValue(keyType), getMockValue(valueType));
+        }
+
+        // 原有的基础类型处理
+        switch (typeName) {
+            case "java.lang.String":
+                return "\"" + RandomUtil.randomString(RandomUtil.randomInt(1, 10)) + "\"";
+            case "java.lang.Long":
+            case "long":
+                return RandomUtil.randomLong() + "L";
+            case "java.lang.Integer":
+            case "int":
+                return String.valueOf(RandomUtil.randomInt());
+            case "java.lang.Double":
+            case "double":
+                return RandomUtil.randomDouble() + "d";
+            case "java.lang.Boolean":
+            case "boolean":
+                return String.valueOf(RandomUtil.randomBoolean());
+            case "java.math.BigDecimal":
+                return "new java.math.BigDecimal(\"" + RandomUtil.randomDouble() + "\")";
+            case "java.time.LocalDate":
+                return "java.time.LocalDate.now()";
+            case "java.time.LocalDateTime":
+                return "java.time.LocalDateTime.now()";
+            default:
+                return null;
+        }
+    }
+
+    // 提取泛型类型
+    private static String extractGenericType(String typeName) {
+        int start = typeName.indexOf('<');
+        int end = typeName.lastIndexOf('>');
+        if (start != -1 && end != -1) {
+            return typeName.substring(start + 1, end).trim();
+        }
+        return "java.lang.Object";
+    }
+
+    // 提取Map的键值泛型类型
+    private static String[] extractMapGenericTypes(String typeName) {
+        int start = typeName.indexOf('<');
+        int end = typeName.lastIndexOf('>');
+        if (start != -1 && end != -1) {
+            String generics = typeName.substring(start + 1, end).trim();
+            String[] types = generics.split(",");
+            if (types.length == 2) {
+                return new String[] { types[0].trim(), types[1].trim() };
+            }
+        }
+        return new String[] { "java.lang.Object", "java.lang.Object" };
+    }
 
     /**
      * 处理import
@@ -541,5 +631,18 @@ public class PreviewSqlAction extends AnAction {
             log.error("读取 .gitignore 文件失败", e);
         }
     }
+
+    // 在constructSearchReq方法中添加对集合类型的导入处理
+    private static void addCollectionImports(PsiJavaFile psiJavaFile, PsiElementFactory elementFactory) {
+        psiJavaFile.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.Arrays")));
+        psiJavaFile.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.ArrayList")));
+        psiJavaFile.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.HashSet")));
+        psiJavaFile.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.HashMap")));
+    }
+
 
 }

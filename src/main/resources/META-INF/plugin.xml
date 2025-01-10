@@ -247,12 +247,20 @@
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
-        <action id="com.easy.query.plugin.action.PreviewSqlAction"
-                class="com.easy.query.plugin.action.PreviewSqlAction" text="Preview SQL"
+        <action id="com.easy.query.plugin.action.PreviewSqlAutoParamAction"
+                class="com.easy.query.plugin.action.PreviewSqlAutoParamAction" text="Code -> SQL(Auto)"
                 icon="/icons/eq.svg">
             <!-- 添加到编辑器弹出菜单 -->
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
 <!--            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>-->
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+        </action>
+        <action id="com.easy.query.plugin.action.PreviewSqlManualParamAction"
+                class="com.easy.query.plugin.action.PreviewSqlManualParamAction" text="Code -> SQL(Manual)"
+                icon="/icons/eq.svg">
+            <!-- 添加到编辑器弹出菜单 -->
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <!--            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>-->
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
 
