@@ -7,6 +7,7 @@ import com.intellij.psi.impl.source.PsiJavaFileImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiInlineDocTag;
+import com.intellij.psi.util.PsiTreeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
@@ -153,21 +154,10 @@ public class PsiJavaClassUtil {
      * @param element
      */
     public static boolean isElementRelatedToClass(PsiElement element) {
-        if (element == null) {
+        if (element == null || element.getParent() == null) {
             return false;
         }
-        PsiElement parent = element.getParent();
-        while (!(parent instanceof PsiClass)) {
-            if (parent instanceof PsiMethod) {
-                return false;
-            }
-            if (parent instanceof PsiReferenceExpression) {
-                return false;
-            }
-            parent = parent.getParent();
-        }
-
-        return true;
+        return PsiTreeUtil.getParentOfType(element,PsiMethod.class,PsiReferenceExpression.class) == null;
     }
 
 

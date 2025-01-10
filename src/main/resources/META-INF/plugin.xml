@@ -247,6 +247,13 @@
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
+        <action id="com.easy.query.plugin.action.PreviewSqlAction"
+                class="com.easy.query.plugin.action.PreviewSqlAction" text="Preview SQL"
+                icon="/icons/eq.svg">
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+        </action>
+
 <!--        MyBatisPlusToEasyQueryAction-->
         <action id="com.easy.query.plugin.action.MyBatisPlusToEasyQueryAction"
                 class="com.easy.query.plugin.action.MyBatisPlusToEasyQueryAction" text="MyBatisPlus -> EasyQuery"
