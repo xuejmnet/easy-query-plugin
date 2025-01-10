@@ -5,19 +5,20 @@ import cn.hutool.core.util.RandomUtil;
 import com.easy.query.plugin.core.util.MyModuleUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
+import com.easy.query.plugin.windows.SQLPreviewDialog;
 import com.google.common.collect.Sets;
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.ProgramRunnerUtil;
-import com.intellij.execution.RunManager;
-import com.intellij.execution.RunnerAndConfigurationSettings;
+import com.intellij.execution.*;
 import com.intellij.execution.application.ApplicationConfiguration;
 import com.intellij.execution.application.ApplicationConfigurationType;
-import com.intellij.execution.configurations.ConfigurationFactory;
-import com.intellij.execution.configurations.ConfigurationType;
-import com.intellij.execution.configurations.ConfigurationTypeUtil;
+import com.intellij.execution.configurations.*;
 import com.intellij.execution.executors.DefaultRunExecutor;
+import com.intellij.execution.process.ProcessAdapter;
+import com.intellij.execution.process.ProcessEvent;
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
+import com.intellij.execution.runners.ProgramRunner;
+import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -30,13 +31,18 @@ import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.sql.dialects.mysql.MysqlDialect;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,7 +52,25 @@ import java.util.stream.Collectors;
  *
  * @author link2fun
  */
+@Slf4j
 public class PreviewSqlAction extends AnAction {
+
+
+    @Override
+    public void update(@NotNull AnActionEvent e) {
+        // 获取当前项目
+        Project project = e.getProject();
+        // 获取当前选中的文件
+        PsiFile psiFile = e.getData(CommonDataKeys.PSI_FILE);
+
+        // 设置菜单项是否可见
+        e.getPresentation().setEnabledAndVisible(
+                project != null &&
+                        psiFile != null &&
+                        psiFile.getFileType().equals(JavaFileType.INSTANCE)
+        );
+    }
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
 
@@ -71,25 +95,40 @@ public class PreviewSqlAction extends AnAction {
 
         PsiJavaFile psiJavaFileSource = (PsiJavaFile) psiFile;
 
-        PsiElement selectedElementRaw = PsiTreeUtil.findElementOfClassAtRange(psiJavaFileSource, selectionModel.getSelectionStart(), selectionModel.getSelectionEnd(), PsiElement.class);
+        PsiElement selectedElementRaw = PsiTreeUtil.findElementOfClassAtRange(psiJavaFileSource,
+                selectionModel.getSelectionStart(), selectionModel.getSelectionEnd(), PsiElement.class);
 
         // 很可能没选全, 这里获取最外围的方法调用
-        PsiElement selectedElements = PsiTreeUtil.getTopmostParentOfType(selectedElementRaw, PsiMethodCallExpression.class);
+//        PsiElement selectedElementsWhole = PsiTreeUtil.getTopmostParentOfType(selectedElementRaw,
+//                PsiMethodCallExpression.class);
+        PsiElement selectedElements = selectedElementRaw;
 
-        if (selectedElements == null || selectedElements.getChildren().length == 0 || selectedElements.getChildren()[0].getChildren().length == 0) {
+        // 移除最后一个方法调用, 最后一个一般是转换结果的
+
+        if (selectedElements == null || selectedElements.getChildren().length == 0
+                || selectedElements.getChildren()[0].getChildren().length == 0) {
             return;
         }
 
         selectedText = selectedElements.getChildren()[0].getChildren()[0].getText();
 
-
-        List<PsiReferenceExpression> refOrVarList = PsiTreeUtil.findChildrenOfType(selectedElements, PsiReferenceExpression.class).stream()
+        List<PsiReferenceExpression> refOrVarList = PsiTreeUtil
+                .findChildrenOfType(selectedElements, PsiReferenceExpression.class).stream()
                 .filter(ref -> {
                     PsiElement resolved = ref.resolve();
                     if (resolved instanceof PsiLocalVariable || resolved instanceof PsiParameter) {
                         // 如果 resolved 的位置, 在选中的内部, 说明是内部定义的, 不是外部引用的
-                        if (selectionModel.getSelectionStart() <= resolved.getTextOffset() && resolved.getTextOffset() <= selectionModel.getSelectionEnd()) {
+                        if (selectionModel.getSelectionStart() <= resolved.getTextOffset()
+                                && resolved.getTextOffset() <= selectionModel.getSelectionEnd()) {
                             return false;
+                        }
+
+                        // 看看是否有父类, 如果父类是 easy-query 包下面的, 那么可能是自动生成的
+                        if (resolved instanceof PsiParameter) {
+                            String canonicalText = ((PsiParameter) resolved).getType().getCanonicalText();
+                            if (canonicalText.endsWith("Proxy") && canonicalText.contains(".proxy.")) {
+                                return false;
+                            }
                         }
 
                         return true;
@@ -99,6 +138,8 @@ public class PreviewSqlAction extends AnAction {
                 .collect(Collectors.toList());
 
 
+        updateGitignore(psiFile.getProject());
+
         PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(psiFile.getProject());
         // 需要把这些外部变量给定义了
         Set<String> varRegistered = Sets.newHashSet();
@@ -106,8 +147,10 @@ public class PreviewSqlAction extends AnAction {
         for (PsiReferenceExpression varRef : refOrVarList) {
             PsiElement varEle = varRef.resolve();
             if (varEle instanceof PsiLocalVariable || varEle instanceof PsiParameter) {
-                PsiType type = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getType() : ((PsiParameter) varEle).getType();
-                String varName = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getName() : ((PsiParameter) varEle).getName();
+                PsiType type = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getType()
+                        : ((PsiParameter) varEle).getType();
+                String varName = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getName()
+                        : ((PsiParameter) varEle).getName();
                 String varType = type.getCanonicalText();
                 if (varRegistered.contains(varName)) {
                     continue;
@@ -117,16 +160,17 @@ public class PreviewSqlAction extends AnAction {
                 // 定义变量
                 String varDef;
                 if (StrUtil.equalsAny(varType, String.class.getCanonicalName())) {
-                    varDef = varType + " " + varName + " = \"" + RandomUtil.randomString(RandomUtil.randomInt(1, 10)) + "\";";
-                } else if (StrUtil.equalsAny(varType, Long.class.getCanonicalName())) {
+                    varDef = varType + " " + varName + " = \"" + RandomUtil.randomString(RandomUtil.randomInt(1, 10))
+                            + "\";";
+                } else if (StrUtil.equalsAny(varType, Long.class.getCanonicalName(),"long")) {
                     varDef = varType + " " + varName + " = " + RandomUtil.randomLong() + "L;";
-                } else if (StrUtil.equalsAny(varType, Double.class.getCanonicalName())) {
+                } else if (StrUtil.equalsAny(varType, Double.class.getCanonicalName(),"double")) {
                     varDef = varType + " " + varName + " = " + RandomUtil.randomDouble() + "d;";
-                } else if (StrUtil.equalsAny(varType, Integer.class.getCanonicalName())) {
+                } else if (StrUtil.equalsAny(varType, Integer.class.getCanonicalName(),"int")) {
                     varDef = varType + " " + varName + " = " + RandomUtil.randomInt() + ";";
                 }
                 // boolean
-                else if (StrUtil.equalsAny(varType, Boolean.class.getCanonicalName())) {
+                else if (StrUtil.equalsAny(varType, Boolean.class.getCanonicalName(),"boolean")) {
                     varDef = varType + " " + varName + " = " + RandomUtil.randomBoolean() + ";";
                 }
                 // BigDecimal
@@ -164,9 +208,9 @@ public class PreviewSqlAction extends AnAction {
         }
 
         // 添加上新的接口 javax.sql.DataSource
-        PsiJavaCodeReferenceElement dataSourceInterface = elementFactory.createReferenceFromText("javax.sql.DataSource", psiClassCopied);
+        PsiJavaCodeReferenceElement dataSourceInterface = elementFactory.createReferenceFromText("javax.sql.DataSource",
+                psiClassCopied);
         implementsList.add(dataSourceInterface);
-
 
         // 修改类文件, 移除注解
         for (PsiMethod method : psiClassCopied.getMethods()) {
@@ -203,17 +247,16 @@ public class PreviewSqlAction extends AnAction {
                         "        option.setPrintSql(true); // 输出SQL\n" +
                         "        option.setKeepNativeStyle(true);\n" +
                         "      })\n" +
-                        "      .useDatabaseConfigure(new MsSQLDatabaseConfiguration())\n" +
+//                        "      .useDatabaseConfigure(new MsSQLDatabaseConfiguration())\n" +
+                        "      .useDatabaseConfigure(new com.easy.query.mysql.config.MySQLDatabaseConfiguration())\n" +
                         "      .build();\n" +
                         "\n" +
                         "    EasyEntityQuery entityQuery = new DefaultEasyEntityQuery(queryClient);\n" +
-
 
                         varList.stream().collect(Collectors.joining("\n")) +
 
                         "String sql = " + selectedText + ".toSQL();" +
                         "        System.out.println(sql);\n" +
-
 
                         // TODO 这里加上全部的代码
                         "    }", psiClassCopied);
@@ -225,7 +268,6 @@ public class PreviewSqlAction extends AnAction {
         addDataSourceInterfaceImplement(psiClassCopied, elementFactory);
 
         handleImport(psiJavaFileCopied, elementFactory, project);
-
 
         // TODO 还需要引入外部包
 
@@ -252,20 +294,14 @@ public class PreviewSqlAction extends AnAction {
             if (ObjectUtil.isNotNull(file)) {
                 file.delete();
             }
-            PsiElement psiElementFormated = containingDirectory.add(CodeStyleManager.getInstance(project).reformat(psiJavaFileCopied));
+            PsiElement psiElementFormated = containingDirectory
+                    .add(CodeStyleManager.getInstance(project).reformat(psiJavaFileCopied));
             VirtualFile virtualFile = psiElementFormated.getContainingFile().getVirtualFile();
 
             // 编辑器打开这个文件
             FileEditorManager.getInstance(project).openFile(virtualFile, true);
 
-//            // 删除临时文件
-//            ApplicationManager.getApplication().invokeLater(() -> {
-//                try {
-//                    virtualFile.delete(this);
-//                } catch (IOException e) {
-//                    System.err.println("删除文件失败");
-//                }
-//            }, ModalityState.defaultModalityState());
+
 
             // 编译文件
             CompilerManager compilerManager = CompilerManager.getInstance(project);
@@ -278,36 +314,102 @@ public class PreviewSqlAction extends AnAction {
                         return;
                     }
 
-
                     RunManager runManager = RunManager.getInstance(project);
-                    ConfigurationType configurationType = ConfigurationTypeUtil.findConfigurationType(ApplicationConfigurationType.class);
+                    ConfigurationType configurationType = ConfigurationTypeUtil
+                            .findConfigurationType(ApplicationConfigurationType.class);
                     ConfigurationFactory configurationFactory = configurationType.getConfigurationFactories()[0];
 
                     // 获取配置模板
-                    RunnerAndConfigurationSettings templateSettings = runManager.getConfigurationTemplate(configurationFactory);
+                    RunnerAndConfigurationSettings templateSettings = runManager
+                            .getConfigurationTemplate(configurationFactory);
 
-                    RunnerAndConfigurationSettings easyQueryPreviewSqlSettings = runManager.createConfiguration("EasyQuery Preview SQL", templateSettings.getFactory());
+                    RunnerAndConfigurationSettings easyQueryPreviewSqlSettings = runManager
+                            .createConfiguration("EasyQuery Preview SQL", templateSettings.getFactory());
                     easyQueryPreviewSqlSettings.setTemporary(true); // 设为临时的
-                    ApplicationConfiguration runConfiguration = (ApplicationConfiguration) easyQueryPreviewSqlSettings.getConfiguration();
+                    ApplicationConfiguration runConfiguration = (ApplicationConfiguration) easyQueryPreviewSqlSettings
+                            .getConfiguration();
 
                     runConfiguration.setMainClassName(qualifiedName);
                     runConfiguration.setModule(currentModule);
 
-
                     runManager.addConfiguration(easyQueryPreviewSqlSettings);
-
 
                     // 执行配置
                     // 执行配置并获取结果
                     ExecutionEnvironmentBuilder builder;
                     try {
-                        builder = ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(), easyQueryPreviewSqlSettings);
+                        builder = ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(),
+                                easyQueryPreviewSqlSettings);
                     } catch (ExecutionException e) {
                         e.printStackTrace();
                         return;
                     }
                     ExecutionEnvironment environment = builder.build();
-                    ProgramRunnerUtil.executeConfiguration(environment, true, true);
+
+                    Boolean usingRunConfiguration = false;
+                    if (usingRunConfiguration) {
+                        ProgramRunnerUtil.executeConfiguration(environment, true, true);
+                        return;
+                    }
+
+
+                    JavaCommandLineState commandLineState = new JavaCommandLineState(environment) {
+                        @Override
+                        protected JavaParameters createJavaParameters() throws ExecutionException {
+                            JavaParameters params = new JavaParameters();
+                            params.setMainClass(qualifiedName);
+                            params.configureByModule(currentModule, JavaParameters.JDK_AND_CLASSES);
+                            return params;
+                        }
+                    };
+                    try {
+                        ProgramRunner<?> programRunner = ProgramRunnerUtil.getRunner(DefaultRunExecutor.EXECUTOR_ID,
+                                easyQueryPreviewSqlSettings);
+                        ExecutionResult executionResult = commandLineState
+                                .execute(DefaultRunExecutor.getRunExecutorInstance(), programRunner);
+                        ProcessHandler processHandler = executionResult.getProcessHandler();
+                        processHandler.addProcessListener(new ProcessAdapter() {
+                            @Override
+                            public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
+                                String text = event.getText();
+                                if (!StrUtil.startWithAnyIgnoreCase(text, "select", "insert", "update", "delete", "truncate")) {
+                                    System.out.println(text);
+                                    return;
+                                }
+
+                                CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(project);
+                                PsiFileFactory psiFileFactory = PsiFileFactory.getInstance(project);
+                                PsiFile sqlFile = psiFileFactory.createFileFromText(
+                                        "preview-easy-query.sql", MysqlDialect.INSTANCE, text, false, false
+                                );
+
+                                PsiElement formattedElement = codeStyleManager.reformat(sqlFile, false);
+                                // 更新到 sqlFile
+//                                String formattedSQL = extractFormattedSQL(formattedElement);
+                                String formattedText = formattedElement.getText();
+                                System.out.println(formattedText);
+//                                System.out.println(formattedSQL);
+                                SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(formattedText);
+                                SwingUtilities.invokeLater(() -> {
+                                    sqlPreviewDialog.setVisible(true);
+                                });
+                            }
+
+                            @Override
+                            public void processTerminated(@NotNull ProcessEvent event) {
+                                WriteCommandAction.runWriteCommandAction(project, () -> {
+                                    try {
+                                        virtualFile.delete(this);
+                                    } catch (IOException e) {
+                                        log.warn("删除文件失败");
+                                    }
+                                });
+                            }
+                        });
+                        processHandler.startNotify();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
 
                 }
             });
@@ -316,81 +418,128 @@ public class PreviewSqlAction extends AnAction {
 
     }
 
+
     /**
      * 处理import
      */
     private static void handleImport(PsiJavaFile psiJavaFileCopied, PsiElementFactory elementFactory, Project project) {
         // 添加EQ相关import
         // import com.easy.query.core.logging.LogFactory
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.logging.LogFactory")));
+        psiJavaFileCopied.getImportList().add(elementFactory
+                .createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.logging.LogFactory")));
         // import com.easy.query.core.api.client.EasyQueryClient
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.api.client.EasyQueryClient")));
+        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.api.client.EasyQueryClient")));
         // import com.easy.query.core.bootstrapper.EasyQueryBootstrapper
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.bootstrapper.EasyQueryBootstrapper")));
+        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.bootstrapper.EasyQueryBootstrapper")));
         // import com.easy.query.mssql.config.MsSQLDatabaseConfiguration
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.mssql.config.MsSQLDatabaseConfiguration")));
+        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.mssql.config.MsSQLDatabaseConfiguration")));
         // import java.sql.Connection
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.Connection")));
+        psiJavaFileCopied.getImportList()
+                .add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.Connection")));
         // import java.sql.SQLException
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLException")));
+        psiJavaFileCopied.getImportList().add(
+                elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLException")));
         // import java.io.PrintWriter
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.io.PrintWriter")));
+        psiJavaFileCopied.getImportList()
+                .add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.io.PrintWriter")));
         // import java.util.logging.Logger
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.util.logging.Logger")));
+        psiJavaFileCopied.getImportList().add(
+                elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.util.logging.Logger")));
         // import java.sql.SQLFeatureNotSupportedException
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLFeatureNotSupportedException")));
+        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLFeatureNotSupportedException")));
         // com.easy.query.api.proxy.client.DefaultEasyEntityQuery
-        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.api.proxy.client.DefaultEasyEntityQuery")));
+        psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
+                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.api.proxy.client.DefaultEasyEntityQuery")));
     }
 
     private void addDataSourceInterfaceImplement(PsiClass psiClassCopied, PsiElementFactory elementFactory) {
-        PsiMethod getConnectionMethod = elementFactory.createMethodFromText("public Connection getConnection() throws SQLException {\n" +
-                "    return null;\n" +
-                "  }", psiClassCopied);
+        PsiMethod getConnectionMethod = elementFactory
+                .createMethodFromText("public Connection getConnection() throws SQLException {\n" +
+                        "    return null;\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(getConnectionMethod);
 
-        PsiMethod getConnectionMethod2 = elementFactory.createMethodFromText("public Connection getConnection(String username, String password) throws SQLException {\n" +
-                "    return null;\n" +
-                "  }", psiClassCopied);
+        PsiMethod getConnectionMethod2 = elementFactory.createMethodFromText(
+                "public Connection getConnection(String username, String password) throws SQLException {\n" +
+                        "    return null;\n" +
+                        "  }",
+                psiClassCopied);
         psiClassCopied.add(getConnectionMethod2);
 
-
-        PsiMethod getLogWriterMethod = elementFactory.createMethodFromText("public PrintWriter getLogWriter() throws SQLException {\n" +
-                "    return null;\n" +
-                "  }", psiClassCopied);
+        PsiMethod getLogWriterMethod = elementFactory
+                .createMethodFromText("public PrintWriter getLogWriter() throws SQLException {\n" +
+                        "    return null;\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(getLogWriterMethod);
 
-        PsiMethod setLogWriterMethod = elementFactory.createMethodFromText("public void setLogWriter(PrintWriter out) throws SQLException {\n" +
-                "\n" +
-                "  }", psiClassCopied);
+        PsiMethod setLogWriterMethod = elementFactory
+                .createMethodFromText("public void setLogWriter(PrintWriter out) throws SQLException {\n" +
+                        "\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(setLogWriterMethod);
 
-        PsiMethod setLoginTimeoutMethod = elementFactory.createMethodFromText("public void setLoginTimeout(int seconds) throws SQLException {\n" +
-                "\n" +
-                "  }", psiClassCopied);
+        PsiMethod setLoginTimeoutMethod = elementFactory
+                .createMethodFromText("public void setLoginTimeout(int seconds) throws SQLException {\n" +
+                        "\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(setLoginTimeoutMethod);
 
-        PsiMethod getLoginTimeoutMethod = elementFactory.createMethodFromText("public int getLoginTimeout() throws SQLException {\n" +
-                "    return 0;\n" +
-                "  }", psiClassCopied);
+        PsiMethod getLoginTimeoutMethod = elementFactory
+                .createMethodFromText("public int getLoginTimeout() throws SQLException {\n" +
+                        "    return 0;\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(getLoginTimeoutMethod);
 
-        PsiMethod getParentLoggerMethod = elementFactory.createMethodFromText("public Logger getParentLogger() throws SQLFeatureNotSupportedException {\n" +
-                "    return null;\n" +
-                "  }", psiClassCopied);
+        PsiMethod getParentLoggerMethod = elementFactory
+                .createMethodFromText("public Logger getParentLogger() throws SQLFeatureNotSupportedException {\n" +
+                        "    return null;\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(getParentLoggerMethod);
 
-        PsiMethod unwrapMethod = elementFactory.createMethodFromText("public <T> T unwrap(Class<T> iface) throws SQLException {\n" +
-                "    return null;\n" +
-                "  }", psiClassCopied);
+        PsiMethod unwrapMethod = elementFactory
+                .createMethodFromText("public <T> T unwrap(Class<T> iface) throws SQLException {\n" +
+                        "    return null;\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(unwrapMethod);
 
-        PsiMethod isWrapperForMethod = elementFactory.createMethodFromText("public boolean isWrapperFor(Class<?> iface) throws SQLException {\n" +
-                "    return false;\n" +
-                "  }", psiClassCopied);
+        PsiMethod isWrapperForMethod = elementFactory
+                .createMethodFromText("public boolean isWrapperFor(Class<?> iface) throws SQLException {\n" +
+                        "    return false;\n" +
+                        "  }", psiClassCopied);
         psiClassCopied.add(isWrapperForMethod);
 
     }
 
+    private void updateGitignore(Project project) {
+        VirtualFile baseDir = project.getBaseDir();
+        VirtualFile gitignoreFile = baseDir.findChild(".gitignore");
+
+        if (gitignoreFile != null) {
+            appendToGitignoreFile(project, gitignoreFile);
+        }
+    }
+
+    private void appendToGitignoreFile(Project project, VirtualFile gitignoreFile) {
+        try {
+            String content = new String(gitignoreFile.contentsToByteArray());
+            if (!content.contains("EasyQueryPreviewSqlAction.java")) {
+                WriteCommandAction.runWriteCommandAction(project, () -> {
+                    try {
+                        String newContent = content.endsWith("\n") ? content + "EasyQueryPreviewSqlAction.java\n"
+                                : content + "\nEasyQueryPreviewSqlAction.java\n";
+                        gitignoreFile.setBinaryContent(newContent.getBytes());
+                    } catch (IOException e) {
+                        log.error("更新 .gitignore 文件失败", e);
+                    }
+                });
+            }
+        } catch (IOException e) {
+            log.error("读取 .gitignore 文件失败", e);
+        }
+    }
 
 }

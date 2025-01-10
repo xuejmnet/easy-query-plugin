@@ -250,7 +250,9 @@
         <action id="com.easy.query.plugin.action.PreviewSqlAction"
                 class="com.easy.query.plugin.action.PreviewSqlAction" text="Preview SQL"
                 icon="/icons/eq.svg">
-            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
+            <!-- 添加到编辑器弹出菜单 -->
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+<!--            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>-->
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
 
