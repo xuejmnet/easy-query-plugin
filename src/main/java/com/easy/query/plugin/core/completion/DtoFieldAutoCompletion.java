@@ -3,6 +3,8 @@ package com.easy.query.plugin.core.completion;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
 import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
+import com.easy.query.plugin.core.util.PsiUtil;
+import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
@@ -70,10 +72,11 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                                 .withIcon(Icons.EQ),
                         400d);
                 result.addElement(lookupElementWithoutEq);
-
+                String psiFieldComment = PsiUtil.getPsiFieldClearComment(entityFieldRaw);
+                String shortComment = StrUtil.subSufByLength(psiFieldComment, 15);
                 // 再添加一个eq:开头的, 进行索引
                 LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                        LookupElementBuilder.create("EQ实体字段:" + entityFieldRaw.getName())
+                        LookupElementBuilder.create("EQ实体字段:" + entityFieldRaw.getName()+" "+shortComment)
                                 .withTypeText(entityFieldRaw.getType().getPresentableText())
                                 .withInsertHandler((context, item) -> {
                                     PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
