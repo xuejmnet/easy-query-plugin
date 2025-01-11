@@ -23,7 +23,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
@@ -33,7 +32,6 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.codeStyle.CodeStyleManager;
-import com.intellij.psi.search.GlobalSearchScope;
 import org.apache.velocity.VelocityContext;
 import org.jetbrains.kotlin.psi.KtFile;
 
@@ -147,7 +145,7 @@ public class APTVersion2_2 {
                 }
                 PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
                 String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-                String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+                String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
                 PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
                 boolean isValueObject = valueObject != null;
                 String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
@@ -279,7 +277,7 @@ public class APTVersion2_2 {
             }
             PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
             String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-            String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+            String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
             PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
             boolean isValueObject = valueObject != null;
             String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;

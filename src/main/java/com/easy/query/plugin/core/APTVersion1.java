@@ -22,7 +22,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
@@ -151,7 +150,7 @@ public class APTVersion1 {
                 }
                 PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
                 String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-                String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+                String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
                 PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
                 boolean isValueObject = valueObject != null;
                 String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
@@ -285,7 +284,7 @@ public class APTVersion1 {
             }
             PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
             String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-            String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+            String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
             PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
             boolean isValueObject = valueObject != null;
             String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;

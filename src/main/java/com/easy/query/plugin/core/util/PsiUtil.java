@@ -84,7 +84,7 @@ public class PsiUtil {
         return matcher.replaceAll("").trim();
     }
 
-    public static String getPsiFieldClearComment(PsiField field) {
+    public static String getPsiFieldWithStarComment(PsiField field) {
 
         String psiFieldComment = getPsiFieldComment(field, null);
         if (Objects.isNull(psiFieldComment)) {

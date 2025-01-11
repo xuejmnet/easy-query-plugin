@@ -148,7 +148,7 @@ public class APTVersion2_1 {
                 }
                 PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
                 String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-                String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+                String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
                 PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
                 boolean isValueObject = valueObject != null;
                 String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
@@ -287,7 +287,7 @@ public class APTVersion2_1 {
             }
             PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
             String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-            String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+            String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
             PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
             boolean isValueObject = valueObject != null;
             String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;

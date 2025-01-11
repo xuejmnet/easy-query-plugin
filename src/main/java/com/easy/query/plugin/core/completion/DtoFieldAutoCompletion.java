@@ -72,7 +72,7 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                                 .withIcon(Icons.EQ),
                         400d);
                 result.addElement(lookupElementWithoutEq);
-                String psiFieldComment = PsiUtil.getPsiFieldClearComment(entityFieldRaw);
+                String psiFieldComment = PsiUtil.getPsiFieldOnlyComment(entityFieldRaw);
                 String shortComment = StrUtil.subSufByLength(psiFieldComment, 15);
                 // 再添加一个eq:开头的, 进行索引
                 LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
