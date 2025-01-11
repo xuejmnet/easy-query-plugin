@@ -85,8 +85,8 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 ProjectSettings projectSettings = ProjectSettings.getInstance(currentClass.getProject());
 
                 for (PsiField dtoField : dtoFields) {
-                    boolean isStatic = PsiUtil.fieldIsStatic(dtoField);
-                    if (isStatic) {
+                    boolean ignoreField = PsiJavaFieldUtil.ignoreField(dtoField);
+                    if (ignoreField) {
                         continue;
                     }
                     //region 字段名称不匹配
