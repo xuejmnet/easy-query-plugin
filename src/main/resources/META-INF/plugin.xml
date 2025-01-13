@@ -176,6 +176,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.lang</depends>
     <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.modules.sql</depends>
     <depends>org.jetbrains.kotlin</depends>
     <depends>com.intellij.database</depends>
 
@@ -195,8 +196,10 @@
                                 id="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"
                                 implementationClass="com.easy.query.plugin.core.contributor.EasyQueryApiCompletionContributor"/>
 
-        <completion.contributor language="JAVA" implementationClass="com.easy.query.plugin.core.completion.DtoFieldAutoCompletion"/>
-        <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.easy.query.plugin.core.provider.NavToEntityFieldRelatedItemLineMarkerProvider"/>
+        <completion.contributor language="JAVA"
+                                implementationClass="com.easy.query.plugin.core.completion.DtoFieldAutoCompletion"/>
+        <codeInsight.lineMarkerProvider language="JAVA"
+                                        implementationClass="com.easy.query.plugin.core.provider.NavToEntityFieldRelatedItemLineMarkerProvider"/>
 
         <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
 
@@ -213,15 +216,16 @@
 
     </extensions>
     <actions>
-        <group id="com.easy.query.plugin.ToolGroup" text="EasyQuery" description="EasyQuery工具" popup="true" icon="/icons/eq.svg">
+        <group id="com.easy.query.plugin.ToolGroup" text="EasyQuery" description="EasyQuery工具" popup="true"
+               icon="/icons/eq.svg">
             <add-to-group
                     group-id="ToolsMenu"/>
 
         </group>
-<!--        <action id="com.easy.query.plugin.action.AutoProxyAvailableAction" class="com.easy.query.plugin.action.AutoProxyAvailableAction"-->
-<!--                text="AnonymousMap123">-->
-<!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
-<!--        </action>-->
+        <!--        <action id="com.easy.query.plugin.action.AutoProxyAvailableAction" class="com.easy.query.plugin.action.AutoProxyAvailableAction"-->
+        <!--                text="AnonymousMap123">-->
+        <!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
+        <!--        </action>-->
         <action id="com.easy.query.plugin.action.CreateStructDTOAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.CreateStructDTOAction"
@@ -235,10 +239,10 @@
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="last"/>
         </action>
-            <action id="com.easy.query.plugin.action.QuickTipSettingAction"
-                    icon="/icons/eq.svg"
-                    class="com.easy.query.plugin.action.QuickTipSettingAction"
-                    text="QuickTipSetting">
+        <action id="com.easy.query.plugin.action.QuickTipSettingAction"
+                icon="/icons/eq.svg"
+                class="com.easy.query.plugin.action.QuickTipSettingAction"
+                text="QuickTipSetting">
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
         </action>
         <action id="com.easy.query.plugin.action.AutoCompileAction"
@@ -247,24 +251,24 @@
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
-        <action id="com.easy.query.plugin.action.PreviewSqlAutoParamAction"
-                class="com.easy.query.plugin.action.PreviewSqlAutoParamAction" text="Code -> SQL(Auto)"
+        <action id="com.easy.query.plugin.action.PreviewEditorSQLAutoParamAction"
+                class="com.easy.query.plugin.action.PreviewEditorSQLAutoParamAction" text="Code -> SQL(Auto)"
                 icon="/icons/eq.svg">
             <!-- 添加到编辑器弹出菜单 -->
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-<!--            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>-->
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
-        <action id="com.easy.query.plugin.action.PreviewSqlManualParamAction"
-                class="com.easy.query.plugin.action.PreviewSqlManualParamAction" text="Code -> SQL(Manual)"
+        <action id="com.easy.query.plugin.action.PreviewEditorSQLManualParamAction"
+                class="com.easy.query.plugin.action.PreviewEditorSQLManualParamAction" text="Code -> SQL(Manual)"
                 icon="/icons/eq.svg">
             <!-- 添加到编辑器弹出菜单 -->
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-            <!--            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>-->
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
 
-<!--        MyBatisPlusToEasyQueryAction-->
+        <!--        MyBatisPlusToEasyQueryAction-->
         <action id="com.easy.query.plugin.action.MyBatisPlusToEasyQueryAction"
                 class="com.easy.query.plugin.action.MyBatisPlusToEasyQueryAction" text="MyBatisPlus -> EasyQuery"
                 icon="/icons/eq.svg">
@@ -282,8 +286,8 @@
                 icon="/icons/eq.svg">
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
-            </action>
-        <action id="com.easy.query.plugin.action.SQLPreviewAction" class="com.easy.query.plugin.action.SQLPreviewAction"
+        </action>
+        <action id="com.easy.query.plugin.action.PreviewConsoleLogSQLAction" class="com.easy.query.plugin.action.PreviewConsoleLogSQLAction"
                 text="SQLFormatPreview" icon="/icons/eq.svg">
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="ConsoleEditorPopupMenu" anchor="before" relative-to-action="ConsoleView.ClearAll"/>

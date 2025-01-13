@@ -8,10 +8,10 @@ import lombok.extern.slf4j.Slf4j;
  * @author link2fun
  */
 @Slf4j
-public class PreviewSqlAutoParamAction extends AbstractPreviewSqlAction {
+public class PreviewEditorSQLAutoParamAction extends PreviewEditorSQLAbstractAction {
 
 
-    public PreviewSqlAutoParamAction() {
+    public PreviewEditorSQLAutoParamAction() {
         super("auto");
     }
 }

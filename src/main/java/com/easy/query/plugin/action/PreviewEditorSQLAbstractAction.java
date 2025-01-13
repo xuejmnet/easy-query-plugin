@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
  * @author link2fun
  */
 @Slf4j
-public abstract class AbstractPreviewSqlAction extends AnAction {
+public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
     /**
      * 数据库类型、EQ配置、数据库方言三元组
@@ -137,7 +137,7 @@ public abstract class AbstractPreviewSqlAction extends AnAction {
      */
     private final String runMode;
 
-    public AbstractPreviewSqlAction(String runMode) {
+    public PreviewEditorSQLAbstractAction(String runMode) {
         this.runMode = runMode;
     }
 

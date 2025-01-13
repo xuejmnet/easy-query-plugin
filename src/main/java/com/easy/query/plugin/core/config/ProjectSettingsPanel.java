@@ -1,7 +1,7 @@
 package com.easy.query.plugin.core.config;
 
 import cn.hutool.core.convert.Convert;
-import com.easy.query.plugin.action.AbstractPreviewSqlAction;
+import com.easy.query.plugin.action.PreviewEditorSQLAbstractAction;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -38,8 +38,8 @@ public class ProjectSettingsPanel {
         topPanel.add(featureKeepDtoColumnAnnotationCheckBox);
 
         JPanel databasePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        List<String> typeList = AbstractPreviewSqlAction.DATABASE_TUPLES.stream()
-                .map(AbstractPreviewSqlAction.DatabaseTuple::getDatabaseType).collect(Collectors.toList());
+        List<String> typeList = PreviewEditorSQLAbstractAction.DATABASE_TUPLES.stream()
+                .map(PreviewEditorSQLAbstractAction.DatabaseTuple::getDatabaseType).collect(Collectors.toList());
         databaseTypeComboBox = new JComboBox<>(typeList.toArray(new String[0]));
         databaseTypeLabel = new JLabel("数据库类型");
         databasePanel.add(databaseTypeLabel);

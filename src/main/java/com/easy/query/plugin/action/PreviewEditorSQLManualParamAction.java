@@ -8,10 +8,10 @@ import lombok.extern.slf4j.Slf4j;
  * @author link2fun
  */
 @Slf4j
-public class PreviewSqlManualParamAction extends AbstractPreviewSqlAction {
+public class PreviewEditorSQLManualParamAction extends PreviewEditorSQLAbstractAction {
 
 
-    public PreviewSqlManualParamAction() {
+    public PreviewEditorSQLManualParamAction() {
         super("manual");
     }
 }
