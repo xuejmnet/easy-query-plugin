@@ -21,7 +21,7 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -54,6 +54,7 @@ import javax.swing.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -64,6 +65,12 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public abstract class PreviewEditorSQLAbstractAction extends AnAction {
+
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return super.getActionUpdateThread();
+    }
 
     /**
      * 数据库类型、EQ配置、数据库方言三元组
@@ -142,20 +149,15 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
     }
 
     @Override
-    public void update(@NotNull AnActionEvent e) {
-        // 获取当前项目
-        Project project = e.getProject();
-        // 获取当前选中的文件
-        PsiFile psiFile = e.getData(CommonDataKeys.PSI_FILE);
+    public void update(@NotNull AnActionEvent event) {
+        // Get required data keys
+        Project project = event.getProject();
+        Editor editor = event.getData(CommonDataKeys.EDITOR);
 
-        // 设置菜单项是否可见
-        boolean enabled = project != null &&
-                psiFile != null &&
-                psiFile.getFileType().equals(JavaFileType.INSTANCE) &&
-                e.getData(CommonDataKeys.EDITOR) != null &&
-                e.getData(CommonDataKeys.EDITOR).getSelectionModel().getSelectedText() != null;
-        e.getPresentation().setEnabledAndVisible(
-                enabled);
+        // Set visibility only in the case of
+        // existing project editor, and selection
+        event.getPresentation().setEnabledAndVisible(project != null
+                && editor != null && editor.getSelectionModel().hasSelection());
     }
 
     @Override
@@ -193,12 +195,12 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
         // 移除最后一个方法调用, 最后一个一般是转换结果的
 
-        if (selectedElements == null || selectedElements.getChildren().length == 0
-                || selectedElements.getChildren()[0].getChildren().length == 0) {
-            return;
-        }
+//        if (selectedElements == null || selectedElements.getChildren().length == 0
+//                || selectedElements.getChildren()[0].getChildren().length == 0) {
+//            return;
+//        }
 
-        selectedText = selectedElements.getChildren()[0].getChildren()[0].getText();
+//        selectedText = selectedElements.getChildren()[0].getChildren()[0].getText();
 
         List<PsiReferenceExpression> refOrVarList = PsiTreeUtil
                 .findChildrenOfType(selectedElements, PsiReferenceExpression.class).stream()
@@ -240,7 +242,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
         // 修改类文件, 移除接口
         PsiReferenceList implementsList = psiClassCopied.getImplementsList();
-        if (ArrayUtil.isNotEmpty(implementsList.getReferenceElements())) {
+        if (implementsList != null && ArrayUtil.isNotEmpty(implementsList.getReferenceElements())) {
 
             for (PsiJavaCodeReferenceElement referenceElement : implementsList.getReferenceElements()) {
                 referenceElement.delete();
@@ -249,7 +251,8 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
         // 移除继承
         PsiReferenceList extendsList = psiClassCopied.getExtendsList();
-        if (ArrayUtil.isNotEmpty(extendsList.getReferenceElements())) {
+        if (extendsList != null && ArrayUtil.isNotEmpty(extendsList.getReferenceElements())) {
+
             for (PsiJavaCodeReferenceElement referenceElement : extendsList.getReferenceElements()) {
                 referenceElement.delete();
             }
@@ -284,7 +287,8 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
         Project project = psiClassCopied.getProject();
         // 从项目设置中获取数据库类型
         ProjectSettings projectSettings = ProjectSettings.getInstance(project);
-        String databaseType = projectSettings.getState().getDatabaseType();
+        String databaseType = Optional.ofNullable(projectSettings).map(ProjectSettings::getState).map(ProjectSettings.State::getDatabaseType).orElse("default");
+
 
         DatabaseTuple databaseTuple = DATABASE_TUPLES.stream()
                 .filter(tuple -> StrUtil.equals(tuple.getDatabaseType(), databaseType))
@@ -405,7 +409,6 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                         builder = ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(),
                                 easyQueryPreviewSqlSettings);
                     } catch (ExecutionException e) {
-                        e.printStackTrace();
                         return;
                     }
                     ExecutionEnvironment environment = builder.build();
