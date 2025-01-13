@@ -1,19 +1,19 @@
 package com.easy.query.plugin.action;
 
 import com.easy.query.plugin.core.expression.SimpleFunction;
-import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.windows.SQLPreviewDialog;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiJavaFile;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 
-public class SQLPreviewAction extends AnAction {
+/**
+ * 预览控制台日志的SQL
+ */
+public class PreviewConsoleLogSQLAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {

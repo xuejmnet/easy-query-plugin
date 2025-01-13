@@ -2,6 +2,7 @@ package com.easy.query.plugin.action;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ArrayUtil;
+import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -64,9 +65,6 @@ public class MyBatisPlusToEasyQueryAction extends AnAction {
                 modifierList.addAnnotation("Table(value=\"" + tableName + "\")");
 
 
-
-
-
             }
 
             // 2. 字段上加上 Column 注解
@@ -75,6 +73,8 @@ public class MyBatisPlusToEasyQueryAction extends AnAction {
             for (PsiField field : fields) {
 
                 PsiAnnotation annoColumn = field.getAnnotation("com.easy.query.core.annotation.Column");
+                PsiAnnotation annoVersion = field.getAnnotation("com.easy.query.core.annotation.Version");
+                PsiAnnotation annoLogicDelete = field.getAnnotation("com.easy.query.core.annotation.LogicDelete");
 
                 PsiAnnotation mpAnnoTableId = field.getAnnotation("com.baomidou.mybatisplus.annotation.TableId");
                 PsiAnnotation mpAnnoTableField = field.getAnnotation("com.baomidou.mybatisplus.annotation.TableField");
@@ -87,21 +87,27 @@ public class MyBatisPlusToEasyQueryAction extends AnAction {
                     // 已经有注解的了, 不用加了
                     if (Objects.nonNull(mpAnnoTableId)) {
                         // 主键
-                        fieldModifierList.addAnnotation("Column(value=\"" + ((PsiNameValuePair) mpAnnoTableId.findAttribute("value")).getLiteralValue() + "\", primaryKey=true)");
+                        JvmAnnotationAttribute valueAttr = mpAnnoTableId.findAttribute("value");
+                        if (Objects.nonNull(valueAttr)) {
+                            fieldModifierList.addAnnotation("Column(value=\"" + ((PsiNameValuePair) valueAttr).getLiteralValue() + "\", primaryKey=true)");
+                        }
                     } else if (Objects.nonNull(mpAnnoTableField)) {
                         // 普通字段
-                        fieldModifierList.addAnnotation("Column(value=\"" + ((PsiNameValuePair) mpAnnoTableField.findAttribute("value")).getLiteralValue() + "\")");
+                        JvmAnnotationAttribute valueAttr = mpAnnoTableField.findAttribute("value");
+                        if (Objects.nonNull(valueAttr)) {
+                            fieldModifierList.addAnnotation("Column(value=\"" + ((PsiNameValuePair) valueAttr).getLiteralValue() + "\")");
+                        }
                     }
                 }
 
 
-                if (Objects.nonNull(mpAnnoTableLogic)) {
+                if (Objects.nonNull(mpAnnoTableLogic) && Objects.isNull(annoLogicDelete)) {
                     // 逻辑删除字段
                     importList.add(JavaPsiFacade.getElementFactory(project).createImportStatement(Objects.requireNonNull(JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.annotation.LogicDelete", GlobalSearchScope.allScope(currentClass.getProject())))));
                     fieldModifierList.addAnnotation("LogicDelete");
                 }
 
-                if (Objects.nonNull(mpAnnoVersion)) {
+                if (Objects.nonNull(mpAnnoVersion) && Objects.isNull(annoVersion)) {
                     // 乐观锁字段, 需要区分字段类型, 先不自动识别类型
                     fieldModifierList.addAnnotation("com.easy.query.core.annotation.Version");
                 }
