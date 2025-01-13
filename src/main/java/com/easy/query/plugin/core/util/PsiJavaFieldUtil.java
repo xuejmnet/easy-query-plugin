@@ -112,15 +112,11 @@ public class PsiJavaFieldUtil {
     }
 
     /**
-     * 是否保留 DTO 上的字段 <br/>
-     * 1. 如果是静态字段<br/>
-     * 2. 如果有一些特殊的注解, NavigateFlat NavigateJoin ColumnIgnore
-     * 3. 如果 SuppressWarnings EasyQueryFieldMissMatch 则认定为自定义的DTO字段, 修改DTO的时候保留<br?
-     *
-     * @param dtoField DTO的字段
-     * @return 是否保留
+     * 是否是需要被忽略的字段
+     * @param dtoField
+     * @return
      */
-    public static Boolean keepField(PsiField dtoField, Boolean keepSuppressWarningsField) {
+    public static boolean ignoreField(PsiField dtoField){
 
         // 看看是否是静态字段
         if (dtoField.hasModifierProperty(PsiModifier.STATIC)) {
@@ -142,7 +138,18 @@ public class PsiJavaFieldUtil {
         if (columnIgnore != null) {
             return true;
         }
-
+        return false;
+    }
+    /**
+     * 是否保留 DTO 上的字段 <br/>
+     * 1. 如果是静态字段<br/>
+     * 2. 如果有一些特殊的注解, NavigateFlat NavigateJoin ColumnIgnore
+     * 3. 如果 SuppressWarnings EasyQueryFieldMissMatch 则认定为自定义的DTO字段, 修改DTO的时候保留<br?
+     *
+     * @param dtoField DTO的字段
+     * @return 是否保留
+     */
+    public static Boolean keepField(PsiField dtoField, Boolean keepSuppressWarningsField) {
 
         if (!keepSuppressWarningsField) {
             return false;

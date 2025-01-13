@@ -9,7 +9,6 @@ import com.easy.query.plugin.core.entity.AptValueObjectInfo;
 import com.easy.query.plugin.core.entity.GenerateFileEntry;
 import com.easy.query.plugin.core.entity.PropertyColumn;
 import com.easy.query.plugin.core.entity.PropertyColumn2Impl;
-import com.easy.query.plugin.core.entity.PropertyColumnImpl;
 import com.easy.query.plugin.core.enums.BeanPropTypeEnum;
 import com.easy.query.plugin.core.enums.FileTypeEnum;
 import com.easy.query.plugin.core.util.ClassUtil;
@@ -149,7 +148,7 @@ public class APTVersion2 {
                 }
                 PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
                 String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-                String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+                String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
                 PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
                 boolean isValueObject = valueObject != null;
                 String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
@@ -287,7 +286,7 @@ public class APTVersion2 {
             }
             PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
             String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, navigate != null);
-            String psiFieldComment = PsiUtil.getPsiFieldClearComment(field);
+            String psiFieldComment = PsiUtil.getPsiFieldWithStarComment(field);
             PsiAnnotation valueObject = field.getAnnotation("com.easy.query.core.annotation.ValueObject");
             boolean isValueObject = valueObject != null;
             String fieldName = isValueObject ? psiFieldPropertyType.substring(psiFieldPropertyType.lastIndexOf(".") + 1) : entityName;
