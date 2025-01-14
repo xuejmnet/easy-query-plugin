@@ -6,8 +6,6 @@ import java.awt.*;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.List;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 public class NavMappingPanel extends JPanel {
     private JComboBox<String> mappingTypeCombo;
@@ -21,6 +19,14 @@ public class NavMappingPanel extends JPanel {
     private JComboBox<String> entitySelector;
     private JComboBox<String> middleEntitySelector;
     private static final int ENTITY_REGION_START_Y = 140;
+    private JLabel middleEntityLabel;
+    private JLabel targetEntityLabel;
+    private JButton selectMiddleEntityButton;
+    private JButton selectTargetEntityButton;
+    private static final String[] AVAILABLE_ENTITIES = {
+            "实体1", "实体2", "实体3", "实体4", "实体5",
+            "中间实体1", "中间实体2", "中间实体3"
+    };
 
     public static class MappingData {
         private String mappingType;
@@ -47,7 +53,7 @@ public class NavMappingPanel extends JPanel {
         private String targetAttribute;
 
         public AttributeMapping(String sourceAttribute, String middleSourceAttribute,
-                String middleTargetAttribute, String targetAttribute) {
+                                String middleTargetAttribute, String targetAttribute) {
             this.sourceAttribute = sourceAttribute;
             this.middleSourceAttribute = middleSourceAttribute;
             this.middleTargetAttribute = middleTargetAttribute;
@@ -85,21 +91,21 @@ public class NavMappingPanel extends JPanel {
         }
 
         private void initializeComponents() {
-            String[] sourceAttributes = new String[] {
+            String[] sourceAttributes = new String[]{
                     "当前实体属性",
                     "id",
                     "name",
                     "code",
                     "description"
             };
-            String[] mappingAttributes = new String[] {
+            String[] mappingAttributes = new String[]{
                     "映射实体属性",
                     "source_id",
                     "source_code",
                     "target_id",
                     "target_code"
             };
-            String[] targetAttributes = new String[] {
+            String[] targetAttributes = new String[]{
                     "目标实体属性",
                     "id",
                     "name",
@@ -136,7 +142,7 @@ public class NavMappingPanel extends JPanel {
         add(mappingTypeLabel);
 
         // 映射类型下拉框
-        mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
+        mappingTypeCombo = new JComboBox<>(new String[]{"OneToOne", "OneToMany", "ManyToOne", "ManyToMany"});
         mappingTypeCombo.setSelectedItem("OneToOne");
         mappingTypeCombo.setBounds(150, 20, 150, 30);
         mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
@@ -147,34 +153,40 @@ public class NavMappingPanel extends JPanel {
         middleLabel.setBounds(50, 55, 100, 30);
         add(middleLabel);
 
-        middleEntitySelector = new JComboBox<>();
-        middleEntitySelector.addItem("");
-        middleEntitySelector.addItem("中间实体1");
-        middleEntitySelector.addItem("中间实体2");
-        middleEntitySelector.setBounds(150, 55, 150, 30);
-        middleEntitySelector.addActionListener(e -> updateMappingDisplay());
-        add(middleEntitySelector);
+        // 中间实体标签和按钮
+        middleEntityLabel = new JLabel("");
+        middleEntityLabel.setBounds(150, 55, 150, 30);
+        add(middleEntityLabel);
+
+        selectMiddleEntityButton = new JButton("选择中间实体");
+        selectMiddleEntityButton.setBounds(300, 55, 120, 30);
+        selectMiddleEntityButton.addActionListener(e -> selectMiddleEntity());
+        add(selectMiddleEntityButton);
 
         // 目标实体标签
         JLabel targetLabel = new JLabel("目标实体(必须):");
         targetLabel.setBounds(50, 90, 100, 30);
         add(targetLabel);
 
-        entitySelector = new JComboBox<>();
-        entitySelector.addItem("实体1");
-        entitySelector.addItem("实体2");
-        entitySelector.setBounds(150, 90, 150, 30);
-        add(entitySelector);
+        // 目标实体标签和按钮 - 移除原来的ComboBox
+        targetEntityLabel = new JLabel("");
+        targetEntityLabel.setBounds(150, 90, 150, 30);
+        add(targetEntityLabel);
+
+        selectTargetEntityButton = new JButton("选择目标实体");
+        selectTargetEntityButton.setBounds(300, 90, 120, 30);
+        selectTargetEntityButton.addActionListener(e -> selectTargetEntity());
+        add(selectTargetEntityButton);
 
         // 添加映射组按钮
         addGroupButton = new JButton("添加映射组");
-        addGroupButton.setBounds(750, 20, 100, 30);
+        addGroupButton.setBounds(650, 20, 100, 30);
         add(addGroupButton);
         addGroupButton.addActionListener(e -> addAttributeGroup());
 
         // 确认按钮
         confirmButton = new JButton("确认");
-        confirmButton.setBounds(750, 500, 80, 30);
+        confirmButton.setBounds(760, 20, 80, 30);
         add(confirmButton);
         confirmButton.addActionListener(e -> handleConfirm());
 
@@ -184,30 +196,6 @@ public class NavMappingPanel extends JPanel {
     }
 
     private void initComponents() {
-        // 映射类型标签和下拉框放在同一行
-        JLabel mappingTypeLabel = new JLabel("映射类型:");
-        mappingTypeLabel.setBounds(50, 20, 70, 30);
-        add(mappingTypeLabel);
-
-        mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
-        mappingTypeCombo.setSelectedItem("OneToOne");
-        mappingTypeCombo.setBounds(120, 20, 150, 30);
-        mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
-
-        // 添加映射组按钮使用固定位置
-        addGroupButton = new JButton("添加映射组");
-        addGroupButton.setBounds(750, 20, 100, 30);
-        addGroupButton.addActionListener(e -> addAttributeGroup());
-
-        // 确认按钮使用固定位置
-        confirmButton = new JButton("确认");
-        confirmButton.addActionListener(e -> handleConfirm());
-        confirmButton.setBounds(750, 500, 80, 30);
-
-        add(mappingTypeLabel);
-        add(mappingTypeCombo);
-        add(addGroupButton);
-        add(confirmButton);
     }
 
     private void addAttributeGroup() {
@@ -277,16 +265,18 @@ public class NavMappingPanel extends JPanel {
 
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
-        boolean hasMiddleEntity = isManyToMany &&
-                middleEntitySelector.getSelectedItem() != null &&
-                !middleEntitySelector.getSelectedItem().toString().isEmpty();
+        boolean hasMiddleEntity = isManyToMany && !middleEntityLabel.getText().isEmpty();
 
         if (isManyToMany && hasMiddleEntity) {
+            // 中间实体属性
             group.middleAttr.setBounds(350, newY, 150, 30);
             group.middleTargetAttr.setBounds(350, newY + 35, 150, 30);
+            // 目标实体属性 - 与中间实体的第二个属性对齐
             group.targetAttr.setBounds(650, newY + 35, 150, 30);
+            // 删除按钮 - 垂直居中
             group.deleteButton.setBounds(830, newY + 15, 60, 30);
         } else {
+            // 无中间实体时，目标实体属性与源实体属性对齐
             group.targetAttr.setBounds(650, newY, 150, 30);
             group.deleteButton.setBounds(830, newY, 60, 30);
         }
@@ -295,22 +285,11 @@ public class NavMappingPanel extends JPanel {
     private void updateMappingDisplay() {
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
-        boolean hasMiddleEntity = isManyToMany &&
-                middleEntitySelector.getSelectedItem() != null &&
-                !middleEntitySelector.getSelectedItem().toString().isEmpty();
+        boolean hasMiddleEntity = isManyToMany && !middleEntityLabel.getText().isEmpty();
 
         // 控制中间实体选择器的可见性
-        Component[] components = getComponents();
-        for (Component component : components) {
-            if (component instanceof JLabel) {
-                JLabel label = (JLabel) component;
-                if (label.getText().equals("中间实体(可选):")) {
-                    label.setVisible(isManyToMany);
-                }
-            } else if (component == middleEntitySelector) {
-                component.setVisible(isManyToMany);
-            }
-        }
+        middleEntityLabel.setVisible(isManyToMany);
+        selectMiddleEntityButton.setVisible(isManyToMany);
 
         // 重新调整所有组的位置
         int newY = INITIAL_GROUP_Y;
@@ -356,9 +335,7 @@ public class NavMappingPanel extends JPanel {
 
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
-        boolean hasMiddleEntity = isManyToMany &&
-                middleEntitySelector.getSelectedItem() != null &&
-                !middleEntitySelector.getSelectedItem().toString().isEmpty();
+        boolean hasMiddleEntity = isManyToMany && !middleEntityLabel.getText().isEmpty();
 
         // 绘制实体区域边框和标签
         drawEntityRegions(g2d, hasMiddleEntity);
@@ -366,7 +343,7 @@ public class NavMappingPanel extends JPanel {
         // 绘制映射组之间的分隔线
         g2d.setColor(new Color(200, 200, 200));
         g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
-                0, new float[] { 5 }, 0));
+                0, new float[]{5}, 0));
 
         // 为每个映射组绘制底部分隔线
         for (int i = 0; i < attributeGroups.size() - 1; i++) {
@@ -382,13 +359,15 @@ public class NavMappingPanel extends JPanel {
         if (isManyToMany && hasMiddleEntity) {
             // 有中间实体时的连线
             for (AttributeGroup group : attributeGroups) {
+                // 源实体到中间实体第一个属性的连线
                 int sourceY = group.yPosition + 15;
                 int middleY1 = group.yPosition + 15;
                 g2d.draw(new Line2D.Double(200, sourceY, 350, middleY1));
                 drawArrow(g2d, 340, middleY1);
 
-                int middleY2 = group.yPosition + 55;
-                int targetY = group.yPosition + 55;
+                // 中间实体第二个属性到目标实体的连线
+                int middleY2 = group.yPosition + 50; // 调整为与middleTargetAttr对齐
+                int targetY = group.yPosition + 50; // 调整为与targetAttr对齐
                 g2d.draw(new Line2D.Double(500, middleY2, 650, targetY));
                 drawArrow(g2d, 640, targetY);
             }
@@ -403,8 +382,8 @@ public class NavMappingPanel extends JPanel {
     }
 
     private void drawArrow(Graphics2D g2d, int x, int y) {
-        int[] xPoints = { x, x - 10, x - 10 };
-        int[] yPoints = { y, y - 5, y + 5 };
+        int[] xPoints = {x, x - 10, x - 10};
+        int[] yPoints = {y, y - 5, y + 5};
         g2d.fillPolygon(xPoints, yPoints, 3);
     }
 
@@ -444,12 +423,12 @@ public class NavMappingPanel extends JPanel {
 
     // 获取选中的实体
     public String getSelectedEntity() {
-        return (String) entitySelector.getSelectedItem();
+        return targetEntityLabel.getText();
     }
 
     // 新增获取选中的中间实体的方法
     public String getSelectedMiddleEntity() {
-        return (String) middleEntitySelector.getSelectedItem();
+        return middleEntityLabel.getText();
     }
 
     private void drawEntityRegions(Graphics2D g2d, boolean hasMiddleEntity) {
@@ -496,5 +475,33 @@ public class NavMappingPanel extends JPanel {
         g2d.setColor(originalColor);
         g2d.setStroke(originalStroke);
         g2d.setFont(originalFont);
+    }
+
+    private void selectMiddleEntity() {
+        EntitySelectDialog dialog = new EntitySelectDialog(
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                "选择中间实体",
+                AVAILABLE_ENTITIES);
+        dialog.setVisible(true);
+
+        String selectedEntity = dialog.getSelectedEntity();
+        if (selectedEntity != null) {
+            middleEntityLabel.setText(selectedEntity);
+            updateMappingDisplay();
+        }
+    }
+
+    private void selectTargetEntity() {
+        EntitySelectDialog dialog = new EntitySelectDialog(
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                "选择目标实体",
+                AVAILABLE_ENTITIES);
+        dialog.setVisible(true);
+
+        String selectedEntity = dialog.getSelectedEntity();
+        if (selectedEntity != null) {
+            targetEntityLabel.setText(selectedEntity);
+            updateMappingDisplay();
+        }
     }
 }
