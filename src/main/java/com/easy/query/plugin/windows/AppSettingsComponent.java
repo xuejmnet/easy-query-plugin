@@ -13,6 +13,7 @@ public class AppSettingsComponent {
     private JTextArea excelDtoAnnoRemove;
     private JPanel mainPanel;
     private JTextField author;
+    private JTextArea FieldMissAnnotationsContent;
 
 
     public JPanel getPanel() {
@@ -49,6 +50,14 @@ public class AppSettingsComponent {
 
     public void setExcelDtoAnnoRemoveText(String text) {
         excelDtoAnnoRemove.setText(text);
+    }
+
+    public String getFieldMissAnnotationsContentText() {
+        return FieldMissAnnotationsContent.getText();
+    }
+
+    public void setFieldMissAnnotationsContentText(String text) {
+        FieldMissAnnotationsContent.setText(text);
     }
 
 

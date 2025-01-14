@@ -57,7 +57,7 @@ public class AppSettingsConfigurable implements SearchableConfigurable {
         state.setRequestDtoAnnoRemove(mySettingsComponent.getRequestDtoAnnoRemove().getText());
         state.setResponseDtoAnnoRemove(mySettingsComponent.getResponseDtoAnnoRemove().getText());
         state.setExcelDtoAnnoRemove(mySettingsComponent.getExcelDtoAnnoRemove().getText());
-
+        state.setFieldMissAnnotationsContent(mySettingsComponent.getFieldMissAnnotationsContentText());
 
     }
 
@@ -69,6 +69,7 @@ public class AppSettingsConfigurable implements SearchableConfigurable {
         mySettingsComponent.getRequestDtoAnnoRemove().setText(state.getRequestDtoAnnoRemove());
         mySettingsComponent.getResponseDtoAnnoRemove().setText(state.getResponseDtoAnnoRemove());
         mySettingsComponent.getExcelDtoAnnoRemove().setText(state.getExcelDtoAnnoRemove());
+        mySettingsComponent.getFieldMissAnnotationsContent().setText(state.getFieldMissAnnotationsContent());
     }
 
     @Override

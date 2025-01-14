@@ -58,6 +58,9 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
                     if (identifierRef == null) {
                         continue;
                     }
+                    if(!(identifierRef.resolve() instanceof ClsMethodImpl)){
+                        continue;
+                    }
                     ClsMethodImpl resolved = (ClsMethodImpl) identifierRef.resolve();
                     if (resolved == null || resolved.getContainingClass() == null || resolved.getContainingClass().getQualifiedName() == null) {
                         continue;
@@ -73,7 +76,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
                         for (PsiExpressionStatement normalExpression : normalExpressions) {
                             PsiExpression expression = normalExpression.getExpression();
                             if (expression instanceof PsiMethodCallExpression) {
-                                PsiMethod resolvedMethod = ((PsiMethodCallExpressionImpl) expression).resolveMethod();
+                                PsiMethod resolvedMethod = ((PsiMethodCallExpression) expression).resolveMethod();
 
                                 String resolvedMethodName = Optional.ofNullable(resolvedMethod).map(PsiMethod::getName).orElse(StrUtil.EMPTY);
 
