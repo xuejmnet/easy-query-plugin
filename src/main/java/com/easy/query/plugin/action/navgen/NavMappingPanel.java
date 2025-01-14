@@ -142,14 +142,16 @@ public class NavMappingPanel extends JPanel {
         add(mappingTypeCombo);
 
         // 中间实体标签和下拉框
-        JLabel middleLabel = new JLabel("中间实体(必须):");
+        JLabel middleLabel = new JLabel("中间实体(可选):");
         middleLabel.setBounds(50, 55, 70, 30);
         add(middleLabel);
 
         middleEntitySelector = new JComboBox<>();
+        middleEntitySelector.addItem("");
         middleEntitySelector.addItem("中间实体1");
         middleEntitySelector.addItem("中间实体2");
         middleEntitySelector.setBounds(120, 55, 150, 30);
+        middleEntitySelector.addActionListener(e -> updateMappingDisplay());
         add(middleEntitySelector);
 
         // 目标实体标签和下拉框
@@ -278,13 +280,18 @@ public class NavMappingPanel extends JPanel {
 
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
+        boolean hasMiddleEntity = isManyToMany &&
+                middleEntitySelector.getSelectedItem() != null &&
+                !middleEntitySelector.getSelectedItem().toString().isEmpty();
 
-        if (isManyToMany) {
+        if (isManyToMany && hasMiddleEntity) {
+            // 有中间实体时的布局
             group.middleAttr.setBounds(350, newY, 150, 30);
-            group.middleTargetAttr.setBounds(350, newY + 35, 150, 30); // 减小间距
+            group.middleTargetAttr.setBounds(350, newY + 35, 150, 30);
             group.targetAttr.setBounds(650, newY + 35, 150, 30);
-            group.deleteButton.setBounds(820, newY + 15, 60, 30); // 调整删除按钮位置
+            group.deleteButton.setBounds(820, newY + 15, 60, 30);
         } else {
+            // 无中间实体时的布局
             group.targetAttr.setBounds(650, newY, 150, 30);
             group.deleteButton.setBounds(820, newY, 60, 30);
         }
@@ -293,13 +300,16 @@ public class NavMappingPanel extends JPanel {
     private void updateMappingDisplay() {
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
+        boolean hasMiddleEntity = isManyToMany &&
+                middleEntitySelector.getSelectedItem() != null &&
+                !middleEntitySelector.getSelectedItem().toString().isEmpty();
 
         // 控制中间实体选择器的可见性
         Component[] components = getComponents();
         for (Component component : components) {
             if (component instanceof JLabel) {
                 JLabel label = (JLabel) component;
-                if (label.getText().equals("中间实体(必须):")) {
+                if (label.getText().equals("中间实体(可选):")) {
                     label.setVisible(isManyToMany);
                 }
             } else if (component == middleEntitySelector) {
@@ -310,12 +320,13 @@ public class NavMappingPanel extends JPanel {
         // 重新调整所有组的位置
         int newY = INITIAL_GROUP_Y;
         for (AttributeGroup group : attributeGroups) {
-            group.middleAttr.setVisible(isManyToMany);
-            group.middleTargetAttr.setVisible(isManyToMany);
+            // 只在选择了中间实体时显示中间实体属性
+            group.middleAttr.setVisible(hasMiddleEntity);
+            group.middleTargetAttr.setVisible(hasMiddleEntity);
 
             updateGroupPosition(group, newY);
             newY += GROUP_VERTICAL_GAP;
-            if (isManyToMany) {
+            if (hasMiddleEntity) {
                 newY += MANY_TO_MANY_EXTRA_GAP;
             }
         }
@@ -350,16 +361,19 @@ public class NavMappingPanel extends JPanel {
 
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
+        boolean hasMiddleEntity = isManyToMany &&
+                middleEntitySelector.getSelectedItem() != null &&
+                !middleEntitySelector.getSelectedItem().toString().isEmpty();
 
         // 绘制映射组之间的分隔线
-        g2d.setColor(new Color(200, 200, 200)); // 浅灰色
+        g2d.setColor(new Color(200, 200, 200));
         g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
-                0, new float[] { 5 }, 0)); // 虚线样式
+                0, new float[] { 5 }, 0));
 
-        // 为每个映射组（除了最后一个）绘制底部分隔线
+        // 为每个映射组绘制底部分隔线
         for (int i = 0; i < attributeGroups.size() - 1; i++) {
             AttributeGroup group = attributeGroups.get(i);
-            int lineY = group.yPosition + (isManyToMany ? 80 : 40); // ManyToMany模式下分隔线位置更低
+            int lineY = group.yPosition + (hasMiddleEntity ? 80 : 40);
             g2d.drawLine(30, lineY, getWidth() - 30, lineY);
         }
 
@@ -367,23 +381,21 @@ public class NavMappingPanel extends JPanel {
         g2d.setStroke(new BasicStroke(2));
         g2d.setColor(Color.BLACK);
 
-        if (isManyToMany) {
-            // 为每个映射组绘制连接线
+        if (isManyToMany && hasMiddleEntity) {
+            // 有中间实体时的连线
             for (AttributeGroup group : attributeGroups) {
-                // 源实体到中间实体的第一个属性的连线
                 int sourceY = group.yPosition + 15;
                 int middleY1 = group.yPosition + 15;
                 g2d.draw(new Line2D.Double(200, sourceY, 350, middleY1));
                 drawArrow(g2d, 340, middleY1);
 
-                // 中间实体的第二个属性到目标实体的连线
-                int middleY2 = group.yPosition + 55; // 调整连接线位置
+                int middleY2 = group.yPosition + 55;
                 int targetY = group.yPosition + 55;
                 g2d.draw(new Line2D.Double(500, middleY2, 650, targetY));
                 drawArrow(g2d, 640, targetY);
             }
         } else {
-            // 为每个映射组绘制直接连接线
+            // 无中间实体时的直接连线
             for (AttributeGroup group : attributeGroups) {
                 int y = group.yPosition + 15;
                 g2d.draw(new Line2D.Double(200, y, 650, y));
