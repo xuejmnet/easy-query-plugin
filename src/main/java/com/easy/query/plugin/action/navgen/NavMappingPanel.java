@@ -4,88 +4,180 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import java.awt.*;
 import java.awt.geom.Line2D;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NavMappingPanel extends JPanel {
     private JComboBox<String> mappingTypeCombo;
-    private JComboBox<String> sourceAttr1;
-    private JComboBox<String> sourceAttr2;
-    private JComboBox<String> middleAttr1;
-    private JComboBox<String> middleAttr2;
-    private JComboBox<String> targetAttr1;
-    private JComboBox<String> targetAttr2;
-    private JComboBox<String> middleTargetAttr1;
-    private JComboBox<String> middleTargetAttr2;
+    private List<AttributeGroup> attributeGroups;
+    private JButton addGroupButton;
+    private JPanel attributesPanel;
+    private static final int INITIAL_GROUP_Y = 200;
+    private static final int GROUP_VERTICAL_GAP = 100;
+
+    // 内部类用于管理一组属性映射
+    private class AttributeGroup {
+        JComboBox<String> sourceAttr;
+        JComboBox<String> middleAttr;
+        JComboBox<String> middleTargetAttr;
+        JComboBox<String> targetAttr;
+        JButton deleteButton;
+        int yPosition;
+
+        public AttributeGroup(int yPos) {
+            this.yPosition = yPos;
+            initializeComponents();
+        }
+
+        private void initializeComponents() {
+            String[] sourceAttributes = new String[] {
+                    "当前实体属性",
+                    "id",
+                    "name",
+                    "code",
+                    "description"
+            };
+            String[] mappingAttributes = new String[] {
+                    "映射实体属性",
+                    "source_id",
+                    "source_code",
+                    "target_id",
+                    "target_code"
+            };
+            String[] targetAttributes = new String[] {
+                    "目标实体属性",
+                    "id",
+                    "name",
+                    "code",
+                    "status"
+            };
+
+            sourceAttr = new JComboBox<>(sourceAttributes);
+            middleAttr = new JComboBox<>(mappingAttributes);
+            middleTargetAttr = new JComboBox<>(mappingAttributes);
+            targetAttr = new JComboBox<>(targetAttributes);
+            deleteButton = new JButton("删除");
+
+            // 设置组件位置
+            sourceAttr.setBounds(50, yPosition, 150, 30);
+            middleAttr.setBounds(350, yPosition, 150, 30);
+            middleTargetAttr.setBounds(350, yPosition + 50, 150, 30);
+            targetAttr.setBounds(650, yPosition, 150, 30);
+            deleteButton.setBounds(820, yPosition, 60, 30);
+
+            // 配置样式
+            configureComboBoxStyle(sourceAttr, middleAttr, middleTargetAttr, targetAttr);
+            deleteButton.setVisible(false); // 第一组默认不显示删除按钮
+        }
+    }
 
     public NavMappingPanel() {
-        setLayout(null); // 使用绝对布局
+        setLayout(null);
+        attributeGroups = new ArrayList<>();
 
         // 初始化组件
         initComponents();
 
-        // 添加组件到面板
-        addComponents();
+        // 添加第一组属性
+        addAttributeGroup();
 
-        // 设置初始状态
+        // 更新显示
         updateMappingDisplay();
     }
 
     private void initComponents() {
-        // 顶部映射类型选择 - 修改默认选项为 OneToOne
+        // 映射类型选择保持不变
         mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
-        mappingTypeCombo.setSelectedItem("OneToOne"); // 设置默认选中项
+        mappingTypeCombo.setSelectedItem("OneToOne");
         mappingTypeCombo.setBounds(300, 20, 150, 30);
-
-        // 左侧当前实体属性
-        String[] sourceAttributes = new String[] {
-                "当前实体属性1",
-                "id",
-                "name",
-                "code",
-                "description"
-        };
-        sourceAttr1 = new JComboBox<>(sourceAttributes);
-        sourceAttr2 = new JComboBox<>(sourceAttributes);
-        sourceAttr1.setBounds(50, 200, 150, 30);
-        sourceAttr2.setBounds(50, 300, 150, 30);
-
-        // 中间映射属性
-        String[] mappingAttributes = new String[] {
-                "映射当前实体属性1",
-                "source_id",
-                "source_code",
-                "target_id",
-                "target_code"
-        };
-        middleAttr1 = new JComboBox<>(mappingAttributes);
-        middleAttr2 = new JComboBox<>(mappingAttributes);
-        middleTargetAttr1 = new JComboBox<>(mappingAttributes);
-        middleTargetAttr2 = new JComboBox<>(mappingAttributes);
-
-        middleAttr1.setBounds(350, 200, 150, 30);
-        middleAttr2.setBounds(350, 300, 150, 30);
-        middleTargetAttr1.setBounds(350, 400, 150, 30);
-        middleTargetAttr2.setBounds(350, 500, 150, 30);
-
-        // 右侧目标实体属性
-        String[] targetAttributes = new String[] {
-                "目标实体属性1",
-                "id",
-                "name",
-                "code",
-                "status"
-        };
-        targetAttr1 = new JComboBox<>(targetAttributes);
-        targetAttr2 = new JComboBox<>(targetAttributes);
-        targetAttr1.setBounds(650, 400, 150, 30);
-        targetAttr2.setBounds(650, 500, 150, 30);
-
-        // 设置所有下拉框的样式
-        configureComboBoxStyle(mappingTypeCombo, sourceAttr1, sourceAttr2,
-                middleAttr1, middleAttr2, middleTargetAttr1,
-                middleTargetAttr2, targetAttr1, targetAttr2);
-
-        // 在 mappingTypeCombo 初始化后添加监听器
         mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
+
+        // 添加新增按钮
+        addGroupButton = new JButton("添加映射组");
+        addGroupButton.setBounds(50, 100, 100, 30);
+        addGroupButton.addActionListener(e -> addAttributeGroup());
+
+        add(mappingTypeCombo);
+        add(addGroupButton);
+    }
+
+    private void addAttributeGroup() {
+        int yPos = INITIAL_GROUP_Y + attributeGroups.size() * GROUP_VERTICAL_GAP;
+        AttributeGroup group = new AttributeGroup(yPos);
+        attributeGroups.add(group);
+
+        // 添加组件到面板
+        add(group.sourceAttr);
+        add(group.middleAttr);
+        add(group.middleTargetAttr);
+        add(group.targetAttr);
+        add(group.deleteButton);
+
+        // 如果不是第一组，显示删除按钮
+        if (attributeGroups.size() > 1) {
+            group.deleteButton.setVisible(true);
+            group.deleteButton.addActionListener(e -> removeAttributeGroup(group));
+        }
+
+        updateMappingDisplay();
+        revalidate();
+        repaint();
+    }
+
+    private void removeAttributeGroup(AttributeGroup group) {
+        remove(group.sourceAttr);
+        remove(group.middleAttr);
+        remove(group.middleTargetAttr);
+        remove(group.targetAttr);
+        remove(group.deleteButton);
+
+        attributeGroups.remove(group);
+
+        // 重新调整剩余组的位置
+        for (int i = 0; i < attributeGroups.size(); i++) {
+            AttributeGroup currentGroup = attributeGroups.get(i);
+            int newY = INITIAL_GROUP_Y + i * GROUP_VERTICAL_GAP;
+            updateGroupPosition(currentGroup, newY);
+        }
+
+        revalidate();
+        repaint();
+    }
+
+    private void updateGroupPosition(AttributeGroup group, int newY) {
+        group.yPosition = newY;
+        group.sourceAttr.setBounds(50, newY, 150, 30);
+        group.middleAttr.setBounds(350, newY, 150, 30);
+        group.middleTargetAttr.setBounds(350, newY + 50, 150, 30);
+
+        // 根据当前映射类型调整目标属性的位置
+        String selectedType = (String) mappingTypeCombo.getSelectedItem();
+        boolean isManyToMany = "ManyToMany".equals(selectedType);
+        if (isManyToMany) {
+            group.targetAttr.setBounds(650, newY + 50, 150, 30);
+        } else {
+            group.targetAttr.setBounds(650, newY, 150, 30);
+        }
+
+        group.deleteButton.setBounds(820, newY, 60, 30);
+    }
+
+    private void updateMappingDisplay() {
+        String selectedType = (String) mappingTypeCombo.getSelectedItem();
+        boolean isManyToMany = "ManyToMany".equals(selectedType);
+
+        for (AttributeGroup group : attributeGroups) {
+            group.middleAttr.setVisible(isManyToMany);
+            group.middleTargetAttr.setVisible(isManyToMany);
+
+            if (!isManyToMany) {
+                group.targetAttr.setBounds(650, group.yPosition, 150, 30);
+            } else {
+                group.targetAttr.setBounds(650, group.yPosition + 50, 150, 30);
+            }
+        }
+
+        repaint();
     }
 
     private void configureComboBoxStyle(JComboBox<?>... comboBoxes) {
@@ -107,40 +199,6 @@ public class NavMappingPanel extends JPanel {
         }
     }
 
-    private void addComponents() {
-        add(mappingTypeCombo);
-        add(sourceAttr1);
-        add(sourceAttr2);
-        add(middleAttr1);
-        add(middleAttr2);
-        add(middleTargetAttr1);
-        add(middleTargetAttr2);
-        add(targetAttr1);
-        add(targetAttr2);
-    }
-
-    private void updateMappingDisplay() {
-        String selectedType = (String) mappingTypeCombo.getSelectedItem();
-        boolean isManyToMany = "ManyToMany".equals(selectedType);
-
-        // 更新中间实体相关组件的可见性
-        middleAttr1.setVisible(isManyToMany);
-        middleAttr2.setVisible(isManyToMany);
-        middleTargetAttr1.setVisible(isManyToMany);
-        middleTargetAttr2.setVisible(isManyToMany);
-
-        // 如果不是多对多，调整目标属性的位置
-        if (!isManyToMany) {
-            targetAttr1.setBounds(650, 200, 150, 30);
-            targetAttr2.setBounds(650, 300, 150, 30);
-        } else {
-            targetAttr1.setBounds(650, 400, 150, 30);
-            targetAttr2.setBounds(650, 500, 150, 30);
-        }
-
-        repaint(); // 重绘面板以更新连接线
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -159,29 +217,31 @@ public class NavMappingPanel extends JPanel {
             g2d.drawString("中间实体(可选)", 350, 150);
             g2d.drawString("目标实体(必须)", 650, 150);
 
-            // 绘制多对多模式的连接线
+            // 为每个映射组绘制连接线
             g2d.setStroke(new BasicStroke(2));
-            g2d.draw(new Line2D.Double(200, 215, 350, 215));
-            g2d.draw(new Line2D.Double(200, 315, 350, 315));
-            g2d.draw(new Line2D.Double(500, 415, 650, 415));
-            g2d.draw(new Line2D.Double(500, 515, 650, 515));
+            for (AttributeGroup group : attributeGroups) {
+                // 源实体到中间实体的第一个属性的连线
+                int sourceY = group.yPosition + 15;
+                int middleY1 = group.yPosition + 15;
+                g2d.draw(new Line2D.Double(200, sourceY, 350, middleY1));
+                drawArrow(g2d, 340, middleY1);
 
-            // 绘制箭头
-            drawArrow(g2d, 340, 215);
-            drawArrow(g2d, 340, 315);
-            drawArrow(g2d, 640, 415);
-            drawArrow(g2d, 640, 515);
+                // 中间实体的第二个属性到目标实体的连线
+                int middleY2 = group.yPosition + 65; // 中间实体第二个属性的Y坐标
+                int targetY = group.yPosition + 65; // 目标实体属性的Y坐标，与中间实体第二个属性对齐
+                g2d.draw(new Line2D.Double(500, middleY2, 650, targetY));
+                drawArrow(g2d, 640, targetY);
+            }
         } else {
             g2d.drawString("目标实体(必须)", 650, 150);
 
-            // 绘制直接连接线
+            // 为每个映射组绘制直接连接线
             g2d.setStroke(new BasicStroke(2));
-            g2d.draw(new Line2D.Double(200, 215, 650, 215));
-            g2d.draw(new Line2D.Double(200, 315, 650, 315));
-
-            // 绘制箭头
-            drawArrow(g2d, 640, 215);
-            drawArrow(g2d, 640, 315);
+            for (AttributeGroup group : attributeGroups) {
+                int y = group.yPosition + 15;
+                g2d.draw(new Line2D.Double(200, y, 650, y));
+                drawArrow(g2d, 640, y);
+            }
         }
     }
 
