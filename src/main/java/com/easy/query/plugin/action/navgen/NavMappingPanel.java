@@ -15,8 +15,9 @@ public class NavMappingPanel extends JPanel {
     private JButton addGroupButton;
     private JButton confirmButton;
     private JPanel attributesPanel;
-    private static final int INITIAL_GROUP_Y = 120;
-    private static final int GROUP_VERTICAL_GAP = 60;
+    private static final int INITIAL_GROUP_Y = 150;
+    private static final int GROUP_VERTICAL_GAP = 70;
+    private static final int MANY_TO_MANY_EXTRA_GAP = 30;
     private JComboBox<String> entitySelector;
     private JComboBox<String> middleEntitySelector;
 
@@ -211,7 +212,19 @@ public class NavMappingPanel extends JPanel {
     }
 
     private void addAttributeGroup() {
-        int yPos = INITIAL_GROUP_Y + 80 + attributeGroups.size() * GROUP_VERTICAL_GAP;
+        String selectedType = (String) mappingTypeCombo.getSelectedItem();
+        boolean isManyToMany = "ManyToMany".equals(selectedType);
+
+        // 计算新组的Y位置，考虑ManyToMany模式
+        int yPos = INITIAL_GROUP_Y;
+        if (attributeGroups.size() > 0) {
+            AttributeGroup lastGroup = attributeGroups.get(attributeGroups.size() - 1);
+            yPos = lastGroup.yPosition + GROUP_VERTICAL_GAP;
+            if (isManyToMany) {
+                yPos += MANY_TO_MANY_EXTRA_GAP; // ManyToMany模式增加额外间距
+            }
+        }
+
         AttributeGroup group = new AttributeGroup(yPos);
         attributeGroups.add(group);
 
@@ -243,10 +256,16 @@ public class NavMappingPanel extends JPanel {
         attributeGroups.remove(group);
 
         // 重新调整剩余组的位置
-        for (int i = 0; i < attributeGroups.size(); i++) {
-            AttributeGroup currentGroup = attributeGroups.get(i);
-            int newY = INITIAL_GROUP_Y + i * GROUP_VERTICAL_GAP;
+        String selectedType = (String) mappingTypeCombo.getSelectedItem();
+        boolean isManyToMany = "ManyToMany".equals(selectedType);
+
+        int newY = INITIAL_GROUP_Y;
+        for (AttributeGroup currentGroup : attributeGroups) {
             updateGroupPosition(currentGroup, newY);
+            newY += GROUP_VERTICAL_GAP;
+            if (isManyToMany) {
+                newY += MANY_TO_MANY_EXTRA_GAP;
+            }
         }
 
         revalidate();
@@ -256,19 +275,19 @@ public class NavMappingPanel extends JPanel {
     private void updateGroupPosition(AttributeGroup group, int newY) {
         group.yPosition = newY;
         group.sourceAttr.setBounds(50, newY, 150, 30);
-        group.middleAttr.setBounds(350, newY, 150, 30);
-        group.middleTargetAttr.setBounds(350, newY + 50, 150, 30);
 
-        // 根据当前映射类型调整目标属性的位置
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
+
         if (isManyToMany) {
-            group.targetAttr.setBounds(650, newY + 50, 150, 30);
+            group.middleAttr.setBounds(350, newY, 150, 30);
+            group.middleTargetAttr.setBounds(350, newY + 35, 150, 30); // 减小间距
+            group.targetAttr.setBounds(650, newY + 35, 150, 30);
+            group.deleteButton.setBounds(820, newY + 15, 60, 30); // 调整删除按钮位置
         } else {
             group.targetAttr.setBounds(650, newY, 150, 30);
+            group.deleteButton.setBounds(820, newY, 60, 30);
         }
-
-        group.deleteButton.setBounds(820, newY, 60, 30);
     }
 
     private void updateMappingDisplay() {
@@ -288,14 +307,16 @@ public class NavMappingPanel extends JPanel {
             }
         }
 
+        // 重新调整所有组的位置
+        int newY = INITIAL_GROUP_Y;
         for (AttributeGroup group : attributeGroups) {
             group.middleAttr.setVisible(isManyToMany);
             group.middleTargetAttr.setVisible(isManyToMany);
 
-            if (!isManyToMany) {
-                group.targetAttr.setBounds(650, group.yPosition, 150, 30);
-            } else {
-                group.targetAttr.setBounds(650, group.yPosition + 50, 150, 30);
+            updateGroupPosition(group, newY);
+            newY += GROUP_VERTICAL_GAP;
+            if (isManyToMany) {
+                newY += MANY_TO_MANY_EXTRA_GAP;
             }
         }
 
@@ -330,9 +351,24 @@ public class NavMappingPanel extends JPanel {
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
 
+        // 绘制映射组之间的分隔线
+        g2d.setColor(new Color(200, 200, 200)); // 浅灰色
+        g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
+                0, new float[] { 5 }, 0)); // 虚线样式
+
+        // 为每个映射组（除了最后一个）绘制底部分隔线
+        for (int i = 0; i < attributeGroups.size() - 1; i++) {
+            AttributeGroup group = attributeGroups.get(i);
+            int lineY = group.yPosition + (isManyToMany ? 80 : 40); // ManyToMany模式下分隔线位置更低
+            g2d.drawLine(30, lineY, getWidth() - 30, lineY);
+        }
+
+        // 恢复实线样式和颜色用于绘制连接线
+        g2d.setStroke(new BasicStroke(2));
+        g2d.setColor(Color.BLACK);
+
         if (isManyToMany) {
             // 为每个映射组绘制连接线
-            g2d.setStroke(new BasicStroke(2));
             for (AttributeGroup group : attributeGroups) {
                 // 源实体到中间实体的第一个属性的连线
                 int sourceY = group.yPosition + 15;
@@ -341,14 +377,13 @@ public class NavMappingPanel extends JPanel {
                 drawArrow(g2d, 340, middleY1);
 
                 // 中间实体的第二个属性到目标实体的连线
-                int middleY2 = group.yPosition + 65;
-                int targetY = group.yPosition + 65;
+                int middleY2 = group.yPosition + 55; // 调整连接线位置
+                int targetY = group.yPosition + 55;
                 g2d.draw(new Line2D.Double(500, middleY2, 650, targetY));
                 drawArrow(g2d, 640, targetY);
             }
         } else {
             // 为每个映射组绘制直接连接线
-            g2d.setStroke(new BasicStroke(2));
             for (AttributeGroup group : attributeGroups) {
                 int y = group.yPosition + 15;
                 g2d.draw(new Line2D.Double(200, y, 650, y));
