@@ -25,7 +25,7 @@ public class EntitySelectDialog extends JDialog {
 
     private void initComponents() {
         setLayout(new BorderLayout());
-        setSize(300, 400);
+        setSize(600, 400);
         setLocationRelativeTo(getOwner());
 
         // 创建筛选面板

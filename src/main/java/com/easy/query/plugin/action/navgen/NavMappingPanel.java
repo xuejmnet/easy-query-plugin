@@ -423,7 +423,8 @@ public class NavMappingPanel extends JPanel {
         // 添加 selfProperty
         if (relation.getSourceFields() != null && relation.getSourceFields().length > 0) {
             code.append(", selfProperty = {");
-            code.append(Arrays.stream(relation.getSourceFields()).map(s->sourceEntity+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getSourceFields()).map(s -> sourceEntity + ".Fields." + s + "")
+                    .collect(Collectors.joining(", ")));
             code.append("}");
         }
 
@@ -431,7 +432,8 @@ public class NavMappingPanel extends JPanel {
         if (relation.getSelfMappingFields() != null && relation.getSelfMappingFields().length > 0) {
             code.append(", selfMappingProperty = {");
 
-            code.append(Arrays.stream(relation.getSelfMappingFields()).map(s->mappingClass+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getSelfMappingFields()).map(s -> mappingClass + ".Fields." + s + "")
+                    .collect(Collectors.joining(", ")));
             code.append("}");
         }
 
@@ -443,14 +445,16 @@ public class NavMappingPanel extends JPanel {
         // 添加 targetProperty
         if (relation.getTargetFields() != null && relation.getTargetFields().length > 0) {
             code.append(", targetProperty = {");
-            code.append(Arrays.stream(relation.getTargetFields()).map(s->targetEntity+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getTargetFields()).map(s -> targetEntity + ".Fields." + s + "")
+                    .collect(Collectors.joining(", ")));
             code.append("}");
         }
 
         // 添加 targetMappingProperty
         if (relation.getTargetMappingFields() != null && relation.getTargetMappingFields().length > 0) {
             code.append(", targetMappingProperty = {");
-            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s->mappingClass+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s -> mappingClass + ".Fields." + s + "")
+                    .collect(Collectors.joining(", ")));
             code.append("}");
         }
 

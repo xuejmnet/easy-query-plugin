@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 public class NavMappingGUI extends JDialog {
     private NavMappingPanel mappingPanel;
-    private Consumer<String> confirmCallback;
+    private Consumer<NavMappingRelation> confirmCallback;
 
     public NavMappingGUI(String[] availableEntities, String currentEntityName,
             Map<String, String[]> entityAttributesMap) {
@@ -17,7 +17,7 @@ public class NavMappingGUI extends JDialog {
     }
 
     public NavMappingGUI(String[] availableEntities, String currentEntityName,
-            Map<String, String[]> entityAttributesMap, Consumer<String> confirmCallback) {
+            Map<String, String[]> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
         super();
         setTitle("映射关系");
         setModal(true);
@@ -37,13 +37,13 @@ public class NavMappingGUI extends JDialog {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            String[] entities = { "SysUser", "SysUserRole", "SysRole" };
-            String currentEntity = "SysUser";
+            String[] entities = { "com.easy.query.plugin.action.navgen.SysUser", "com.easy.query.plugin.action.navgen.SysUserRole", "com.easy.query.plugin.action.navgen.SysRole" };
+            String currentEntity = "com.easy.query.plugin.action.navgen.SysUser";
 
             Map<String, String[]> entityAttributesMap = new HashMap<>();
-            entityAttributesMap.put("SysUser", new String[] { "id", "loginName", "realName" });
-            entityAttributesMap.put("SysUserRole", new String[] { "id", "userId", "roleId" });
-            entityAttributesMap.put("SysRole", new String[] { "id", "roleCode", "roleName" });
+            entityAttributesMap.put("com.easy.query.plugin.action.navgen.SysUser", new String[] { "id", "loginName", "realName", "loginName", "realName", "loginName", "realName", "loginName", "realName", "loginName", "realName", "loginName", "realName", "loginName", "realName" });
+            entityAttributesMap.put("com.easy.query.plugin.action.navgen.SysUserRole", new String[] { "id", "userId", "roleId" });
+            entityAttributesMap.put("com.easy.query.plugin.action.navgen.SysRole", new String[] { "id", "roleCode", "roleName" });
 
             NavMappingGUI gui = new NavMappingGUI(entities, currentEntity, entityAttributesMap);
             gui.setVisible(true);
