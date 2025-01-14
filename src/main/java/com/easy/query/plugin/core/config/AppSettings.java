@@ -36,6 +36,7 @@ public class AppSettings implements PersistentStateComponent<AppSettings.State> 
         private String requestDtoAnnoRemove;
         private String responseDtoAnnoRemove;
         private String excelDtoAnnoRemove;
+        private String fieldMissAnnotationsContent;
 
         public List<String> getRemoveAnnoList(String schema) {
             if ("request".equals(schema)) {
