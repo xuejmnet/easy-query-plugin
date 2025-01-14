@@ -33,7 +33,7 @@ public class NavMappingPanel extends JPanel {
     @Getter
     private final String currentEntityName;
     private final Map<String, String[]> entityAttributesMap;
-    private final Consumer<String> confirmCallback;
+    private final Consumer<NavMappingRelation> confirmCallback;
 
     public static class MappingData {
         private String mappingType;
@@ -110,10 +110,15 @@ public class NavMappingPanel extends JPanel {
             targetAttr = new JComboBox<>(targetAttributes);
             deleteButton = new JButton("删除");
 
-            sourceAttr.setBounds(50, yPosition, 150, 30);
-            middleAttr.setBounds(350, yPosition, 150, 30);
-            middleTargetAttr.setBounds(350, yPosition + 50, 150, 30);
-            targetAttr.setBounds(650, yPosition, 150, 30);
+            sourceAttr.setMaximumRowCount(15);
+            middleAttr.setMaximumRowCount(15);
+            middleTargetAttr.setMaximumRowCount(15);
+            targetAttr.setMaximumRowCount(15);
+
+            sourceAttr.setBounds(50, yPosition, 150, 600);
+            middleAttr.setBounds(350, yPosition, 150, 600);
+            middleTargetAttr.setBounds(350, yPosition + 50, 150, 600);
+            targetAttr.setBounds(650, yPosition, 150, 600);
             deleteButton.setBounds(820, yPosition, 60, 30);
 
             configureComboBoxStyle(sourceAttr, middleAttr, middleTargetAttr, targetAttr);
@@ -148,7 +153,7 @@ public class NavMappingPanel extends JPanel {
     }
 
     public NavMappingPanel(String[] availableEntities, String currentEntityName,
-            Map<String, String[]> entityAttributesMap, Consumer<String> confirmCallback) {
+            Map<String, String[]> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
         this.availableEntities = availableEntities;
         this.currentEntityName = currentEntityName;
         this.entityAttributesMap = entityAttributesMap;
@@ -175,7 +180,7 @@ public class NavMappingPanel extends JPanel {
         add(currentEntityLabel);
 
         JLabel currentEntityDisplay = new JLabel(currentEntityName);
-        currentEntityDisplay.setBounds(150, 55, 150, 30);
+        currentEntityDisplay.setBounds(150, 55, 550, 30);
         currentEntityDisplay.setBorder(BorderFactory.createLineBorder(Color.GRAY));
         currentEntityDisplay.setOpaque(true);
         currentEntityDisplay.setBackground(Color.WHITE);
@@ -186,11 +191,11 @@ public class NavMappingPanel extends JPanel {
         add(middleLabel);
 
         middleEntityLabel = new JLabel("");
-        middleEntityLabel.setBounds(150, 90, 150, 30);
+        middleEntityLabel.setBounds(150, 90, 550, 30);
         add(middleEntityLabel);
 
         selectMiddleEntityButton = new JButton("选择中间实体");
-        selectMiddleEntityButton.setBounds(300, 90, 120, 30);
+        selectMiddleEntityButton.setBounds(700, 90, 120, 30);
         selectMiddleEntityButton.addActionListener(e -> selectMiddleEntity());
         add(selectMiddleEntityButton);
 
@@ -199,11 +204,11 @@ public class NavMappingPanel extends JPanel {
         add(targetLabel);
 
         targetEntityLabel = new JLabel("");
-        targetEntityLabel.setBounds(150, 125, 150, 30);
+        targetEntityLabel.setBounds(150, 125, 550, 30);
         add(targetEntityLabel);
 
         selectTargetEntityButton = new JButton("选择目标实体");
-        selectTargetEntityButton.setBounds(300, 125, 120, 30);
+        selectTargetEntityButton.setBounds(700, 125, 120, 30);
         selectTargetEntityButton.addActionListener(e -> selectTargetEntity());
         add(selectTargetEntityButton);
 
@@ -396,11 +401,10 @@ public class NavMappingPanel extends JPanel {
     private void handleConfirm() {
         NavMappingRelation relation = getNavMappingRelation();
         if (relation != null) {
-            String generatedCode = generateNavPropertyCode(relation);
             if (confirmCallback != null) {
                 // 使用 WriteCommandAction 包装文档修改操作
                 WriteCommandAction.runWriteCommandAction(null, () -> {
-                    confirmCallback.accept(generatedCode);
+                    confirmCallback.accept(relation);
                 });
             }
         }
@@ -408,60 +412,7 @@ public class NavMappingPanel extends JPanel {
         SwingUtilities.getWindowAncestor(this).dispose();
     }
 
-    private String generateNavPropertyCode(NavMappingRelation relation) {
-        String sourceEntity = relation.getSourceEntity();
-        String targetEntity = relation.getTargetEntity();
-        String mappingClass = relation.getMappingClass();
-        StringBuilder code = new StringBuilder();
 
-        // 生成注解
-        code.append("@Navigate(");
-
-        // 添加关系类型
-        code.append("value = RelationTypeEnum.").append(relation.getRelationType());
-
-        // 添加 selfProperty
-        if (relation.getSourceFields() != null && relation.getSourceFields().length > 0) {
-            code.append(", selfProperty = {");
-            code.append(Arrays.stream(relation.getSourceFields()).map(s -> sourceEntity + ".Fields." + s + "")
-                    .collect(Collectors.joining(", ")));
-            code.append("}");
-        }
-
-        // 添加 selfMappingProperty
-        if (relation.getSelfMappingFields() != null && relation.getSelfMappingFields().length > 0) {
-            code.append(", selfMappingProperty = {");
-
-            code.append(Arrays.stream(relation.getSelfMappingFields()).map(s -> mappingClass + ".Fields." + s + "")
-                    .collect(Collectors.joining(", ")));
-            code.append("}");
-        }
-
-        // 添加 mappingClass
-        if (mappingClass != null && !mappingClass.isEmpty()) {
-            code.append(", mappingClass = ").append(mappingClass).append(".class");
-        }
-
-        // 添加 targetProperty
-        if (relation.getTargetFields() != null && relation.getTargetFields().length > 0) {
-            code.append(", targetProperty = {");
-            code.append(Arrays.stream(relation.getTargetFields()).map(s -> targetEntity + ".Fields." + s + "")
-                    .collect(Collectors.joining(", ")));
-            code.append("}");
-        }
-
-        // 添加 targetMappingProperty
-        if (relation.getTargetMappingFields() != null && relation.getTargetMappingFields().length > 0) {
-            code.append(", targetMappingProperty = {");
-            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s -> mappingClass + ".Fields." + s + "")
-                    .collect(Collectors.joining(", ")));
-            code.append("}");
-        }
-
-        code.append(")");
-
-        return code.toString();
-    }
 
     public MappingData collectFormData() {
         String mappingType = (String) mappingTypeCombo.getSelectedItem();
