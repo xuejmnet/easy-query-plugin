@@ -23,10 +23,7 @@ public class NavMappingPanel extends JPanel {
     private JLabel targetEntityLabel;
     private JButton selectMiddleEntityButton;
     private JButton selectTargetEntityButton;
-    private static final String[] AVAILABLE_ENTITIES = {
-            "实体1", "实体2", "实体3", "实体4", "实体5",
-            "中间实体1", "中间实体2", "中间实体3"
-    };
+    private final String[] availableEntities;
 
     public static class MappingData {
         private String mappingType;
@@ -53,7 +50,7 @@ public class NavMappingPanel extends JPanel {
         private String targetAttribute;
 
         public AttributeMapping(String sourceAttribute, String middleSourceAttribute,
-                                String middleTargetAttribute, String targetAttribute) {
+                String middleTargetAttribute, String targetAttribute) {
             this.sourceAttribute = sourceAttribute;
             this.middleSourceAttribute = middleSourceAttribute;
             this.middleTargetAttribute = middleTargetAttribute;
@@ -91,21 +88,21 @@ public class NavMappingPanel extends JPanel {
         }
 
         private void initializeComponents() {
-            String[] sourceAttributes = new String[]{
+            String[] sourceAttributes = new String[] {
                     "当前实体属性",
                     "id",
                     "name",
                     "code",
                     "description"
             };
-            String[] mappingAttributes = new String[]{
+            String[] mappingAttributes = new String[] {
                     "映射实体属性",
                     "source_id",
                     "source_code",
                     "target_id",
                     "target_code"
             };
-            String[] targetAttributes = new String[]{
+            String[] targetAttributes = new String[] {
                     "目标实体属性",
                     "id",
                     "name",
@@ -132,7 +129,12 @@ public class NavMappingPanel extends JPanel {
         }
     }
 
-    public NavMappingPanel() {
+    public NavMappingPanel(String[] availableEntities) {
+        this.availableEntities = availableEntities;
+        initializePanel();
+    }
+
+    private void initializePanel() {
         setLayout(null);
         setPreferredSize(new Dimension(900, 600));
 
@@ -142,7 +144,7 @@ public class NavMappingPanel extends JPanel {
         add(mappingTypeLabel);
 
         // 映射类型下拉框
-        mappingTypeCombo = new JComboBox<>(new String[]{"OneToOne", "OneToMany", "ManyToOne", "ManyToMany"});
+        mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
         mappingTypeCombo.setSelectedItem("OneToOne");
         mappingTypeCombo.setBounds(150, 20, 150, 30);
         mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
@@ -343,7 +345,7 @@ public class NavMappingPanel extends JPanel {
         // 绘制映射组之间的分隔线
         g2d.setColor(new Color(200, 200, 200));
         g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
-                0, new float[]{5}, 0));
+                0, new float[] { 5 }, 0));
 
         // 为每个映射组绘制底部分隔线
         for (int i = 0; i < attributeGroups.size() - 1; i++) {
@@ -382,8 +384,8 @@ public class NavMappingPanel extends JPanel {
     }
 
     private void drawArrow(Graphics2D g2d, int x, int y) {
-        int[] xPoints = {x, x - 10, x - 10};
-        int[] yPoints = {y, y - 5, y + 5};
+        int[] xPoints = { x, x - 10, x - 10 };
+        int[] yPoints = { y, y - 5, y + 5 };
         g2d.fillPolygon(xPoints, yPoints, 3);
     }
 
@@ -479,9 +481,9 @@ public class NavMappingPanel extends JPanel {
 
     private void selectMiddleEntity() {
         EntitySelectDialog dialog = new EntitySelectDialog(
-                (Frame) SwingUtilities.getWindowAncestor(this),
+                SwingUtilities.getWindowAncestor(this),
                 "选择中间实体",
-                AVAILABLE_ENTITIES);
+                availableEntities);
         dialog.setVisible(true);
 
         String selectedEntity = dialog.getSelectedEntity();
@@ -493,9 +495,9 @@ public class NavMappingPanel extends JPanel {
 
     private void selectTargetEntity() {
         EntitySelectDialog dialog = new EntitySelectDialog(
-                (Frame) SwingUtilities.getWindowAncestor(this),
+                SwingUtilities.getWindowAncestor(this),
                 "选择目标实体",
-                AVAILABLE_ENTITIES);
+                availableEntities);
         dialog.setVisible(true);
 
         String selectedEntity = dialog.getSelectedEntity();

@@ -17,8 +17,8 @@ public class EntitySelectDialog extends JDialog {
     private final String[] allEntities;
     private DefaultListModel<String> listModel;
 
-    public EntitySelectDialog(Frame owner, String title, String[] entities) {
-        super(owner, title, true);
+    public EntitySelectDialog(Window owner, String title, String[] entities) {
+        super(owner, title, ModalityType.APPLICATION_MODAL);
         this.allEntities = entities;
         initComponents();
     }

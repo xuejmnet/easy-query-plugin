@@ -3,24 +3,33 @@ package com.easy.query.plugin.action.navgen;
 import javax.swing.*;
 import java.awt.*;
 
-public class NavMappingGUI extends JFrame {
-    private static final int WINDOW_WIDTH = 1000;
-    private static final int WINDOW_HEIGHT = 600;
+public class NavMappingGUI extends JDialog {
+    private NavMappingPanel mappingPanel;
 
-    public NavMappingGUI() {
+    public NavMappingGUI(String[] availableEntities) {
+        super();
         setTitle("映射关系");
-        setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setModal(true);
+        initComponents(availableEntities);
+    }
+
+    private void initComponents(String[] availableEntities) {
         setLayout(new BorderLayout());
 
-        // 创建主面板
-        NavMappingPanel navMappingPanel = new NavMappingPanel();
-        add(navMappingPanel, BorderLayout.CENTER);
+        // 使用传入的实体列表创建NavMappingPanel
+        mappingPanel = new NavMappingPanel(availableEntities);
+        add(mappingPanel, BorderLayout.CENTER);
+
+        // ... 其他初始化代码 ...
+
+        pack();
+        setLocationRelativeTo(getOwner());
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            NavMappingGUI gui = new NavMappingGUI();
+            NavMappingGUI gui = new NavMappingGUI(
+                    new String[] { "Entity1", "Entity2", "Entity3" });
             gui.setVisible(true);
         });
     }
