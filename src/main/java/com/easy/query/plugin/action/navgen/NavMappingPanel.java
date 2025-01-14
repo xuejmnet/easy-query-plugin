@@ -13,17 +13,18 @@ public class NavMappingPanel extends JPanel {
     private JButton addGroupButton;
     private JButton confirmButton;
     private JPanel attributesPanel;
-    private static final int INITIAL_GROUP_Y = 180;
+    private static final int INITIAL_GROUP_Y = 220;
     private static final int GROUP_VERTICAL_GAP = 70;
     private static final int MANY_TO_MANY_EXTRA_GAP = 30;
     private JComboBox<String> entitySelector;
     private JComboBox<String> middleEntitySelector;
-    private static final int ENTITY_REGION_START_Y = 140;
+    private static final int ENTITY_REGION_START_Y = 180;
     private JLabel middleEntityLabel;
     private JLabel targetEntityLabel;
     private JButton selectMiddleEntityButton;
     private JButton selectTargetEntityButton;
     private final String[] availableEntities;
+    private final String currentEntityName;
 
     public static class MappingData {
         private String mappingType;
@@ -129,8 +130,9 @@ public class NavMappingPanel extends JPanel {
         }
     }
 
-    public NavMappingPanel(String[] availableEntities) {
+    public NavMappingPanel(String[] availableEntities, String currentEntityName) {
         this.availableEntities = availableEntities;
+        this.currentEntityName = currentEntityName;
         initializePanel();
     }
 
@@ -138,55 +140,63 @@ public class NavMappingPanel extends JPanel {
         setLayout(null);
         setPreferredSize(new Dimension(900, 600));
 
-        // 映射类型标签
+        // 映射类型标签和下拉框 (y=20)
         JLabel mappingTypeLabel = new JLabel("映射类型:");
         mappingTypeLabel.setBounds(50, 20, 100, 30);
         add(mappingTypeLabel);
 
-        // 映射类型下拉框
         mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
         mappingTypeCombo.setSelectedItem("OneToOne");
         mappingTypeCombo.setBounds(150, 20, 150, 30);
         mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
         add(mappingTypeCombo);
 
-        // 中间实体标签
+        // 当前实体标签和显示 (y=55)
+        JLabel currentEntityLabel = new JLabel("当前实体:");
+        currentEntityLabel.setBounds(50, 55, 100, 30);
+        add(currentEntityLabel);
+
+        JLabel currentEntityDisplay = new JLabel(currentEntityName);
+        currentEntityDisplay.setBounds(150, 55, 150, 30);
+        currentEntityDisplay.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        currentEntityDisplay.setOpaque(true);
+        currentEntityDisplay.setBackground(Color.WHITE);
+        add(currentEntityDisplay);
+
+        // 中间实体标签和选择 (y=90)
         JLabel middleLabel = new JLabel("中间实体(可选):");
-        middleLabel.setBounds(50, 55, 100, 30);
+        middleLabel.setBounds(50, 90, 100, 30);
         add(middleLabel);
 
-        // 中间实体标签和按钮
         middleEntityLabel = new JLabel("");
-        middleEntityLabel.setBounds(150, 55, 150, 30);
+        middleEntityLabel.setBounds(150, 90, 150, 30);
         add(middleEntityLabel);
 
         selectMiddleEntityButton = new JButton("选择中间实体");
-        selectMiddleEntityButton.setBounds(300, 55, 120, 30);
+        selectMiddleEntityButton.setBounds(300, 90, 120, 30);
         selectMiddleEntityButton.addActionListener(e -> selectMiddleEntity());
         add(selectMiddleEntityButton);
 
-        // 目标实体标签
+        // 目标实体标签和选择 (y=125)
         JLabel targetLabel = new JLabel("目标实体(必须):");
-        targetLabel.setBounds(50, 90, 100, 30);
+        targetLabel.setBounds(50, 125, 100, 30);
         add(targetLabel);
 
-        // 目标实体标签和按钮 - 移除原来的ComboBox
         targetEntityLabel = new JLabel("");
-        targetEntityLabel.setBounds(150, 90, 150, 30);
+        targetEntityLabel.setBounds(150, 125, 150, 30);
         add(targetEntityLabel);
 
         selectTargetEntityButton = new JButton("选择目标实体");
-        selectTargetEntityButton.setBounds(300, 90, 120, 30);
+        selectTargetEntityButton.setBounds(300, 125, 120, 30);
         selectTargetEntityButton.addActionListener(e -> selectTargetEntity());
         add(selectTargetEntityButton);
 
-        // 添加映射组按钮
+        // 添加映射组按钮和确认按钮保持在右上角
         addGroupButton = new JButton("添加映射组");
         addGroupButton.setBounds(650, 20, 100, 30);
         add(addGroupButton);
         addGroupButton.addActionListener(e -> addAttributeGroup());
 
-        // 确认按钮
         confirmButton = new JButton("确认");
         confirmButton.setBounds(760, 20, 80, 30);
         add(confirmButton);
@@ -270,15 +280,11 @@ public class NavMappingPanel extends JPanel {
         boolean hasMiddleEntity = isManyToMany && !middleEntityLabel.getText().isEmpty();
 
         if (isManyToMany && hasMiddleEntity) {
-            // 中间实体属性
             group.middleAttr.setBounds(350, newY, 150, 30);
             group.middleTargetAttr.setBounds(350, newY + 35, 150, 30);
-            // 目标实体属性 - 与中间实体的第二个属性对齐
             group.targetAttr.setBounds(650, newY + 35, 150, 30);
-            // 删除按钮 - 垂直居中
             group.deleteButton.setBounds(830, newY + 15, 60, 30);
         } else {
-            // 无中间实体时，目标实体属性与源实体属性对齐
             group.targetAttr.setBounds(650, newY, 150, 30);
             group.deleteButton.setBounds(830, newY, 60, 30);
         }
@@ -368,8 +374,8 @@ public class NavMappingPanel extends JPanel {
                 drawArrow(g2d, 340, middleY1);
 
                 // 中间实体第二个属性到目标实体的连线
-                int middleY2 = group.yPosition + 50; // 调整为与middleTargetAttr对齐
-                int targetY = group.yPosition + 50; // 调整为与targetAttr对齐
+                int middleY2 = group.yPosition + 50;
+                int targetY = group.yPosition + 50;
                 g2d.draw(new Line2D.Double(500, middleY2, 650, targetY));
                 drawArrow(g2d, 640, targetY);
             }
@@ -443,34 +449,31 @@ public class NavMappingPanel extends JPanel {
         g2d.setFont(new Font("宋体", Font.BOLD, 12));
 
         // 计算区域高度
-        int height = getHeight() - 50; // 留出底部空间
-        int startY = ENTITY_REGION_START_Y; // 使用新的起始位置常量
+        int height = getHeight() - 50;
+        int startY = ENTITY_REGION_START_Y;
 
         // 当前实体区域 (蓝色)
-        g2d.setColor(new Color(100, 149, 237, 50)); // 淡蓝色填充
+        g2d.setColor(new Color(100, 149, 237, 50));
         g2d.fillRect(40, startY, 170, height - startY);
-        g2d.setColor(new Color(100, 149, 237)); // 蓝色边框
+        g2d.setColor(new Color(100, 149, 237));
         g2d.setStroke(new BasicStroke(2));
         g2d.drawRect(40, startY, 170, height - startY);
-        // 绘制标签
         g2d.drawString("当前实体", 90, startY - 5);
 
         if (hasMiddleEntity) {
             // 中间实体区域 (绿色)
-            g2d.setColor(new Color(144, 238, 144, 50)); // 淡绿色填充
+            g2d.setColor(new Color(144, 238, 144, 50));
             g2d.fillRect(340, startY, 170, height - startY);
-            g2d.setColor(new Color(60, 179, 113)); // 绿色边框
+            g2d.setColor(new Color(60, 179, 113));
             g2d.drawRect(340, startY, 170, height - startY);
-            // 绘制标签
             g2d.drawString("中间实体", 390, startY - 5);
         }
 
         // 目标实体区域 (橙色)
-        g2d.setColor(new Color(255, 165, 0, 50)); // 淡橙色填充
+        g2d.setColor(new Color(255, 165, 0, 50));
         g2d.fillRect(640, startY, 170, height - startY);
-        g2d.setColor(new Color(255, 140, 0)); // 橙色边框
+        g2d.setColor(new Color(255, 140, 0));
         g2d.drawRect(640, startY, 170, height - startY);
-        // 绘制标签
         g2d.drawString("目标实体", 690, startY - 5);
 
         // 恢复原始设置
