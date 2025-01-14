@@ -443,14 +443,14 @@ public class NavMappingPanel extends JPanel {
         // 添加 targetProperty
         if (relation.getTargetFields() != null && relation.getTargetFields().length > 0) {
             code.append(", targetProperty = {");
-            code.append(Arrays.stream(relation.getTargetFields()).map(s->mappingClass+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getTargetFields()).map(s->targetEntity+".Fields."+s+"").collect(Collectors.joining(", ")));
             code.append("}");
         }
 
         // 添加 targetMappingProperty
         if (relation.getTargetMappingFields() != null && relation.getTargetMappingFields().length > 0) {
             code.append(", targetMappingProperty = {");
-            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s->targetEntity+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s->mappingClass+".Fields."+s+"").collect(Collectors.joining(", ")));
             code.append("}");
         }
 

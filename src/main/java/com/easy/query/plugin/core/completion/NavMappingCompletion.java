@@ -3,10 +3,12 @@ package com.easy.query.plugin.core.completion;
 import com.easy.query.plugin.action.navgen.NavMappingGUI;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
+import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
@@ -14,10 +16,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -42,7 +41,6 @@ public class NavMappingCompletion extends CompletionContributor {
         }
         String currentClassQualifiedName = currentPsiClass.getQualifiedName();
 
-        PsiField[] currentFields = currentPsiClass.getAllFields();
 
         //
 
@@ -56,21 +54,29 @@ public class NavMappingCompletion extends CompletionContributor {
                                 });
                             };
 
+                            Project project = context.getProject();
                             SwingUtilities.invokeLater(() -> {
 
 
-                                String[] entities = {currentClassQualifiedName, "SysUser", "SysUserRole", "SysRole"};
-                                String currentEntity = currentClassQualifiedName;
+                                Collection<PsiClass> entityClasses = PsiJavaFileUtil.getAnnotationPsiClass(project,
+                                        "com.easy.query.core.annotation.Table");
+
+                                List<String> entityClassQualifiedNameList = entityClasses.stream().map(PsiClass::getQualifiedName).collect(Collectors.toList());
+
+
+                                String[] entities = entityClassQualifiedNameList.toArray(new String[0]);
 
                                 Map<String, String[]> entityAttributesMap = new HashMap<>();
-                                entityAttributesMap.put(currentClassQualifiedName, Arrays.stream(currentFields)
-                                        .map(PsiField::getName).collect(Collectors.toList()).toArray(new String[0]));
 
-                                entityAttributesMap.put("SysUser", new String[]{"id", "loginName", "realName"});
-                                entityAttributesMap.put("SysUserRole", new String[]{"id", "userId", "roleId"});
-                                entityAttributesMap.put("SysRole", new String[]{"id", "roleCode", "roleName"});
 
-                                NavMappingGUI gui = new NavMappingGUI(entities, currentEntity, entityAttributesMap,
+                                for (PsiClass psiClass : entityClasses) {
+                                    PsiField[] allFields = psiClass.getAllFields();
+                                    entityAttributesMap.put(psiClass.getQualifiedName(), Arrays.stream(allFields)
+                                            .map(PsiField::getName).collect(Collectors.toList()).toArray(new String[0]));
+                                }
+
+
+                                NavMappingGUI gui = new NavMappingGUI(entities, currentClassQualifiedName, entityAttributesMap,
                                         callback);
                                 gui.setVisible(true);
                             });
