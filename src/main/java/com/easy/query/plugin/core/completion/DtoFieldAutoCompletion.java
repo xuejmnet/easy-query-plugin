@@ -63,28 +63,28 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
             if (!dtoFieldNameSet.contains(fieldName)) {
 
                 LookupElement lookupElementWithoutEq = PrioritizedLookupElement.withPriority(
-                    LookupElementBuilder.create(entityFieldRaw.getName())
-                        .withTypeText(entityFieldRaw.getType().getPresentableText())
-                        .withInsertHandler((context, item) -> {
+                        LookupElementBuilder.create(entityFieldRaw.getName())
+                                .withTypeText(entityFieldRaw.getType().getPresentableText())
+                                .withInsertHandler((context, item) -> {
 
-                            PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                            context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
-                        })
-                        .withIcon(Icons.EQ),
-                    400d);
+                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
+                                })
+                                .withIcon(Icons.EQ),
+                        400d);
                 result.addElement(lookupElementWithoutEq);
                 String psiFieldComment = PsiUtil.getPsiFieldOnlyComment(entityFieldRaw);
                 String shortComment = StrUtil.subSufByLength(psiFieldComment, 15);
                 // 再添加一个eq:开头的, 进行索引
                 LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                    LookupElementBuilder.create("EQ实体字段:" + entityFieldRaw.getName() + " " + shortComment)
-                        .withTypeText(entityFieldRaw.getType().getPresentableText())
-                        .withInsertHandler((context, item) -> {
-                            PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                            context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
-                        })
-                        .withIcon(Icons.EQ),
-                    400d);
+                        LookupElementBuilder.create("EQ实体字段:" + entityFieldRaw.getName() + " " + shortComment)
+                                .withTypeText(entityFieldRaw.getType().getPresentableText())
+                                .withInsertHandler((context, item) -> {
+                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
+                                })
+                                .withIcon(Icons.EQ),
+                        400d);
                 result.addElement(lookupElementWithEq);
                 appendAllFields = true;
             }
@@ -92,26 +92,28 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
         if (appendAllFields) {
             // 再添加一个eq:开头的, 进行索引
             LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                LookupElementBuilder.create("EQ实体字段:ALL_FIELDS")
-                    .withInsertHandler((context, item) -> {
-                        StringBuilder fieldStringBuilder = new StringBuilder();
-                        int i = 0;
-                        for (Map.Entry<String, PsiField> innerEntityFieldKv : entityFieldMap.entrySet()) {
-                            String fieldName = innerEntityFieldKv.getKey();
-                            PsiField entityFieldRaw = innerEntityFieldKv.getValue();
-                            if (!dtoFieldNameSet.contains(fieldName)) {
-                                if (i != 0) {
-                                    fieldStringBuilder.append(System.lineSeparator());
+                    LookupElementBuilder.create("EQ实体字段:ALL_FIELDS")
+                            .withInsertHandler((context, item) -> {
+                                StringBuilder fieldStringBuilder = new StringBuilder();
+                                int i = 0;
+                                for (Map.Entry<String, PsiField> innerEntityFieldKv : entityFieldMap.entrySet()) {
+                                    String fieldName = innerEntityFieldKv.getKey();
+                                    PsiField entityFieldRaw = innerEntityFieldKv.getValue();
+                                    if (!dtoFieldNameSet.contains(fieldName)) {
+                                        if (i != 0) {
+                                            fieldStringBuilder.append(System.lineSeparator());
+                                        }
+                                        i++;
+                                        PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                        fieldStringBuilder.append(dtoField.getText());
+                                    }
                                 }
-                                i++;
-                                PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                                fieldStringBuilder.append(dtoField.getText());
-                            }
-                        }
-                        context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), fieldStringBuilder.toString());
-                    })
-                    .withIcon(Icons.EQ),
-                400d);
+                                // 需要将内容中的 \r 替换掉, 否则 win 下会报错 com.intellij.openapi.util.text.StringUtil.assertValidSeparators 将 \r 视作非法字符
+                                String newContent = fieldStringBuilder.toString().replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), newContent);
+                            })
+                            .withIcon(Icons.EQ),
+                    400d);
             result.addElement(lookupElementWithEq);
         }
 //        for (PsiField entityFieldRaw : psiFields) {
