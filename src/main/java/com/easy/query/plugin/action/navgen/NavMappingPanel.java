@@ -24,11 +24,15 @@ public class NavMappingPanel extends JPanel {
 
         // 添加组件到面板
         addComponents();
+
+        // 设置初始状态
+        updateMappingDisplay();
     }
 
     private void initComponents() {
-        // 顶部映射类型选择
+        // 顶部映射类型选择 - 修改默认选项为 OneToOne
         mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
+        mappingTypeCombo.setSelectedItem("OneToOne"); // 设置默认选中项
         mappingTypeCombo.setBounds(300, 20, 150, 30);
 
         // 左侧当前实体属性
@@ -79,6 +83,9 @@ public class NavMappingPanel extends JPanel {
         configureComboBoxStyle(mappingTypeCombo, sourceAttr1, sourceAttr2,
                 middleAttr1, middleAttr2, middleTargetAttr1,
                 middleTargetAttr2, targetAttr1, targetAttr2);
+
+        // 在 mappingTypeCombo 初始化后添加监听器
+        mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
     }
 
     private void configureComboBoxStyle(JComboBox<?>... comboBoxes) {
@@ -112,6 +119,28 @@ public class NavMappingPanel extends JPanel {
         add(targetAttr2);
     }
 
+    private void updateMappingDisplay() {
+        String selectedType = (String) mappingTypeCombo.getSelectedItem();
+        boolean isManyToMany = "ManyToMany".equals(selectedType);
+
+        // 更新中间实体相关组件的可见性
+        middleAttr1.setVisible(isManyToMany);
+        middleAttr2.setVisible(isManyToMany);
+        middleTargetAttr1.setVisible(isManyToMany);
+        middleTargetAttr2.setVisible(isManyToMany);
+
+        // 如果不是多对多，调整目标属性的位置
+        if (!isManyToMany) {
+            targetAttr1.setBounds(650, 200, 150, 30);
+            targetAttr2.setBounds(650, 300, 150, 30);
+        } else {
+            targetAttr1.setBounds(650, 400, 150, 30);
+            targetAttr2.setBounds(650, 500, 150, 30);
+        }
+
+        repaint(); // 重绘面板以更新连接线
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -122,24 +151,38 @@ public class NavMappingPanel extends JPanel {
         g2d.setFont(new Font("宋体", Font.PLAIN, 14));
         g2d.drawString("映射类型:", 220, 40);
         g2d.drawString("当前实体(必须)", 50, 150);
-        g2d.drawString("中间实体(可选)", 350, 150);
-        g2d.drawString("目标实体(必须)", 650, 150);
 
-        // 绘制连接线
-        g2d.setStroke(new BasicStroke(2));
-        // 左侧到中间的连接线
-        g2d.draw(new Line2D.Double(200, 215, 350, 215));
-        g2d.draw(new Line2D.Double(200, 315, 350, 315));
+        String selectedType = (String) mappingTypeCombo.getSelectedItem();
+        boolean isManyToMany = "ManyToMany".equals(selectedType);
 
-        // 中间到右侧的连接线
-        g2d.draw(new Line2D.Double(500, 415, 650, 415));
-        g2d.draw(new Line2D.Double(500, 515, 650, 515));
+        if (isManyToMany) {
+            g2d.drawString("中间实体(可选)", 350, 150);
+            g2d.drawString("目标实体(必须)", 650, 150);
 
-        // 绘制箭头
-        drawArrow(g2d, 340, 215);
-        drawArrow(g2d, 340, 315);
-        drawArrow(g2d, 640, 415);
-        drawArrow(g2d, 640, 515);
+            // 绘制多对多模式的连接线
+            g2d.setStroke(new BasicStroke(2));
+            g2d.draw(new Line2D.Double(200, 215, 350, 215));
+            g2d.draw(new Line2D.Double(200, 315, 350, 315));
+            g2d.draw(new Line2D.Double(500, 415, 650, 415));
+            g2d.draw(new Line2D.Double(500, 515, 650, 515));
+
+            // 绘制箭头
+            drawArrow(g2d, 340, 215);
+            drawArrow(g2d, 340, 315);
+            drawArrow(g2d, 640, 415);
+            drawArrow(g2d, 640, 515);
+        } else {
+            g2d.drawString("目标实体(必须)", 650, 150);
+
+            // 绘制直接连接线
+            g2d.setStroke(new BasicStroke(2));
+            g2d.draw(new Line2D.Double(200, 215, 650, 215));
+            g2d.draw(new Line2D.Double(200, 315, 650, 315));
+
+            // 绘制箭头
+            drawArrow(g2d, 640, 215);
+            drawArrow(g2d, 640, 315);
+        }
     }
 
     private void drawArrow(Graphics2D g2d, int x, int y) {
