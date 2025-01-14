@@ -6,16 +6,67 @@ import java.awt.*;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 public class NavMappingPanel extends JPanel {
     private JComboBox<String> mappingTypeCombo;
     private List<AttributeGroup> attributeGroups;
     private JButton addGroupButton;
+    private JButton confirmButton;
     private JPanel attributesPanel;
     private static final int INITIAL_GROUP_Y = 200;
     private static final int GROUP_VERTICAL_GAP = 100;
 
-    // 内部类用于管理一组属性映射
+    public static class MappingData {
+        private String mappingType;
+        private List<AttributeMapping> attributeMappings;
+
+        public MappingData(String mappingType, List<AttributeMapping> attributeMappings) {
+            this.mappingType = mappingType;
+            this.attributeMappings = attributeMappings;
+        }
+
+        public String getMappingType() {
+            return mappingType;
+        }
+
+        public List<AttributeMapping> getAttributeMappings() {
+            return attributeMappings;
+        }
+    }
+
+    public static class AttributeMapping {
+        private String sourceAttribute;
+        private String middleSourceAttribute;
+        private String middleTargetAttribute;
+        private String targetAttribute;
+
+        public AttributeMapping(String sourceAttribute, String middleSourceAttribute,
+                String middleTargetAttribute, String targetAttribute) {
+            this.sourceAttribute = sourceAttribute;
+            this.middleSourceAttribute = middleSourceAttribute;
+            this.middleTargetAttribute = middleTargetAttribute;
+            this.targetAttribute = targetAttribute;
+        }
+
+        public String getSourceAttribute() {
+            return sourceAttribute;
+        }
+
+        public String getMiddleSourceAttribute() {
+            return middleSourceAttribute;
+        }
+
+        public String getMiddleTargetAttribute() {
+            return middleTargetAttribute;
+        }
+
+        public String getTargetAttribute() {
+            return targetAttribute;
+        }
+    }
+
     private class AttributeGroup {
         JComboBox<String> sourceAttr;
         JComboBox<String> middleAttr;
@@ -96,6 +147,21 @@ public class NavMappingPanel extends JPanel {
         addGroupButton = new JButton("添加映射组");
         addGroupButton.setBounds(50, 100, 100, 30);
         addGroupButton.addActionListener(e -> addAttributeGroup());
+
+        // 添加确认按钮
+        confirmButton = new JButton("确认");
+        confirmButton.addActionListener(e -> handleConfirm());
+        // 设置按钮位置在右下角
+        confirmButton.setBounds(getWidth() - 100, getHeight() - 40, 80, 30);
+        add(confirmButton);
+
+        // 添加组件大小改变监听器，确保按钮始终在右下角
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                confirmButton.setBounds(getWidth() - 100, getHeight() - 40, 80, 30);
+            }
+        });
 
         add(mappingTypeCombo);
         add(addGroupButton);
@@ -249,5 +315,39 @@ public class NavMappingPanel extends JPanel {
         int[] xPoints = { x, x - 10, x - 10 };
         int[] yPoints = { y, y - 5, y + 5 };
         g2d.fillPolygon(xPoints, yPoints, 3);
+    }
+
+    private void handleConfirm() {
+        MappingData mappingData = collectFormData();
+        // 这里可以添加处理收集到的数据的逻辑
+        System.out.println("Mapping Type: " + mappingData.getMappingType());
+        for (AttributeMapping mapping : mappingData.getAttributeMappings()) {
+            System.out.println("Source: " + mapping.getSourceAttribute());
+            if ("ManyToMany".equals(mappingData.getMappingType())) {
+                System.out.println("Middle Source: " + mapping.getMiddleSourceAttribute());
+                System.out.println("Middle Target: " + mapping.getMiddleTargetAttribute());
+            }
+            System.out.println("Target: " + mapping.getTargetAttribute());
+        }
+    }
+
+    public MappingData collectFormData() {
+        String mappingType = (String) mappingTypeCombo.getSelectedItem();
+        List<AttributeMapping> attributeMappings = new ArrayList<>();
+
+        for (AttributeGroup group : attributeGroups) {
+            String sourceAttr = (String) group.sourceAttr.getSelectedItem();
+            String middleAttr = (String) group.middleAttr.getSelectedItem();
+            String middleTargetAttr = (String) group.middleTargetAttr.getSelectedItem();
+            String targetAttr = (String) group.targetAttr.getSelectedItem();
+
+            attributeMappings.add(new AttributeMapping(
+                    sourceAttr,
+                    middleAttr,
+                    middleTargetAttr,
+                    targetAttr));
+        }
+
+        return new MappingData(mappingType, attributeMappings);
     }
 }
