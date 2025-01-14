@@ -202,6 +202,9 @@
 
         <completion.contributor language="JAVA"
                                 implementationClass="com.easy.query.plugin.core.completion.DtoFieldAutoCompletion"/>
+
+        <completion.contributor language="JAVA"
+                                implementationClass="com.easy.query.plugin.core.completion.NavMappingCompletion"/>
         <codeInsight.lineMarkerProvider language="JAVA"
                                         implementationClass="com.easy.query.plugin.core.provider.NavToEntityFieldRelatedItemLineMarkerProvider"/>
 

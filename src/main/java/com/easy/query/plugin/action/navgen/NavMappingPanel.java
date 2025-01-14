@@ -1,13 +1,17 @@
 package com.easy.query.plugin.action.navgen;
 
+import lombok.Getter;
+
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import java.awt.*;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import com.intellij.openapi.command.WriteCommandAction;
 
 public class NavMappingPanel extends JPanel {
     private JComboBox<String> mappingTypeCombo;
@@ -26,8 +30,10 @@ public class NavMappingPanel extends JPanel {
     private JButton selectMiddleEntityButton;
     private JButton selectTargetEntityButton;
     private final String[] availableEntities;
+    @Getter
     private final String currentEntityName;
     private final Map<String, String[]> entityAttributesMap;
+    private final Consumer<String> confirmCallback;
 
     public static class MappingData {
         private String mappingType;
@@ -142,10 +148,11 @@ public class NavMappingPanel extends JPanel {
     }
 
     public NavMappingPanel(String[] availableEntities, String currentEntityName,
-            Map<String, String[]> entityAttributesMap) {
+            Map<String, String[]> entityAttributesMap, Consumer<String> confirmCallback) {
         this.availableEntities = availableEntities;
         this.currentEntityName = currentEntityName;
         this.entityAttributesMap = entityAttributesMap;
+        this.confirmCallback = confirmCallback;
         initializePanel();
     }
 
@@ -387,16 +394,69 @@ public class NavMappingPanel extends JPanel {
     }
 
     private void handleConfirm() {
-        MappingData mappingData = collectFormData();
-        System.out.println("Mapping Type: " + mappingData.getMappingType());
-        for (AttributeMapping mapping : mappingData.getAttributeMappings()) {
-            System.out.println("Source: " + mapping.getSourceAttribute());
-            if ("ManyToMany".equals(mappingData.getMappingType())) {
-                System.out.println("Middle Source: " + mapping.getMiddleSourceAttribute());
-                System.out.println("Middle Target: " + mapping.getMiddleTargetAttribute());
+        NavMappingRelation relation = getNavMappingRelation();
+        if (relation != null) {
+            String generatedCode = generateNavPropertyCode(relation);
+            if (confirmCallback != null) {
+                // 使用 WriteCommandAction 包装文档修改操作
+                WriteCommandAction.runWriteCommandAction(null, () -> {
+                    confirmCallback.accept(generatedCode);
+                });
             }
-            System.out.println("Target: " + mapping.getTargetAttribute());
         }
+        // 关闭当前窗口
+        SwingUtilities.getWindowAncestor(this).dispose();
+    }
+
+    private String generateNavPropertyCode(NavMappingRelation relation) {
+        String sourceEntity = relation.getSourceEntity();
+        String targetEntity = relation.getTargetEntity();
+        String mappingClass = relation.getMappingClass();
+        StringBuilder code = new StringBuilder();
+
+        // 生成注解
+        code.append("@Navigate(");
+
+        // 添加关系类型
+        code.append("value = RelationTypeEnum.").append(relation.getRelationType());
+
+        // 添加 selfProperty
+        if (relation.getSourceFields() != null && relation.getSourceFields().length > 0) {
+            code.append(", selfProperty = {");
+            code.append(Arrays.stream(relation.getSourceFields()).map(s->sourceEntity+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append("}");
+        }
+
+        // 添加 selfMappingProperty
+        if (relation.getSelfMappingFields() != null && relation.getSelfMappingFields().length > 0) {
+            code.append(", selfMappingProperty = {");
+
+            code.append(Arrays.stream(relation.getSelfMappingFields()).map(s->mappingClass+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append("}");
+        }
+
+        // 添加 mappingClass
+        if (mappingClass != null && !mappingClass.isEmpty()) {
+            code.append(", mappingClass = ").append(mappingClass).append(".class");
+        }
+
+        // 添加 targetProperty
+        if (relation.getTargetFields() != null && relation.getTargetFields().length > 0) {
+            code.append(", targetProperty = {");
+            code.append(Arrays.stream(relation.getTargetFields()).map(s->mappingClass+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append("}");
+        }
+
+        // 添加 targetMappingProperty
+        if (relation.getTargetMappingFields() != null && relation.getTargetMappingFields().length > 0) {
+            code.append(", targetMappingProperty = {");
+            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s->targetEntity+".Fields."+s+"").collect(Collectors.joining(", ")));
+            code.append("}");
+        }
+
+        code.append(")");
+
+        return code.toString();
     }
 
     public MappingData collectFormData() {
@@ -495,5 +555,71 @@ public class NavMappingPanel extends JPanel {
             }
             updateMappingDisplay();
         }
+    }
+
+    public NavMappingRelation getNavMappingRelation() {
+        String sourceEntity = getCurrentEntityName();
+        String targetEntity = getSelectedEntity();
+
+        // 获取映射类型
+        String relationType = (String) mappingTypeCombo.getSelectedItem();
+
+        // 收集所有映射组的数据
+        List<String> sourceFields = new ArrayList<>();
+        List<String> targetFields = new ArrayList<>();
+        List<String> selfMappingFields = new ArrayList<>();
+        List<String> targetMappingFields = new ArrayList<>();
+
+        for (AttributeGroup group : attributeGroups) {
+            String sourceField = (String) group.sourceAttr.getSelectedItem();
+            String targetField = (String) group.targetAttr.getSelectedItem();
+
+            if (sourceField != null && !sourceField.isEmpty()) {
+                sourceFields.add(sourceField);
+            }
+            if (targetField != null && !targetField.isEmpty()) {
+                targetFields.add(targetField);
+            }
+
+            if (Objects.equals(relationType, "ManyToMany")) {
+                String middleSourceField = (String) group.middleAttr.getSelectedItem();
+                String middleTargetField = (String) group.middleTargetAttr.getSelectedItem();
+
+                if (middleSourceField != null && !middleSourceField.isEmpty()) {
+                    selfMappingFields.add(middleSourceField);
+                }
+                if (middleTargetField != null && !middleTargetField.isEmpty()) {
+                    targetMappingFields.add(middleTargetField);
+                }
+            }
+        }
+
+        // 如果必要字段为空，返回null
+        if (sourceEntity == null || targetEntity == null ||
+                sourceFields.isEmpty() || targetFields.isEmpty()) {
+            return null;
+        }
+
+        // 对于多对多关系，检查中间表相关字段
+        String mappingClass = null;
+        if (relationType == "ManyToMany") {
+            mappingClass = getSelectedMiddleEntity();
+            if (mappingClass == null || mappingClass.isEmpty() ||
+                    selfMappingFields.isEmpty() || targetMappingFields.isEmpty()) {
+                return null;
+            }
+        }
+
+        return new NavMappingRelation(
+                sourceEntity,
+                targetEntity,
+                sourceFields.toArray(new String[0]),
+                targetFields.toArray(new String[0]),
+                relationType,
+                mappingClass,
+                selfMappingFields.toArray(new String[0]),
+                targetMappingFields.toArray(new String[0]),
+                true // 默认设置propIsProxy为true
+        );
     }
 }
