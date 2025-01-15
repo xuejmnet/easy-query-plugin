@@ -5,6 +5,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.util.MyModuleUtil;
+import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.windows.SQLPreviewDialog;
@@ -21,6 +22,7 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.execution.runners.ProgramRunner;
+import com.intellij.lang.Language;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -39,14 +41,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.sql.dialects.base.SqlLanguageDialectBase;
-import com.intellij.sql.dialects.clickhouse.CHouseDialect;
-import com.intellij.sql.dialects.db2.Db2LUWDialect;
-import com.intellij.sql.dialects.generic.GenericDialect;
-import com.intellij.sql.dialects.h2.H2Dialect;
-import com.intellij.sql.dialects.mssql.MsDialect;
-import com.intellij.sql.dialects.mysql.MysqlDialect;
-import com.intellij.sql.dialects.postgres.PgDialect;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -78,15 +72,15 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
     public static final class DatabaseTuple {
         private final String databaseType;
         private final String eqConfig;
-        private final SqlLanguageDialectBase sqlDialect;
+        private final Language sqlDialect;
 
-        public DatabaseTuple(String databaseType, String eqConfig, SqlLanguageDialectBase sqlDialect) {
+        public DatabaseTuple(String databaseType, String eqConfig, Language sqlDialect) {
             this.databaseType = databaseType;
             this.eqConfig = eqConfig;
             this.sqlDialect = sqlDialect;
         }
 
-        public static DatabaseTuple of(String databaseType, String eqConfig, SqlLanguageDialectBase sqlDialect) {
+        public static DatabaseTuple of(String databaseType, String eqConfig, Language sqlDialect) {
             return new DatabaseTuple(databaseType, eqConfig, sqlDialect);
         }
 
@@ -98,45 +92,60 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
             return eqConfig;
         }
 
-        public SqlLanguageDialectBase getSqlDialect() {
+        public Language getSqlDialect() {
             return sqlDialect;
         }
     }
 
     public static final List<DatabaseTuple> DATABASE_TUPLES = Lists.newArrayList(
-            // com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration
-            DatabaseTuple.of("clickhouse", "com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration",
-                    CHouseDialect.INSTANCE),
-            // com.easy.query.db2.config.DB2DatabaseConfiguration
-            DatabaseTuple.of("db2", "com.easy.query.db2.config.DB2DatabaseConfiguration", Db2LUWDialect.INSTANCE),
-            // com.easy.query.dameng.config.DamengDatabaseConfiguration
-            DatabaseTuple.of("dameng", "com.easy.query.dameng.config.DamengDatabaseConfiguration",
-                    GenericDialect.INSTANCE),
-            // com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration
-            DatabaseTuple.of("default", "com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration",
-                    GenericDialect.INSTANCE),
-            // com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration
-            DatabaseTuple.of("gaussdb", "com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration",
-                    GenericDialect.INSTANCE),
-            // com.easy.query.h2.config.H2DatabaseConfiguration
-            DatabaseTuple.of("h2", "com.easy.query.h2.config.H2DatabaseConfiguration", H2Dialect.INSTANCE),
-            // com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration
-            DatabaseTuple.of("kingbase-es", "com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration",
-                    GenericDialect.INSTANCE),
-            // com.easy.query.mssql.config.MsSQLDatabaseConfiguration
-            DatabaseTuple.of("mssql", "com.easy.query.mssql.config.MsSQLDatabaseConfiguration", MsDialect.INSTANCE),
-            // com.easy.query.mysql.config.MySQLDatabaseConfiguration
-            DatabaseTuple.of("mysql", "com.easy.query.mysql.config.MySQLDatabaseConfiguration", MysqlDialect.INSTANCE),
-            // com.easy.query.oracle.config.OracleDatabaseConfiguration
-            DatabaseTuple.of("oracle", "com.easy.query.oracle.config.OracleDatabaseConfiguration",
-                    GenericDialect.INSTANCE),
-            // com.easy.query.pgsql.config.PgSQLDatabaseConfiguration
-            DatabaseTuple.of("pgsql", "com.easy.query.pgsql.config.PgSQLDatabaseConfiguration", PgDialect.INSTANCE),
-            // com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration
-            DatabaseTuple.of("sqllite", "com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration",
-                    GenericDialect.INSTANCE)
+        // com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration
+        DatabaseTuple.of("clickhouse", "com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.clickhouse.CHouseDialect")),
+        // com.easy.query.db2.config.DB2DatabaseConfiguration
+        DatabaseTuple.of("db2", "com.easy.query.db2.config.DB2DatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.db2.Db2LUWDialect")),
+        // com.easy.query.dameng.config.DamengDatabaseConfiguration
+        DatabaseTuple.of("dameng", "com.easy.query.dameng.config.DamengDatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.generic.GenericDialect")),
+        // com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration
+        DatabaseTuple.of("default", "com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.generic.GenericDialect")),
+        // com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration
+        DatabaseTuple.of("gaussdb", "com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.generic.GenericDialect")),
+        // com.easy.query.h2.config.H2DatabaseConfiguration
+        DatabaseTuple.of("h2", "com.easy.query.h2.config.H2DatabaseConfiguration",createLanguage("com.intellij.sql.dialects.h2.H2Dialect")),
+        // com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration
+        DatabaseTuple.of("kingbase-es", "com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.generic.GenericDialect")),
+        // com.easy.query.mssql.config.MsSQLDatabaseConfiguration
+        DatabaseTuple.of("mssql", "com.easy.query.mssql.config.MsSQLDatabaseConfiguration", createLanguage("com.intellij.sql.dialects.mssql.MsDialect")),
+        // com.easy.query.mysql.config.MySQLDatabaseConfiguration
+        DatabaseTuple.of("mysql", "com.easy.query.mysql.config.MySQLDatabaseConfiguration",createLanguage("com.intellij.sql.dialects.mysql.MysqlDialect")),
+        // com.easy.query.oracle.config.OracleDatabaseConfiguration
+        DatabaseTuple.of("oracle", "com.easy.query.oracle.config.OracleDatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.generic.GenericDialect")),
+        // com.easy.query.pgsql.config.PgSQLDatabaseConfiguration
+        DatabaseTuple.of("pgsql", "com.easy.query.pgsql.config.PgSQLDatabaseConfiguration",createLanguage("com.intellij.sql.dialects.postgres.PgDialect")),
+        // com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration
+        DatabaseTuple.of("sqllite", "com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration",
+            createLanguage("com.intellij.sql.dialects.generic.GenericDialect"))
 
     );
+
+    public static Language createLanguage(String className) {
+        try {
+            try {
+                return (Language) Class.forName(className).newInstance();
+            } catch (InstantiationException e) {
+
+            } catch (IllegalAccessException e) {
+            }
+        } catch (ClassNotFoundException e) {
+
+        }
+        return null;
+    }
 
     /**
      * 运行模式, auto or manual
@@ -157,7 +166,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
         // Set visibility only in the case of
         // existing project editor, and selection
         event.getPresentation().setEnabledAndVisible(project != null
-                && editor != null && editor.getSelectionModel().hasSelection());
+            && editor != null && editor.getSelectionModel().hasSelection());
     }
 
     @Override
@@ -185,7 +194,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
         PsiJavaFile psiJavaFileSource = (PsiJavaFile) psiFile;
 
         PsiElement selectedElementRaw = PsiTreeUtil.findElementOfClassAtRange(psiJavaFileSource,
-                selectionModel.getSelectionStart(), selectionModel.getSelectionEnd(), PsiElement.class);
+            selectionModel.getSelectionStart(), selectionModel.getSelectionEnd(), PsiElement.class);
 
         // 很可能没选全, 这里获取最外围的方法调用
         // PsiElement selectedElementsWhole =
@@ -203,29 +212,29 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 //        selectedText = selectedElements.getChildren()[0].getChildren()[0].getText();
 
         List<PsiReferenceExpression> refOrVarList = PsiTreeUtil
-                .findChildrenOfType(selectedElements, PsiReferenceExpression.class).stream()
-                .filter(ref -> {
-                    PsiElement resolved = ref.resolve();
-                    if (resolved instanceof PsiLocalVariable || resolved instanceof PsiParameter) {
-                        // 如果 resolved 的位置, 在选中的内部, 说明是内部定义的, 不是外部引用的
-                        if (selectionModel.getSelectionStart() <= resolved.getTextOffset()
-                                && resolved.getTextOffset() <= selectionModel.getSelectionEnd()) {
+            .findChildrenOfType(selectedElements, PsiReferenceExpression.class).stream()
+            .filter(ref -> {
+                PsiElement resolved = ref.resolve();
+                if (resolved instanceof PsiLocalVariable || resolved instanceof PsiParameter) {
+                    // 如果 resolved 的位置, 在选中的内部, 说明是内部定义的, 不是外部引用的
+                    if (selectionModel.getSelectionStart() <= resolved.getTextOffset()
+                        && resolved.getTextOffset() <= selectionModel.getSelectionEnd()) {
+                        return false;
+                    }
+
+                    // 看看是否有父类, 如果父类是 easy-query 包下面的, 那么可能是自动生成的
+                    if (resolved instanceof PsiParameter) {
+                        String canonicalText = ((PsiParameter) resolved).getType().getCanonicalText();
+                        if (canonicalText.endsWith("Proxy") && canonicalText.contains(".proxy.")) {
                             return false;
                         }
-
-                        // 看看是否有父类, 如果父类是 easy-query 包下面的, 那么可能是自动生成的
-                        if (resolved instanceof PsiParameter) {
-                            String canonicalText = ((PsiParameter) resolved).getType().getCanonicalText();
-                            if (canonicalText.endsWith("Proxy") && canonicalText.contains(".proxy.")) {
-                                return false;
-                            }
-                        }
-
-                        return true;
                     }
-                    return false;
-                })
-                .collect(Collectors.toList());
+
+                    return true;
+                }
+                return false;
+            })
+            .collect(Collectors.toList());
 
         updateGitignore(psiFile.getProject());
 
@@ -262,7 +271,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
         // 添加上新的接口 javax.sql.DataSource
         PsiJavaCodeReferenceElement dataSourceInterface = elementFactory.createReferenceFromText("javax.sql.DataSource",
-                psiClassCopied);
+            psiClassCopied);
         implementsList.add(dataSourceInterface);
 
         // 修改类文件, 移除注解
@@ -291,47 +300,47 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
 
         DatabaseTuple databaseTuple = DATABASE_TUPLES.stream()
-                .filter(tuple -> StrUtil.equals(tuple.getDatabaseType(), databaseType))
-                .findFirst()
-                .orElse(null);
+            .filter(tuple -> StrUtil.equals(tuple.getDatabaseType(), databaseType))
+            .findFirst()
+            .orElse(null);
 
         if (databaseTuple == null) {
             log.warn("数据库类型 {} 不存在", databaseType);
             // 弹窗提示
             JOptionPane.showMessageDialog(null,
-                    "数据库类型 " + databaseType + " 不存在, 请在Settings->EasyQuery Project Settings中配置", "错误",
-                    JOptionPane.ERROR_MESSAGE);
+                "数据库类型 " + databaseType + " 不存在, 请在Settings->EasyQuery Project Settings中配置", "错误",
+                JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         // 构建一个 Main 方法
 
         PsiMethod mainMethod = JavaPsiFacade.getElementFactory(project)
-                .createMethodFromText("public static void main(String[] args) {\n" +
-                        "        System.out.println(\"EasyQuery Preview SQL\");\n" +
-                        "\n" +
-                        "    // 采用控制台输出\n" +
-                        "    LogFactory.useStdOutLogging();\n" +
-                        "\n" +
-                        "    EasyQueryClient queryClient = EasyQueryBootstrapper.defaultBuilderConfiguration()\n" +
-                        "      .setDefaultDataSource(new EasyQueryPreviewSqlAction())\n" +
-                        "      .optionConfigure(option -> {\n" +
-                        "        option.setPrintSql(true); // 输出SQL\n" +
-                        "        option.setKeepNativeStyle(true);\n" +
-                        "      })\n" +
-                        // " .useDatabaseConfigure(new MsSQLDatabaseConfiguration())\n" +
-                        "      .useDatabaseConfigure(new " + databaseTuple.getEqConfig() + "())\n" +
-                        "      .build();\n" +
-                        "\n" +
-                        "    EasyEntityQuery entityQuery = new DefaultEasyEntityQuery(queryClient);\n" +
+            .createMethodFromText("public static void main(String[] args) {\n" +
+                "        System.out.println(\"EasyQuery Preview SQL\");\n" +
+                "\n" +
+                "    // 采用控制台输出\n" +
+                "    LogFactory.useStdOutLogging();\n" +
+                "\n" +
+                "    EasyQueryClient queryClient = EasyQueryBootstrapper.defaultBuilderConfiguration()\n" +
+                "      .setDefaultDataSource(new EasyQueryPreviewSqlAction())\n" +
+                "      .optionConfigure(option -> {\n" +
+                "        option.setPrintSql(true); // 输出SQL\n" +
+                "        option.setKeepNativeStyle(true);\n" +
+                "      })\n" +
+                // " .useDatabaseConfigure(new MsSQLDatabaseConfiguration())\n" +
+                "      .useDatabaseConfigure(new " + databaseTuple.getEqConfig() + "())\n" +
+                "      .build();\n" +
+                "\n" +
+                "    EasyEntityQuery entityQuery = new DefaultEasyEntityQuery(queryClient);\n" +
 
-                        String.join("\n", varList) +
+                String.join("\n", varList) +
 
-                        "String sql = " + selectedText + ".toSQL();" +
-                        // TODO 这里的SQL 需要格式化
-                        "        System.out.println(sql);\n" +
+                "String sql = " + selectedText + ".toSQL();" +
+                // TODO 这里的SQL 需要格式化
+                "        System.out.println(sql);\n" +
 
-                        "    }", psiClassCopied);
+                "    }", psiClassCopied);
 
         // 添加 Main 方法
         psiClassCopied.add(mainMethod);
@@ -365,7 +374,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                 file.delete();
             }
             PsiElement psiElementFormated = containingDirectory
-                    .add(CodeStyleManager.getInstance(project).reformat(psiJavaFileCopied));
+                .add(CodeStyleManager.getInstance(project).reformat(psiJavaFileCopied));
             VirtualFile virtualFile = psiElementFormated.getContainingFile().getVirtualFile();
 
             // 编辑器打开这个文件
@@ -384,18 +393,18 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
                     RunManager runManager = RunManager.getInstance(project);
                     ConfigurationType configurationType = ConfigurationTypeUtil
-                            .findConfigurationType(ApplicationConfigurationType.class);
+                        .findConfigurationType(ApplicationConfigurationType.class);
                     ConfigurationFactory configurationFactory = configurationType.getConfigurationFactories()[0];
 
                     // 获取配置模板
                     RunnerAndConfigurationSettings templateSettings = runManager
-                            .getConfigurationTemplate(configurationFactory);
+                        .getConfigurationTemplate(configurationFactory);
 
                     RunnerAndConfigurationSettings easyQueryPreviewSqlSettings = runManager
-                            .createConfiguration("EasyQuery Preview SQL", templateSettings.getFactory());
+                        .createConfiguration("EasyQuery Preview SQL", templateSettings.getFactory());
                     easyQueryPreviewSqlSettings.setTemporary(true); // 设为临时的
                     ApplicationConfiguration runConfiguration = (ApplicationConfiguration) easyQueryPreviewSqlSettings
-                            .getConfiguration();
+                        .getConfiguration();
 
                     runConfiguration.setMainClassName(qualifiedName);
                     runConfiguration.setModule(currentModule);
@@ -407,7 +416,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                     ExecutionEnvironmentBuilder builder;
                     try {
                         builder = ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(),
-                                easyQueryPreviewSqlSettings);
+                            easyQueryPreviewSqlSettings);
                     } catch (ExecutionException e) {
                         return;
                     }
@@ -429,24 +438,29 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                     };
                     try {
                         ProgramRunner<?> programRunner = ProgramRunnerUtil.getRunner(DefaultRunExecutor.EXECUTOR_ID,
-                                easyQueryPreviewSqlSettings);
+                            easyQueryPreviewSqlSettings);
                         ExecutionResult executionResult = commandLineState
-                                .execute(DefaultRunExecutor.getRunExecutorInstance(), programRunner);
+                            .execute(DefaultRunExecutor.getRunExecutorInstance(), programRunner);
                         ProcessHandler processHandler = executionResult.getProcessHandler();
                         processHandler.addProcessListener(new ProcessAdapter() {
                             @Override
                             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
                                 String text = event.getText();
                                 if (!StrUtil.startWithAnyIgnoreCase(text, "select", "insert", "update", "delete",
-                                        "truncate")) {
+                                    "truncate")) {
                                     System.out.println(text);
                                     return;
                                 }
 
                                 CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(project);
                                 PsiFileFactory psiFileFactory = PsiFileFactory.getInstance(project);
+                                Language sqlDialect = databaseTuple.getSqlDialect();
+                                if(sqlDialect==null){
+                                    NotificationUtils.notifyError(project, "无法获取数据库类型,请确认当前idea版本大于等于2023", "sql预览");
+                                    return;
+                                }
                                 PsiFile sqlFile = psiFileFactory.createFileFromText(
-                                        "preview-easy-query.sql", databaseTuple.getSqlDialect(), text, false, false);
+                                    "preview-easy-query.sql", sqlDialect, text, false, false);
 
                                 PsiElement formattedElement = codeStyleManager.reformat(sqlFile, false);
                                 // 更新到 sqlFile
@@ -491,20 +505,20 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
             PsiElement varEle = varRef.resolve();
             if (varEle instanceof PsiLocalVariable || varEle instanceof PsiParameter) {
                 PsiType type = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getType()
-                        : ((PsiParameter) varEle).getType();
+                    : ((PsiParameter) varEle).getType();
                 String varName = varEle instanceof PsiLocalVariable ? ((PsiLocalVariable) varEle).getName()
-                        : ((PsiParameter) varEle).getName();
+                    : ((PsiParameter) varEle).getName();
                 String varType = type.getCanonicalText();
                 if (varRegistered.contains(varName)) {
                     continue;
                 }
                 // 判断是否是基本类型或包装类
                 boolean isPriType = type instanceof PsiPrimitiveType ||
-                        Arrays.asList("java.lang.Integer", "java.lang.Long", "java.lang.Double",
-                                        "java.lang.String",
-                                        "java.lang.Float", "java.lang.Boolean", "java.lang.Byte",
-                                        "java.lang.Short", "java.lang.Character")
-                                .contains(varType);
+                    Arrays.asList("java.lang.Integer", "java.lang.Long", "java.lang.Double",
+                            "java.lang.String",
+                            "java.lang.Float", "java.lang.Boolean", "java.lang.Byte",
+                            "java.lang.Short", "java.lang.Character")
+                        .contains(varType);
 
                 varRegistered.add(varName);
 
@@ -551,13 +565,13 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
         if (typeName.startsWith("java.util.List<") || typeName.startsWith("java.util.ArrayList<")) {
             String genericType = extractGenericType(typeName);
             return String.format("java.util.Arrays.asList(%s, %s)", getMockValue(genericType),
-                    getMockValue(genericType));
+                getMockValue(genericType));
         }
 
         if (typeName.startsWith("java.util.Set<") || typeName.startsWith("java.util.HashSet<")) {
             String genericType = extractGenericType(typeName);
             return String.format("new java.util.HashSet<>(java.util.Arrays.asList(%s, %s))",
-                    getMockValue(genericType), getMockValue(genericType));
+                getMockValue(genericType), getMockValue(genericType));
         }
 
         if (typeName.startsWith("java.util.Map<")) {
@@ -565,8 +579,8 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
             String keyType = genericTypes[0];
             String valueType = genericTypes[1];
             return String.format("new java.util.HashMap<>() {{ put(%s, %s); put(%s, %s); }}",
-                    getMockValue(keyType), getMockValue(valueType),
-                    getMockValue(keyType), getMockValue(valueType));
+                getMockValue(keyType), getMockValue(valueType),
+                getMockValue(keyType), getMockValue(valueType));
         }
 
         // 原有的基础类型处理
@@ -627,90 +641,90 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
         // 添加EQ相关import
         // import com.easy.query.core.logging.LogFactory
         psiJavaFileCopied.getImportList().add(elementFactory
-                .createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.logging.LogFactory")));
+            .createImportStatement(PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.logging.LogFactory")));
         // import com.easy.query.core.api.client.EasyQueryClient
         psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.api.client.EasyQueryClient")));
+            PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.api.client.EasyQueryClient")));
         // import com.easy.query.core.bootstrapper.EasyQueryBootstrapper
         psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.bootstrapper.EasyQueryBootstrapper")));
+            PsiJavaFileUtil.getPsiClass(project, "com.easy.query.core.bootstrapper.EasyQueryBootstrapper")));
         // import com.easy.query.mssql.config.MsSQLDatabaseConfiguration
         psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.mssql.config.MsSQLDatabaseConfiguration")));
+            PsiJavaFileUtil.getPsiClass(project, "com.easy.query.mssql.config.MsSQLDatabaseConfiguration")));
         // import java.sql.Connection
         psiJavaFileCopied.getImportList()
-                .add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.Connection")));
+            .add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.Connection")));
         // import java.sql.SQLException
         psiJavaFileCopied.getImportList().add(
-                elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLException")));
+            elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLException")));
         // import java.io.PrintWriter
         psiJavaFileCopied.getImportList()
-                .add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.io.PrintWriter")));
+            .add(elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.io.PrintWriter")));
         // import java.util.logging.Logger
         psiJavaFileCopied.getImportList().add(
-                elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.util.logging.Logger")));
+            elementFactory.createImportStatement(PsiJavaFileUtil.getPsiClass(project, "java.util.logging.Logger")));
         // import java.sql.SQLFeatureNotSupportedException
         psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLFeatureNotSupportedException")));
+            PsiJavaFileUtil.getPsiClass(project, "java.sql.SQLFeatureNotSupportedException")));
         // com.easy.query.api.proxy.client.DefaultEasyEntityQuery
         psiJavaFileCopied.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(project, "com.easy.query.api.proxy.client.DefaultEasyEntityQuery")));
+            PsiJavaFileUtil.getPsiClass(project, "com.easy.query.api.proxy.client.DefaultEasyEntityQuery")));
     }
 
     private void addDataSourceInterfaceImplement(PsiClass psiClassCopied, PsiElementFactory elementFactory) {
         PsiMethod getConnectionMethod = elementFactory
-                .createMethodFromText("public Connection getConnection() throws SQLException {\n" +
-                        "    return null;\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public Connection getConnection() throws SQLException {\n" +
+                "    return null;\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(getConnectionMethod);
 
         PsiMethod getConnectionMethod2 = elementFactory.createMethodFromText(
-                "public Connection getConnection(String username, String password) throws SQLException {\n" +
-                        "    return null;\n" +
-                        "  }",
-                psiClassCopied);
+            "public Connection getConnection(String username, String password) throws SQLException {\n" +
+                "    return null;\n" +
+                "  }",
+            psiClassCopied);
         psiClassCopied.add(getConnectionMethod2);
 
         PsiMethod getLogWriterMethod = elementFactory
-                .createMethodFromText("public PrintWriter getLogWriter() throws SQLException {\n" +
-                        "    return null;\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public PrintWriter getLogWriter() throws SQLException {\n" +
+                "    return null;\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(getLogWriterMethod);
 
         PsiMethod setLogWriterMethod = elementFactory
-                .createMethodFromText("public void setLogWriter(PrintWriter out) throws SQLException {\n" +
-                        "\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public void setLogWriter(PrintWriter out) throws SQLException {\n" +
+                "\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(setLogWriterMethod);
 
         PsiMethod setLoginTimeoutMethod = elementFactory
-                .createMethodFromText("public void setLoginTimeout(int seconds) throws SQLException {\n" +
-                        "\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public void setLoginTimeout(int seconds) throws SQLException {\n" +
+                "\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(setLoginTimeoutMethod);
 
         PsiMethod getLoginTimeoutMethod = elementFactory
-                .createMethodFromText("public int getLoginTimeout() throws SQLException {\n" +
-                        "    return 0;\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public int getLoginTimeout() throws SQLException {\n" +
+                "    return 0;\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(getLoginTimeoutMethod);
 
         PsiMethod getParentLoggerMethod = elementFactory
-                .createMethodFromText("public Logger getParentLogger() throws SQLFeatureNotSupportedException {\n" +
-                        "    return null;\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public Logger getParentLogger() throws SQLFeatureNotSupportedException {\n" +
+                "    return null;\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(getParentLoggerMethod);
 
         PsiMethod unwrapMethod = elementFactory
-                .createMethodFromText("public <T> T unwrap(Class<T> iface) throws SQLException {\n" +
-                        "    return null;\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public <T> T unwrap(Class<T> iface) throws SQLException {\n" +
+                "    return null;\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(unwrapMethod);
 
         PsiMethod isWrapperForMethod = elementFactory
-                .createMethodFromText("public boolean isWrapperFor(Class<?> iface) throws SQLException {\n" +
-                        "    return false;\n" +
-                        "  }", psiClassCopied);
+            .createMethodFromText("public boolean isWrapperFor(Class<?> iface) throws SQLException {\n" +
+                "    return false;\n" +
+                "  }", psiClassCopied);
         psiClassCopied.add(isWrapperForMethod);
 
     }
@@ -731,7 +745,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                 WriteCommandAction.runWriteCommandAction(project, () -> {
                     try {
                         String newContent = content.endsWith("\n") ? content + "EasyQueryPreviewSqlAction.java\n"
-                                : content + "\nEasyQueryPreviewSqlAction.java\n";
+                            : content + "\nEasyQueryPreviewSqlAction.java\n";
                         gitignoreFile.setBinaryContent(newContent.getBytes());
                     } catch (IOException e) {
                         log.error("更新 .gitignore 文件失败", e);
@@ -746,13 +760,13 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
     // 在constructSearchReq方法中添加对集合类型的导入处理
     private static void addCollectionImports(PsiJavaFile psiJavaFile, PsiElementFactory elementFactory) {
         psiJavaFile.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.Arrays")));
+            PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.Arrays")));
         psiJavaFile.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.ArrayList")));
+            PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.ArrayList")));
         psiJavaFile.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.HashSet")));
+            PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.HashSet")));
         psiJavaFile.getImportList().add(elementFactory.createImportStatement(
-                PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.HashMap")));
+            PsiJavaFileUtil.getPsiClass(psiJavaFile.getProject(), "java.util.HashMap")));
     }
 
 }
