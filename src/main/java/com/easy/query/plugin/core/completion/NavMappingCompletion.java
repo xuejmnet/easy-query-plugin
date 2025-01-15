@@ -40,7 +40,17 @@ public class NavMappingCompletion extends CompletionContributor {
         if (Objects.isNull(currentPsiClass)) {
             return;
         }
+        if (PsiTreeUtil.getParentOfType(position, PsiAnnotation.class) == null) {
+            // 当前输入的不是注解
+            return;
+        }
+        // 需要是在字段上的注解
+        if (!(PsiTreeUtil.getParentOfType(position, PsiField.class, PsiMethod.class, PsiClass.class) instanceof PsiField)) {
+            return;
+        }
+
         String currentClassQualifiedName = currentPsiClass.getQualifiedName();
+        String[] currentClassFields = Arrays.stream(currentPsiClass.getAllFields()).filter(field -> !PsiJavaFieldUtil.ignoreField(field)).map(PsiField::getName).toArray(String[]::new);
 
 
         //
@@ -72,12 +82,14 @@ public class NavMappingCompletion extends CompletionContributor {
 
                                 Map<String, String[]> entityAttributesMap = new HashMap<>();
 
+                                // 当前可能是DTO, 所以直接先加上当前类的, 如果是实体的话后面会覆盖掉
+                                entityAttributesMap.put(currentClassQualifiedName, currentClassFields);
 
                                 for (PsiClass psiClass : entityClasses) {
                                     PsiField[] allFields = psiClass.getAllFields();
                                     entityAttributesMap.put(psiClass.getQualifiedName(), Arrays.stream(allFields)
                                             .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
-                                            .map(PsiField::getName).collect(Collectors.toList()).toArray(new String[0]));
+                                            .map(PsiField::getName).toArray(String[]::new));
                                 }
 
 
