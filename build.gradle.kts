@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.84"
+version = "0.0.85"
 
 repositories {
     maven {
