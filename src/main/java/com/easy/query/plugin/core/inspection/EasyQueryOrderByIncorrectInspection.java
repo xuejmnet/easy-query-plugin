@@ -73,25 +73,30 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
                     PsiElement parentNextSibling = identifier.getParent().getNextSibling();
                     if (parentNextSibling instanceof PsiExpressionList) {
                         Collection<PsiExpressionStatement> normalExpressions = PsiTreeUtil.findChildrenOfType(parentNextSibling, PsiExpressionStatement.class);
-                        for (PsiExpressionStatement normalExpression : normalExpressions) {
-                            PsiExpression expression = normalExpression.getExpression();
-                            if (expression instanceof PsiMethodCallExpression) {
-                                PsiMethod resolvedMethod = ((PsiMethodCallExpression) expression).resolveMethod();
+                        if(normalExpressions.size()==1){
 
-                                String resolvedMethodName = Optional.ofNullable(resolvedMethod).map(PsiMethod::getName).orElse(StrUtil.EMPTY);
+                            for (PsiExpressionStatement normalExpression : normalExpressions) {
+                                PsiExpression expression = normalExpression.getExpression();
+                                if (expression instanceof PsiMethodCallExpression) {
+                                    PsiMethod resolvedMethod = ((PsiMethodCallExpression) expression).resolveMethod();
 
-                                String methodClassQualifiedName = Optional.ofNullable(resolvedMethod).map(PsiMember::getContainingClass).map(PsiClass::getQualifiedName).orElse(StrUtil.EMPTY);
+                                    String resolvedMethodName = Optional.ofNullable(resolvedMethod).map(PsiMethod::getName).orElse(StrUtil.EMPTY);
 
-                                if (StrUtil.equalsAny(resolvedMethodName, "asc", "desc") && methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression")) {
-                                    continue;
+                                    String methodClassQualifiedName = Optional.ofNullable(resolvedMethod).map(PsiMember::getContainingClass).map(PsiClass::getQualifiedName).orElse(StrUtil.EMPTY);
+
+                                    if (StrUtil.equalsAny(resolvedMethodName, "asc", "desc") && methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression")) {
+                                        continue;
+                                    }
                                 }
-                            }
 
-                            holder.registerProblem(expression, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
+                                holder.registerProblem(expression, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
+                            }
                         }
                         Collection<PsiLambdaExpression> lambdaExpressions = PsiTreeUtil.findChildrenOfType(parentNextSibling, PsiLambdaExpression.class);
-                        for (PsiLambdaExpression expression : lambdaExpressions) {
-                            boolean correct = PsiTreeUtil.findChildrenOfType(expression, PsiMethodCallExpression.class).stream()
+                        if(lambdaExpressions.size()==1){
+
+                            for (PsiLambdaExpression expression : lambdaExpressions) {
+                                boolean correct = PsiTreeUtil.findChildrenOfType(expression, PsiMethodCallExpression.class).stream()
                                     .anyMatch(ele -> {
                                         PsiMethod resolvedMethod = ele.resolveMethod();
                                         String resolvedMethodName = Optional.ofNullable(resolvedMethod).map(PsiMethod::getName).orElse(StrUtil.EMPTY);
@@ -103,10 +108,11 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
 
                                         return methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression");
                                     });
-                            if (!correct) {
-                                holder.registerProblem(expression, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
-                            }
+                                if (!correct) {
+                                    holder.registerProblem(expression, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
+                                }
 
+                            }
                         }
 
                         if (CollectionUtil.isEmpty(normalExpressions) && CollectionUtil.isEmpty(lambdaExpressions)) {
