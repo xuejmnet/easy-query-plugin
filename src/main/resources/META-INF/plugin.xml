@@ -184,7 +184,6 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.lang</depends>
     <depends>com.intellij.modules.java</depends>
-    <depends>com.intellij.modules.sql</depends>
     <depends>org.jetbrains.kotlin</depends>
 
     <!-- Extension points defined by the plugin.
