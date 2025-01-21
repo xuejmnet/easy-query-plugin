@@ -7,6 +7,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+/**
+ * Nav 注解生成GUI
+ * @author link2fun
+ */
 public class NavMappingGUI extends JDialog {
     private NavMappingPanel mappingPanel;
     private Consumer<NavMappingRelation> confirmCallback;

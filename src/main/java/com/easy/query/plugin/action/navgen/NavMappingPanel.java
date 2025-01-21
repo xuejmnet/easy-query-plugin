@@ -12,7 +12,10 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.intellij.openapi.command.WriteCommandAction;
-
+/**
+ * Nav 注解生成GUI
+ * @author link2fun
+ */
 public class NavMappingPanel extends JPanel {
     private JComboBox<String> mappingTypeCombo;
     private List<AttributeGroup> attributeGroups;

@@ -10,14 +10,17 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
+import com.intellij.psi.javadoc.PsiDocToken;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 代理字段自动补全
+ * @author link2fun
+ */
 public class ProxyFieldCompletion extends CompletionContributor {
 
 
@@ -33,16 +36,25 @@ public class ProxyFieldCompletion extends CompletionContributor {
         }
 
         PsiNewExpression newProxyDefine = PsiTreeUtil.findChildOfType(position.getParent(), PsiNewExpression.class);
-        PsiJavaCodeReferenceElement proxyEntityClassReference = newProxyDefine.getClassReference();
-        if (Objects.isNull(newProxyDefine) || proxyEntityClassReference == null) {
+        if (newProxyDefine == null) {
             return;
         }
-        PsiFile proxyEntityContainingFile = proxyEntityClassReference.getContainingFile();
+        PsiJavaCodeReferenceElement proxyEntityClassReference = newProxyDefine.getClassReference();
+        if (proxyEntityClassReference == null) {
+            return;
+        }
         Project project = position.getProject();
         String proxyEntityClassName = proxyEntityClassReference.getQualifiedName();
+
+        // 必须是 Proxy 类
+        if (!StrUtil.contains(proxyEntityClassName, ".proxy.")) {
+            return;
+        }
+
         PsiClass proxyEntityPsiClass = PsiJavaFileUtil.getPsiClass(project, proxyEntityClassName);
 
-        List<PsiMethodCallExpression> methodCallExpressionList = PsiTreeUtil.findChildrenOfType(position.getParent(), PsiMethodCallExpression.class).stream().collect(Collectors.toList());
+        Collection<PsiMethodCallExpression> expressionCollection = PsiTreeUtil.findChildrenOfType(position.getParent(), PsiMethodCallExpression.class);
+        List<PsiMethodCallExpression> methodCallExpressionList = expressionCollection.stream().collect(Collectors.toList());
 
         // 需要从中找出 proxyEntityClassName 调用过的方法
         List<PsiMethodCallExpression> methodCallListFiltered = methodCallExpressionList.stream().filter(methodCall -> {
@@ -63,13 +75,15 @@ public class ProxyFieldCompletion extends CompletionContributor {
 
 
         // 看看调用了哪些方法
-        List<String> proxyFieldSettled = methodCallListFiltered.stream().map(callInfo -> callInfo.resolveMethod().getName()).collect(Collectors.toList());
+        List<String> proxyFieldSettled = methodCallListFiltered.stream().map(callInfo -> Optional.ofNullable(callInfo.resolveMethod()).map(PsiMethod::getName).orElse(null))
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toList());
 
         // 从 proxyEntityPsiClass 中找到 所有 返回值类型是 com.easy.query.core.proxy.columns.types.SQLLongTypeColumn 的方法
         List<PsiMethod> proxyFieldCanSet = Arrays.stream(proxyEntityPsiClass.getMethods())
                 .filter(method -> !method.isConstructor() && method.getReturnType() != null)
                 .filter(method -> {
-                    return method.getReturnType().getCanonicalText().startsWith("com.easy.query.core.proxy.columns.types.SQLLongTypeColumn");
+                    return method.getReturnType().getCanonicalText().startsWith("com.easy.query.core.proxy.columns.types.");
                 }).collect(Collectors.toList());
         // 再去 看看 proxy 类中还有哪些字段没有设置
 
@@ -84,13 +98,18 @@ public class ProxyFieldCompletion extends CompletionContributor {
         List<LookupElement> tips = Lists.newArrayList();
         for (PsiMethod methodToCall : methodToCallList) {
             PsiDocComment docComment = methodToCall.getDocComment();
+            String commentStr = PsiTreeUtil.findChildrenOfType(docComment, PsiDocToken.class).stream().filter(ele -> ele.getTokenType() == JavaDocTokenType.DOC_COMMENT_DATA)
+                    .map(PsiElement::getText)
+                    .filter(StrUtil::isNotBlank)
+                    .map(StrUtil::trimToEmpty)
+                    .collect(Collectors.joining("; "));
             LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                    LookupElementBuilder.create("eq: set" + methodToCall.getName())
+                    LookupElementBuilder.create("eq: set" + methodToCall.getName() + "() // " + StrUtil.subPre(commentStr, 10))
                             .withTypeText("尚未设置")
                             .withInsertHandler((context, item) -> {
                                 String target = methodToCall.getName() + "().set()";
-                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), target);
-
+                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), target + " // " + commentStr);
+                                context.getEditor().getCaretModel().getCurrentCaret().moveToOffset(context.getStartOffset() + target.length() - 1);
                             })
                             .withIcon(Icons.EQ),
                     400d);
@@ -106,7 +125,13 @@ public class ProxyFieldCompletion extends CompletionContributor {
 
                             StringBuilder target = new StringBuilder();
                             for (PsiMethod method : methodToCallList) {
-                                target.append("." + method.getName()).append("().set()\n");
+                                PsiDocComment docComment = method.getDocComment();
+                                String commentStr = PsiTreeUtil.findChildrenOfType(docComment, PsiDocToken.class).stream().filter(ele -> ele.getTokenType() == JavaDocTokenType.DOC_COMMENT_DATA)
+                                        .map(PsiElement::getText)
+                                        .filter(StrUtil::isNotBlank)
+                                        .map(StrUtil::trimToEmpty)
+                                        .collect(Collectors.joining("; "));
+                                target.append(".").append(method.getName()).append("().set() // ").append(commentStr).append("\n");
                             }
 
                             context.getDocument().replaceString(context.getStartOffset() - 1, context.getTailOffset(), target.toString());

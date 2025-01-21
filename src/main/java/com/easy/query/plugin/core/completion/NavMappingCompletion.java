@@ -21,6 +21,10 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+/**
+ * 导航映射自动补全
+ * @author link2fun
+ */
 public class NavMappingCompletion extends CompletionContributor {
 
     @Override

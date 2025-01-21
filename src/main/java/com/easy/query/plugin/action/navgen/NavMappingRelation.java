@@ -1,7 +1,10 @@
 package com.easy.query.plugin.action.navgen;
 
 import lombok.Data;
-
+/**
+ * Nav 注解生成GUI
+ * @author link2fun
+ */
 @Data
 public class NavMappingRelation {
     private String sourceEntity;
