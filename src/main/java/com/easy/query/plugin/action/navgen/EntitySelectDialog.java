@@ -9,7 +9,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
 import java.util.stream.Stream;
-
+/**
+ * Nav 注解生成GUI
+ * @author link2fun
+ */
 public class EntitySelectDialog extends JDialog {
     private String selectedEntity = null;
     private JList<String> entityList;

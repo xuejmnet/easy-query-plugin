@@ -12,7 +12,10 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.intellij.openapi.command.WriteCommandAction;
-
+/**
+ * Nav 注解生成GUI
+ * @author link2fun
+ */
 public class NavMappingPanel extends JPanel {
     private JComboBox<String> mappingTypeCombo;
     private List<AttributeGroup> attributeGroups;
@@ -34,6 +37,66 @@ public class NavMappingPanel extends JPanel {
     private final String currentEntityName;
     private final Map<String, String[]> entityAttributesMap;
     private final Consumer<NavMappingRelation> confirmCallback;
+
+    // 亮色主题颜色
+    private static final Color LIGHT_PRIMARY_COLOR = new Color(33, 150, 243); // Material Blue
+    private static final Color LIGHT_BACKGROUND_COLOR = new Color(250, 250, 250);
+    private static final Color LIGHT_TEXT_COLOR = new Color(33, 33, 33);
+    private static final Color LIGHT_BORDER_COLOR = new Color(224, 224, 224);
+    private static final Color LIGHT_BUTTON_HOVER_COLOR = new Color(41, 182, 246);
+    private static final Color LIGHT_COMPONENT_BACKGROUND = Color.WHITE;
+
+    // 暗色主题颜色
+    private static final Color DARK_PRIMARY_COLOR = new Color(64, 169, 255); // Material Blue (darker)
+    private static final Color DARK_BACKGROUND_COLOR = new Color(43, 43, 43);
+    private static final Color DARK_TEXT_COLOR = new Color(187, 187, 187);
+    private static final Color DARK_BORDER_COLOR = new Color(73, 73, 73);
+    private static final Color DARK_BUTTON_HOVER_COLOR = new Color(82, 176, 255);
+    private static final Color DARK_COMPONENT_BACKGROUND = new Color(60, 63, 65);
+
+    private static final Font LABEL_FONT = new Font("Microsoft YaHei", Font.PLAIN, 13);
+    private static final Font COMBO_FONT = new Font("Microsoft YaHei", Font.PLAIN, 13);
+    private static final int BORDER_RADIUS = 8;
+
+    // 当前主题颜色
+    private Color primaryColor;
+    private Color backgroundColor;
+    private Color textColor;
+    private Color borderColor;
+    private Color buttonHoverColor;
+    private Color componentBackground;
+
+    private void initializeThemeColors() {
+        boolean isDarkTheme = isDarkTheme();
+        primaryColor = isDarkTheme ? DARK_PRIMARY_COLOR : LIGHT_PRIMARY_COLOR;
+        backgroundColor = isDarkTheme ? DARK_BACKGROUND_COLOR : LIGHT_BACKGROUND_COLOR;
+        textColor = isDarkTheme ? DARK_TEXT_COLOR : LIGHT_TEXT_COLOR;
+        borderColor = isDarkTheme ? DARK_BORDER_COLOR : LIGHT_BORDER_COLOR;
+        buttonHoverColor = isDarkTheme ? DARK_BUTTON_HOVER_COLOR : LIGHT_BUTTON_HOVER_COLOR;
+        componentBackground = isDarkTheme ? DARK_COMPONENT_BACKGROUND : LIGHT_COMPONENT_BACKGROUND;
+    }
+
+    private boolean isDarkTheme() {
+        // 使用 IntelliJ 的 API 检查当前主题
+        try {
+            Class<?> jbColorClass = Class.forName("com.intellij.util.ui.JBColor");
+            boolean isDark = (boolean) jbColorClass.getMethod("isBright").invoke(null);
+            return !isDark;
+        } catch (Exception e) {
+            // 如果获取失败，尝试使用 UIManager 的方式
+            try {
+                Color defaultBackground = UIManager.getColor("Panel.background");
+                // 计算颜色的亮度
+                double brightness = (defaultBackground.getRed() * 0.299 +
+                        defaultBackground.getGreen() * 0.587 +
+                        defaultBackground.getBlue() * 0.114) / 255;
+                return brightness < 0.5;
+            } catch (Exception ex) {
+                // 如果都失败了，返回false作为默认值
+                return false;
+            }
+        }
+    }
 
     public static class MappingData {
         private String mappingType;
@@ -154,77 +217,182 @@ public class NavMappingPanel extends JPanel {
 
     public NavMappingPanel(String[] availableEntities, String currentEntityName,
             Map<String, String[]> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
+        this(availableEntities, currentEntityName, null, entityAttributesMap, confirmCallback);
+    }
+
+    public NavMappingPanel(String[] availableEntities, String currentEntityName,
+            String defaultTargetEntity, Map<String, String[]> entityAttributesMap, 
+            Consumer<NavMappingRelation> confirmCallback) {
         this.availableEntities = availableEntities;
         this.currentEntityName = currentEntityName;
         this.entityAttributesMap = entityAttributesMap;
         this.confirmCallback = confirmCallback;
+        initializeThemeColors();
         initializePanel();
+        
+        // 如果有默认目标实体，设置它
+        if (defaultTargetEntity != null && !defaultTargetEntity.isEmpty()) {
+            targetEntityLabel.setText(defaultTargetEntity);
+            // 更新所有属性组的目标实体属性
+            for (AttributeGroup group : attributeGroups) {
+                group.updateAttributes(middleEntityLabel.getText(), defaultTargetEntity);
+            }
+            updateMappingDisplay();
+        }
     }
 
     private void initializePanel() {
         setLayout(null);
         setPreferredSize(new Dimension(900, 600));
+        setBackground(backgroundColor);
 
-        JLabel mappingTypeLabel = new JLabel("映射类型:");
-        mappingTypeLabel.setBounds(50, 20, 100, 30);
+        // 映射类型
+        JLabel mappingTypeLabel = createStyledLabel("映射类型:", 50, 20, 100, 30);
         add(mappingTypeLabel);
 
-        mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
-        mappingTypeCombo.setSelectedItem("OneToOne");
+        mappingTypeCombo = createStyledComboBox(new String[]{"", "OneToOne", "OneToMany", "ManyToOne", "ManyToMany"});
         mappingTypeCombo.setBounds(150, 20, 150, 30);
+        mappingTypeCombo.setSelectedItem("");
         mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
         add(mappingTypeCombo);
 
-        JLabel currentEntityLabel = new JLabel("当前实体:");
-        currentEntityLabel.setBounds(50, 55, 100, 30);
+        // 当前实体
+        JLabel currentEntityLabel = createStyledLabel("当前实体:", 50, 55, 100, 30);
         add(currentEntityLabel);
 
-        JLabel currentEntityDisplay = new JLabel(currentEntityName);
-        currentEntityDisplay.setBounds(150, 55, 550, 30);
-        currentEntityDisplay.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        currentEntityDisplay.setOpaque(true);
-        currentEntityDisplay.setBackground(Color.WHITE);
+        JLabel currentEntityDisplay = createStyledDisplayLabel(currentEntityName, 150, 55, 550, 30);
         add(currentEntityDisplay);
 
-        JLabel middleLabel = new JLabel("中间实体(可选):");
-        middleLabel.setBounds(50, 90, 100, 30);
+        // 中间实体
+        JLabel middleLabel = createStyledLabel("中间实体(可选):", 50, 90, 100, 30);
         add(middleLabel);
 
-        middleEntityLabel = new JLabel("");
-        middleEntityLabel.setBounds(150, 90, 550, 30);
+        middleEntityLabel = createStyledDisplayLabel("", 150, 90, 550, 30);
         add(middleEntityLabel);
 
-        selectMiddleEntityButton = new JButton("选择中间实体");
-        selectMiddleEntityButton.setBounds(700, 90, 120, 30);
+        selectMiddleEntityButton = createStyledButton("选择中间实体", 700, 90, 120, 30);
         selectMiddleEntityButton.addActionListener(e -> selectMiddleEntity());
         add(selectMiddleEntityButton);
 
-        JLabel targetLabel = new JLabel("目标实体(必须):");
-        targetLabel.setBounds(50, 125, 100, 30);
+        // 目标实体
+        JLabel targetLabel = createStyledLabel("目标实体(必须):", 50, 125, 100, 30);
         add(targetLabel);
 
-        targetEntityLabel = new JLabel("");
-        targetEntityLabel.setBounds(150, 125, 550, 30);
+        targetEntityLabel = createStyledDisplayLabel("", 150, 125, 550, 30);
         add(targetEntityLabel);
 
-        selectTargetEntityButton = new JButton("选择目标实体");
-        selectTargetEntityButton.setBounds(700, 125, 120, 30);
+        selectTargetEntityButton = createStyledButton("选择目标实体", 700, 125, 120, 30);
         selectTargetEntityButton.addActionListener(e -> selectTargetEntity());
         add(selectTargetEntityButton);
 
-        addGroupButton = new JButton("添加映射组");
-        addGroupButton.setBounds(650, 20, 100, 30);
+        // 操作按钮
+        addGroupButton = createStyledButton("添加映射组", 650, 20, 100, 30);
         add(addGroupButton);
         addGroupButton.addActionListener(e -> addAttributeGroup());
 
-        confirmButton = new JButton("确认");
-        confirmButton.setBounds(760, 20, 80, 30);
+        confirmButton = createStyledButton("确认", 760, 20, 80, 30);
         add(confirmButton);
         confirmButton.addActionListener(e -> handleConfirm());
 
         attributeGroups = new ArrayList<>();
         addAttributeGroup();
         updateMappingDisplay();
+    }
+
+    private JLabel createStyledLabel(String text, int x, int y, int width, int height) {
+        JLabel label = new JLabel(text);
+        label.setBounds(x, y, width, height);
+        label.setFont(LABEL_FONT);
+        label.setForeground(textColor);
+        return label;
+    }
+
+    private JLabel createStyledDisplayLabel(String text, int x, int y, int width, int height) {
+        JLabel label = new JLabel(text);
+        label.setBounds(x, y, width, height);
+        label.setFont(COMBO_FONT);
+        label.setForeground(textColor);
+        label.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(borderColor),
+            BorderFactory.createEmptyBorder(0, 5, 0, 5)
+        ));
+        label.setOpaque(true);
+        label.setBackground(componentBackground);
+        return label;
+    }
+
+    private JButton createStyledButton(String text, int x, int y, int width, int height) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isPressed()) {
+                    g2.setColor(primaryColor.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(buttonHoverColor);
+                } else {
+                    g2.setColor(primaryColor);
+                }
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), BORDER_RADIUS, BORDER_RADIUS);
+                g2.dispose();
+                
+                super.paintComponent(g);
+            }
+        };
+        button.setBounds(x, y, width, height);
+        button.setFont(COMBO_FONT);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        return button;
+    }
+
+    private JComboBox<String> createStyledComboBox(String[] items) {
+        JComboBox<String> comboBox = new JComboBox<>(items);
+        comboBox.setFont(COMBO_FONT);
+        comboBox.setBackground(componentBackground);
+        comboBox.setForeground(textColor);
+        comboBox.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(borderColor),
+            BorderFactory.createEmptyBorder(0, 5, 0, 5)
+        ));
+        
+        comboBox.setUI(new BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = super.createArrowButton();
+                button.setBackground(componentBackground);
+                button.setBorder(BorderFactory.createEmptyBorder());
+                return button;
+            }
+        });
+        
+        return comboBox;
+    }
+
+    private void configureComboBoxStyle(JComboBox<?>... comboBoxes) {
+        for (JComboBox<?> box : comboBoxes) {
+            box.setFont(COMBO_FONT);
+            box.setBackground(componentBackground);
+            box.setForeground(textColor);
+            box.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(0, 5, 0, 5)
+            ));
+            box.setUI(new BasicComboBoxUI() {
+                @Override
+                protected JButton createArrowButton() {
+                    JButton button = super.createArrowButton();
+                    button.setBackground(componentBackground);
+                    button.setBorder(BorderFactory.createEmptyBorder());
+                    return button;
+                }
+            });
+        }
     }
 
     private void initComponents() {
@@ -329,26 +497,10 @@ public class NavMappingPanel extends JPanel {
         repaint();
     }
 
-    private void configureComboBoxStyle(JComboBox<?>... comboBoxes) {
-        for (JComboBox<?> box : comboBoxes) {
-            box.setBackground(Color.WHITE);
-            box.setFont(new Font("宋体", Font.PLAIN, 12));
-            box.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-            box.setUI(new BasicComboBoxUI() {
-                @Override
-                protected JButton createArrowButton() {
-                    JButton button = super.createArrowButton();
-                    button.setBackground(Color.WHITE);
-                    return button;
-                }
-            });
-            box.setEditable(true);
-        }
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        setBackground(backgroundColor);
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -400,6 +552,13 @@ public class NavMappingPanel extends JPanel {
 
     private void handleConfirm() {
         NavMappingRelation relation = getNavMappingRelation();
+        if (relation == null) {
+            return;
+        }
+        if (relation.getRelationType() == null || relation.getRelationType().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "请选择映射类型", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         if (relation != null) {
             if (confirmCallback != null) {
                 // 使用 WriteCommandAction 包装文档修改操作
