@@ -188,8 +188,8 @@ public class NavMappingPanel extends JPanel {
         mappingTypeLabel.setBounds(50, 20, 100, 30);
         add(mappingTypeLabel);
 
-        mappingTypeCombo = new JComboBox<>(new String[] { "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
-        mappingTypeCombo.setSelectedItem("OneToOne");
+        mappingTypeCombo = new JComboBox<>(new String[] { "", "OneToOne", "OneToMany", "ManyToOne", "ManyToMany" });
+        mappingTypeCombo.setSelectedItem("");
         mappingTypeCombo.setBounds(150, 20, 150, 30);
         mappingTypeCombo.addActionListener(e -> updateMappingDisplay());
         add(mappingTypeCombo);
@@ -419,6 +419,13 @@ public class NavMappingPanel extends JPanel {
 
     private void handleConfirm() {
         NavMappingRelation relation = getNavMappingRelation();
+        if (relation == null) {
+            return;
+        }
+        if (relation.getRelationType() == null || relation.getRelationType().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "请选择映射类型", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         if (relation != null) {
             if (confirmCallback != null) {
                 // 使用 WriteCommandAction 包装文档修改操作
