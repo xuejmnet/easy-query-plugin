@@ -157,11 +157,27 @@ public class NavMappingPanel extends JPanel {
 
     public NavMappingPanel(String[] availableEntities, String currentEntityName,
             Map<String, String[]> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
+        this(availableEntities, currentEntityName, null, entityAttributesMap, confirmCallback);
+    }
+
+    public NavMappingPanel(String[] availableEntities, String currentEntityName,
+            String defaultTargetEntity, Map<String, String[]> entityAttributesMap, 
+            Consumer<NavMappingRelation> confirmCallback) {
         this.availableEntities = availableEntities;
         this.currentEntityName = currentEntityName;
         this.entityAttributesMap = entityAttributesMap;
         this.confirmCallback = confirmCallback;
         initializePanel();
+        
+        // 如果有默认目标实体，设置它
+        if (defaultTargetEntity != null && !defaultTargetEntity.isEmpty()) {
+            targetEntityLabel.setText(defaultTargetEntity);
+            // 更新所有属性组的目标实体属性
+            for (AttributeGroup group : attributeGroups) {
+                group.updateAttributes(middleEntityLabel.getText(), defaultTargetEntity);
+            }
+            updateMappingDisplay();
+        }
     }
 
     private void initializePanel() {

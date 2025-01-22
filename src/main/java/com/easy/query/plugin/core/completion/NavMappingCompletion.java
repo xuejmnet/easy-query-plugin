@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 /**
  * 导航映射自动补全
+ *
  * @author link2fun
  */
 public class NavMappingCompletion extends CompletionContributor {
@@ -53,12 +54,40 @@ public class NavMappingCompletion extends CompletionContributor {
             return;
         }
 
+        PsiField currentField = PsiTreeUtil.getParentOfType(position, PsiField.class);
+        // 获取当前字段的类型
+        if (currentField == null) {
+            return;
+        }
+        PsiType currentFieldType = currentField.getType();
+        String currentFieldTypeQualifiedName = null;
+        if (currentFieldType instanceof PsiClassType) {
+            PsiClassType classType = (PsiClassType) currentFieldType;
+            PsiClass resolvedClass = classType.resolve();
+            if (resolvedClass != null) {
+                if (resolvedClass.getQualifiedName() != null && (resolvedClass.getQualifiedName().equals("java.util.List") || resolvedClass.getQualifiedName().equals("java.util.Set"))) {
+                    PsiType[] genericParameters = classType.getParameters();
+                    if (genericParameters.length > 0 && genericParameters[0] instanceof PsiClassType) {
+                        PsiClass genericClass = ((PsiClassType) genericParameters[0]).resolve();
+                        if (genericClass != null) {
+                            currentFieldTypeQualifiedName = genericClass.getQualifiedName();
+                        }
+                    }
+                } else {
+                    currentFieldTypeQualifiedName = resolvedClass.getQualifiedName();
+                }
+            }
+        }
+
+
+
         String currentClassQualifiedName = currentPsiClass.getQualifiedName();
         String[] currentClassFields = Arrays.stream(currentPsiClass.getAllFields()).filter(field -> !PsiJavaFieldUtil.ignoreField(field)).map(PsiField::getName).toArray(String[]::new);
 
 
         //
 
+        String targetEntityClassName = currentFieldTypeQualifiedName;
         LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
                 LookupElementBuilder.create("Nav EasyQuery @Navigate生成")
                         .withInsertHandler((context, item) -> {
@@ -97,8 +126,8 @@ public class NavMappingCompletion extends CompletionContributor {
                                 }
 
 
-                                NavMappingGUI gui = new NavMappingGUI(entities, currentClassQualifiedName, entityAttributesMap,
-                                        callback);
+                                NavMappingGUI gui = new NavMappingGUI(entities, currentClassQualifiedName, 
+                                        targetEntityClassName, entityAttributesMap, callback);
                                 gui.setVisible(true);
                             });
                         })
