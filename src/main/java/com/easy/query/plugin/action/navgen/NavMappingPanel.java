@@ -1,5 +1,7 @@
 package com.easy.query.plugin.action.navgen;
 
+import cn.hutool.core.lang.Pair;
+import com.google.common.collect.Lists;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -32,10 +34,10 @@ public class NavMappingPanel extends JPanel {
     private JLabel targetEntityLabel;
     private JButton selectMiddleEntityButton;
     private JButton selectTargetEntityButton;
-    private final String[] availableEntities;
+    private final List<Pair<String,String>> availableEntities;
     @Getter
     private final String currentEntityName;
-    private final Map<String, String[]> entityAttributesMap;
+    private final Map<String, List<Pair<String,String>>> entityAttributesMap;
     private final Consumer<NavMappingRelation> confirmCallback;
 
     // 亮色主题颜色
@@ -148,12 +150,18 @@ public class NavMappingPanel extends JPanel {
     }
 
     private class AttributeGroup {
-        JComboBox<String> sourceAttr;
-        JComboBox<String> middleAttr;
-        JComboBox<String> middleTargetAttr;
-        JComboBox<String> targetAttr;
+        JButton sourceAttrButton;
+        JButton middleAttrButton;
+        JButton middleTargetAttrButton;
+        JButton targetAttrButton;
         JButton deleteButton;
         int yPosition;
+        
+        // 存储选中的属性值
+        private String selectedSourceAttr = "";
+        private String selectedMiddleAttr = "";
+        private String selectedMiddleTargetAttr = "";
+        private String selectedTargetAttr = "";
 
         public AttributeGroup(int yPos) {
             this.yPosition = yPos;
@@ -161,67 +169,136 @@ public class NavMappingPanel extends JPanel {
         }
 
         private void initializeComponents() {
-            String[] sourceAttributes = entityAttributesMap.getOrDefault(currentEntityName,
-                    new String[] { "当前实体属性" });
+            List<Pair<String,String>> sourceAttributes = entityAttributesMap.getOrDefault(currentEntityName,
+                    Lists.newArrayList());
 
-            String[] mappingAttributes = { "映射实体属性" };
-            String[] targetAttributes = { "目标实体属性" };
-
-            sourceAttr = new JComboBox<>(sourceAttributes);
-            middleAttr = new JComboBox<>(mappingAttributes);
-            middleTargetAttr = new JComboBox<>(mappingAttributes);
-            targetAttr = new JComboBox<>(targetAttributes);
+            sourceAttrButton = createAttributeButton("选择属性", sourceAttributes, value -> selectedSourceAttr = value);
+            middleAttrButton = createAttributeButton("选择属性", Lists.newArrayList(), value -> selectedMiddleAttr = value);
+            middleTargetAttrButton = createAttributeButton("选择属性", Lists.newArrayList(), value -> selectedMiddleTargetAttr = value);
+            targetAttrButton = createAttributeButton("选择属性", Lists.newArrayList(), value -> selectedTargetAttr = value);
             deleteButton = new JButton("删除");
 
-            sourceAttr.setMaximumRowCount(15);
-            middleAttr.setMaximumRowCount(15);
-            middleTargetAttr.setMaximumRowCount(15);
-            targetAttr.setMaximumRowCount(15);
-
-            sourceAttr.setBounds(50, yPosition, 150, 600);
-            middleAttr.setBounds(350, yPosition, 150, 600);
-            middleTargetAttr.setBounds(350, yPosition + 50, 150, 600);
-            targetAttr.setBounds(650, yPosition, 150, 600);
+            sourceAttrButton.setBounds(50, yPosition, 150, 30);
+            middleAttrButton.setBounds(350, yPosition, 150, 30);
+            middleTargetAttrButton.setBounds(350, yPosition + 35, 150, 30);
+            targetAttrButton.setBounds(650, yPosition, 150, 30);
             deleteButton.setBounds(820, yPosition, 60, 30);
 
-            configureComboBoxStyle(sourceAttr, middleAttr, middleTargetAttr, targetAttr);
+            configureButtonStyle(sourceAttrButton, middleAttrButton, middleTargetAttrButton, targetAttrButton);
             deleteButton.setVisible(false);
+        }
+
+        private JButton createAttributeButton(String defaultText, List<Pair<String,String>> attributes, Consumer<String> onSelect) {
+            JButton button = new JButton(defaultText);
+            button.addActionListener(e -> {
+                EntitySelectDialog dialog = new EntitySelectDialog(
+                        SwingUtilities.getWindowAncestor(NavMappingPanel.this),
+                        "选择属性",
+                        attributes);
+                dialog.setVisible(true);
+
+                String selectedValue = dialog.getSelectedEntity();
+                if (selectedValue != null) {
+                    button.setText(selectedValue);
+                    onSelect.accept(selectedValue);
+                }
+            });
+            return button;
+        }
+
+        private void configureButtonStyle(JButton... buttons) {
+            for (JButton button : buttons) {
+                button.setFont(COMBO_FONT);
+                button.setBackground(componentBackground);
+                button.setForeground(textColor);
+                button.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(borderColor),
+                    BorderFactory.createEmptyBorder(0, 5, 0, 5)
+                ));
+                button.setHorizontalAlignment(SwingConstants.LEFT);
+            }
         }
 
         public void updateAttributes(String middleEntity, String targetEntity) {
             if (middleEntity != null && !middleEntity.isEmpty()) {
-                String[] middleAttributes = entityAttributesMap.getOrDefault(middleEntity,
-                        new String[] { "映射实体属性" });
-                updateComboBoxItems(middleAttr, middleAttributes);
-                updateComboBoxItems(middleTargetAttr, middleAttributes);
+                List<Pair<String,String>> middleAttributes = entityAttributesMap.getOrDefault(middleEntity,
+                        Lists.newArrayList());
+                updateAttributeButton(middleAttrButton, middleAttributes);
+                updateAttributeButton(middleTargetAttrButton, middleAttributes);
             }
 
             if (targetEntity != null && !targetEntity.isEmpty()) {
-                String[] targetAttributes = entityAttributesMap.getOrDefault(targetEntity,
-                        new String[] { "目标实体属性" });
-                updateComboBoxItems(targetAttr, targetAttributes);
+                List<Pair<String,String>> targetAttributes = entityAttributesMap.getOrDefault(targetEntity,
+                        Lists.newArrayList());
+                updateAttributeButton(targetAttrButton, targetAttributes);
             }
         }
 
-        private void updateComboBoxItems(JComboBox<String> comboBox, String[] items) {
-            String selected = (String) comboBox.getSelectedItem();
-            comboBox.removeAllItems();
-            for (String item : items) {
-                comboBox.addItem(item);
+        private void updateAttributeButton(JButton button, List<Pair<String,String>> attributes) {
+            String currentText = button.getText();
+            if (attributes.stream().noneMatch(attr->attr.getKey().contains(currentText))) {
+                button.setText("选择属性");
+                // 重置对应的属性值
+                if (button == sourceAttrButton) {
+                    selectedSourceAttr = "";
+                } else if (button == middleAttrButton) {
+                    selectedMiddleAttr = "";
+                } else if (button == middleTargetAttrButton) {
+                    selectedMiddleTargetAttr = "";
+                } else if (button == targetAttrButton) {
+                    selectedTargetAttr = "";
+                }
             }
-            if (selected != null && Arrays.asList(items).contains(selected)) {
-                comboBox.setSelectedItem(selected);
-            }
+            button.removeActionListener(button.getActionListeners()[0]);
+            button.addActionListener(e -> {
+                EntitySelectDialog dialog = new EntitySelectDialog(
+                        SwingUtilities.getWindowAncestor(NavMappingPanel.this),
+                        "选择属性",
+                        attributes);
+                dialog.setVisible(true);
+
+                String selectedValue = dialog.getSelectedEntity();
+                if (selectedValue != null) {
+                    button.setText(selectedValue);
+                    // 更新对应的属性值
+                    if (button == sourceAttrButton) {
+                        selectedSourceAttr = selectedValue;
+                    } else if (button == middleAttrButton) {
+                        selectedMiddleAttr = selectedValue;
+                    } else if (button == middleTargetAttrButton) {
+                        selectedMiddleTargetAttr = selectedValue;
+                    } else if (button == targetAttrButton) {
+                        selectedTargetAttr = selectedValue;
+                    }
+                }
+            });
+        }
+
+        // 获取选中的属性值
+        public String getSourceAttribute() {
+            return selectedSourceAttr;
+        }
+
+        public String getMiddleAttribute() {
+            return selectedMiddleAttr;
+        }
+
+        public String getMiddleTargetAttribute() {
+            return selectedMiddleTargetAttr;
+        }
+
+        public String getTargetAttribute() {
+            return selectedTargetAttr;
         }
     }
 
-    public NavMappingPanel(String[] availableEntities, String currentEntityName,
-            Map<String, String[]> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
+    public NavMappingPanel(List<Pair<String,String>> availableEntities, String currentEntityName,
+            Map<String, List<Pair<String,String>>> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
         this(availableEntities, currentEntityName, null, entityAttributesMap, confirmCallback);
     }
 
-    public NavMappingPanel(String[] availableEntities, String currentEntityName,
-            String defaultTargetEntity, Map<String, String[]> entityAttributesMap, 
+    public NavMappingPanel(List<Pair<String,String>> availableEntities, String currentEntityName,
+            String defaultTargetEntity, Map<String, List<Pair<String,String>>> entityAttributesMap,
             Consumer<NavMappingRelation> confirmCallback) {
         this.availableEntities = availableEntities;
         this.currentEntityName = currentEntityName;
@@ -414,10 +491,10 @@ public class NavMappingPanel extends JPanel {
         AttributeGroup group = new AttributeGroup(yPos);
         attributeGroups.add(group);
 
-        add(group.sourceAttr);
-        add(group.middleAttr);
-        add(group.middleTargetAttr);
-        add(group.targetAttr);
+        add(group.sourceAttrButton);
+        add(group.middleAttrButton);
+        add(group.middleTargetAttrButton);
+        add(group.targetAttrButton);
         add(group.deleteButton);
 
         if (attributeGroups.size() > 1) {
@@ -431,10 +508,10 @@ public class NavMappingPanel extends JPanel {
     }
 
     private void removeAttributeGroup(AttributeGroup group) {
-        remove(group.sourceAttr);
-        remove(group.middleAttr);
-        remove(group.middleTargetAttr);
-        remove(group.targetAttr);
+        remove(group.sourceAttrButton);
+        remove(group.middleAttrButton);
+        remove(group.middleTargetAttrButton);
+        remove(group.targetAttrButton);
         remove(group.deleteButton);
 
         attributeGroups.remove(group);
@@ -457,19 +534,19 @@ public class NavMappingPanel extends JPanel {
 
     private void updateGroupPosition(AttributeGroup group, int newY) {
         group.yPosition = newY;
-        group.sourceAttr.setBounds(50, newY, 150, 30);
+        group.sourceAttrButton.setBounds(50, newY, 150, 30);
 
         String selectedType = (String) mappingTypeCombo.getSelectedItem();
         boolean isManyToMany = "ManyToMany".equals(selectedType);
         boolean hasMiddleEntity = isManyToMany && !middleEntityLabel.getText().isEmpty();
 
         if (isManyToMany && hasMiddleEntity) {
-            group.middleAttr.setBounds(350, newY, 150, 30);
-            group.middleTargetAttr.setBounds(350, newY + 35, 150, 30);
-            group.targetAttr.setBounds(650, newY + 35, 150, 30);
+            group.middleAttrButton.setBounds(350, newY, 150, 30);
+            group.middleTargetAttrButton.setBounds(350, newY + 35, 150, 30);
+            group.targetAttrButton.setBounds(650, newY + 35, 150, 30);
             group.deleteButton.setBounds(830, newY + 15, 60, 30);
         } else {
-            group.targetAttr.setBounds(650, newY, 150, 30);
+            group.targetAttrButton.setBounds(650, newY, 150, 30);
             group.deleteButton.setBounds(830, newY, 60, 30);
         }
     }
@@ -484,8 +561,8 @@ public class NavMappingPanel extends JPanel {
 
         int newY = INITIAL_GROUP_Y;
         for (AttributeGroup group : attributeGroups) {
-            group.middleAttr.setVisible(hasMiddleEntity);
-            group.middleTargetAttr.setVisible(hasMiddleEntity);
+            group.middleAttrButton.setVisible(hasMiddleEntity);
+            group.middleTargetAttrButton.setVisible(hasMiddleEntity);
 
             updateGroupPosition(group, newY);
             newY += GROUP_VERTICAL_GAP;
@@ -578,10 +655,10 @@ public class NavMappingPanel extends JPanel {
         List<AttributeMapping> attributeMappings = new ArrayList<>();
 
         for (AttributeGroup group : attributeGroups) {
-            String sourceAttr = (String) group.sourceAttr.getSelectedItem();
-            String middleAttr = (String) group.middleAttr.getSelectedItem();
-            String middleTargetAttr = (String) group.middleTargetAttr.getSelectedItem();
-            String targetAttr = (String) group.targetAttr.getSelectedItem();
+            String sourceAttr = group.getSourceAttribute();
+            String middleAttr = group.getMiddleAttribute();
+            String middleTargetAttr = group.getMiddleTargetAttribute();
+            String targetAttr = group.getTargetAttribute();
 
             attributeMappings.add(new AttributeMapping(
                     sourceAttr,
@@ -685,8 +762,8 @@ public class NavMappingPanel extends JPanel {
         List<String> targetMappingFields = new ArrayList<>();
 
         for (AttributeGroup group : attributeGroups) {
-            String sourceField = (String) group.sourceAttr.getSelectedItem();
-            String targetField = (String) group.targetAttr.getSelectedItem();
+            String sourceField = group.getSourceAttribute();
+            String targetField = group.getTargetAttribute();
 
             if (sourceField != null && !sourceField.isEmpty()) {
                 sourceFields.add(sourceField);
@@ -695,9 +772,9 @@ public class NavMappingPanel extends JPanel {
                 targetFields.add(targetField);
             }
 
-            if (Objects.equals(relationType, "ManyToMany")) {
-                String middleSourceField = (String) group.middleAttr.getSelectedItem();
-                String middleTargetField = (String) group.middleTargetAttr.getSelectedItem();
+            if ("ManyToMany".equals(relationType)) {
+                String middleSourceField = group.getMiddleAttribute();
+                String middleTargetField = group.getMiddleTargetAttribute();
 
                 if (middleSourceField != null && !middleSourceField.isEmpty()) {
                     selfMappingFields.add(middleSourceField);
@@ -716,7 +793,7 @@ public class NavMappingPanel extends JPanel {
 
         // 对于多对多关系，检查中间表相关字段
         String mappingClass = null;
-        if (relationType == "ManyToMany") {
+        if ("ManyToMany".equals(relationType)) {
             mappingClass = getSelectedMiddleEntity();
             if (mappingClass == null || mappingClass.isEmpty() ||
                     selfMappingFields.isEmpty() || targetMappingFields.isEmpty()) {

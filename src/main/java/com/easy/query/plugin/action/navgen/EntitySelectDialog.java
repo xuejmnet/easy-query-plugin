@@ -1,26 +1,32 @@
 package com.easy.query.plugin.action.navgen;
 
+import cn.hutool.core.lang.Pair;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Nav 注解生成GUI
+ *
  * @author link2fun
  */
 public class EntitySelectDialog extends JDialog {
-    private String selectedEntity = null;
-    private JList<String> entityList;
+    private Pair<String, String> selectedEntity = null;
+    private JList<Pair<String, String>> entityList;
     private JTextField filterField;
-    private final String[] allEntities;
-    private DefaultListModel<String> listModel;
+    private final List<Pair<String, String>> allEntities;
+    private DefaultListModel<Pair<String, String>> listModel;
 
-    public EntitySelectDialog(Window owner, String title, String[] entities) {
+    public EntitySelectDialog(Window owner, String title, List<Pair<String, String>> entities) {
         super(owner, title, ModalityType.APPLICATION_MODAL);
         this.allEntities = entities;
         initComponents();
@@ -58,6 +64,24 @@ public class EntitySelectDialog extends JDialog {
             }
         });
 
+        // 上下键监听， 切换选中实体
+        filterField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int key = e.getKeyCode();
+                if (key == KeyEvent.VK_UP || key == KeyEvent.VK_DOWN) {
+                    int currentIndex = entityList.getSelectedIndex();
+                    int listSize = listModel.getSize();
+                    if (key == KeyEvent.VK_UP && currentIndex > 0) {
+                        entityList.setSelectedIndex(currentIndex - 1);
+                    } else if (key == KeyEvent.VK_DOWN && currentIndex < listSize - 1) {
+                        entityList.setSelectedIndex(currentIndex + 1);
+                    }
+                    e.consume();
+                }
+            }
+        });
+
         add(filterPanel, BorderLayout.NORTH);
 
         // 创建实体列表
@@ -66,8 +90,23 @@ public class EntitySelectDialog extends JDialog {
         entityList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         entityList.setBorder(new EmptyBorder(5, 5, 5, 5));
 
+        // 设置自定义渲染器
+        entityList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                        boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Pair) {
+                    Pair<String, String> pair = (Pair<String, String>) value;
+                    setText(pair.getKey() + " // " + pair.getValue());
+                }
+                return this;
+            }
+        });
+
         // 添加所有实体到列表
-        Arrays.stream(allEntities).forEach(listModel::addElement);
+        allEntities.stream().forEach(listModel::addElement);
+
 
         // 添加双击监听器
         entityList.addMouseListener(new MouseAdapter() {
@@ -117,8 +156,8 @@ public class EntitySelectDialog extends JDialog {
         String filterText = filterField.getText().toLowerCase().trim();
         listModel.clear();
 
-        Stream.of(allEntities)
-                .filter(entity -> entity.toLowerCase().contains(filterText))
+        allEntities.stream()
+                .filter(entity -> entity.getKey().toLowerCase().contains(filterText))
                 .forEach(listModel::addElement);
 
         if (listModel.getSize() > 0) {
@@ -127,6 +166,6 @@ public class EntitySelectDialog extends JDialog {
     }
 
     public String getSelectedEntity() {
-        return selectedEntity;
+        return Optional.ofNullable(selectedEntity).map(Pair::getKey).orElse("");
     }
 }
