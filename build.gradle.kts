@@ -5,12 +5,12 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.0.87"
+version = "0.0.88"
 
 repositories {
     maven {
-        //setUrl("https://maven.aliyun.com/nexus/content/groups/public/")
-        setUrl("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/")
+        setUrl("https://maven.aliyun.com/repository/central/")
+//        setUrl("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/")
     }
 }
 
