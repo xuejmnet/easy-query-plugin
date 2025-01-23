@@ -207,4 +207,16 @@ public class EasyQueryElementUtil {
     }
 
 
+    /**
+     * 字段上是否有 com.easy.query.core.annotation.Navigate 注解
+     * @param field PsiField
+     */
+    public static boolean hasNavigateAnnotation(PsiField field) {
+        if (field == null) {
+            return false;
+        }
+        return field.getAnnotation("com.easy.query.core.annotation.Navigate") != null;
+    }
+
+
 }

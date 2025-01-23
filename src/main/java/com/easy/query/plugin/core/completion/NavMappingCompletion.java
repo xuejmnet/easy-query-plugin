@@ -81,6 +81,9 @@ public class NavMappingCompletion extends CompletionContributor {
         String currentClassQualifiedName = currentPsiClass.getQualifiedName();
         List<Pair<String, String>> currentClassFields = Arrays.stream(currentPsiClass.getAllFields())
                 .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
+                .filter(field-> !EasyQueryElementUtil.hasNavigateAnnotation(field))
+                // 还需要过滤掉当前字段， 毕竟 当前字段是被关联的， 所以不能作为关联属性
+                .filter(field-> !StrUtil.equals(currentField.getName(), field.getName()))
                 .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
                 .collect(Collectors.toList());
 
@@ -117,16 +120,19 @@ public class NavMappingCompletion extends CompletionContributor {
 
                                 Map<String, List<Pair<String,String>>> entityAttributesMap = new HashMap<>();
 
-                                // 当前可能是DTO, 所以直接先加上当前类的, 如果是实体的话后面会覆盖掉
-                                entityAttributesMap.put(currentClassQualifiedName, currentClassFields);
 
                                 for (PsiClass psiClass : entityClasses) {
                                     PsiField[] allFields = psiClass.getAllFields();
                                     entityAttributesMap.put(psiClass.getQualifiedName(), Arrays.stream(allFields)
                                             .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
+                                             .filter(field-> !EasyQueryElementUtil.hasNavigateAnnotation(field))
                                             .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
                                             .collect(Collectors.toList()));
                                 }
+
+                                // 当前可能是DTO
+                                entityAttributesMap.put(currentClassQualifiedName, currentClassFields);
+
 
 
                                 NavMappingGUI gui = new NavMappingGUI(entities, currentClassQualifiedName,
