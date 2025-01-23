@@ -90,6 +90,20 @@ public class EntitySelectDialog extends JDialog {
         entityList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         entityList.setBorder(new EmptyBorder(5, 5, 5, 5));
 
+        // 设置自定义渲染器
+        entityList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                        boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Pair) {
+                    Pair<String, String> pair = (Pair<String, String>) value;
+                    setText(pair.getKey() + " // " + pair.getValue());
+                }
+                return this;
+            }
+        });
+
         // 添加所有实体到列表
         allEntities.stream().forEach(listModel::addElement);
 
