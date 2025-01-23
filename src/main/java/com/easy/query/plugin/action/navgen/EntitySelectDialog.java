@@ -5,6 +5,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
@@ -55,6 +57,24 @@ public class EntitySelectDialog extends JDialog {
             @Override
             public void changedUpdate(DocumentEvent e) {
                 filterEntities();
+            }
+        });
+
+        // 上下键监听， 切换选中实体
+        filterField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int key = e.getKeyCode();
+                if (key == KeyEvent.VK_UP || key == KeyEvent.VK_DOWN) {
+                    int currentIndex = entityList.getSelectedIndex();
+                    int listSize = listModel.getSize();
+                    if (key == KeyEvent.VK_UP && currentIndex > 0) {
+                        entityList.setSelectedIndex(currentIndex - 1);
+                    } else if (key == KeyEvent.VK_DOWN && currentIndex < listSize - 1) {
+                        entityList.setSelectedIndex(currentIndex + 1);
+                    }
+                    e.consume();
+                }
             }
         });
 
