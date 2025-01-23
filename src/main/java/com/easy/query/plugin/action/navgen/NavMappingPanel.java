@@ -1,5 +1,7 @@
 package com.easy.query.plugin.action.navgen;
 
+import cn.hutool.core.lang.Pair;
+import com.google.common.collect.Lists;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -32,10 +34,10 @@ public class NavMappingPanel extends JPanel {
     private JLabel targetEntityLabel;
     private JButton selectMiddleEntityButton;
     private JButton selectTargetEntityButton;
-    private final String[] availableEntities;
+    private final List<Pair<String,String>> availableEntities;
     @Getter
     private final String currentEntityName;
-    private final Map<String, String[]> entityAttributesMap;
+    private final Map<String, List<Pair<String,String>>> entityAttributesMap;
     private final Consumer<NavMappingRelation> confirmCallback;
 
     // 亮色主题颜色
@@ -167,13 +169,13 @@ public class NavMappingPanel extends JPanel {
         }
 
         private void initializeComponents() {
-            String[] sourceAttributes = entityAttributesMap.getOrDefault(currentEntityName,
-                    new String[] { "当前实体属性" });
+            List<Pair<String,String>> sourceAttributes = entityAttributesMap.getOrDefault(currentEntityName,
+                    Lists.newArrayList());
 
             sourceAttrButton = createAttributeButton("选择属性", sourceAttributes, value -> selectedSourceAttr = value);
-            middleAttrButton = createAttributeButton("选择属性", new String[]{"映射实体属性"}, value -> selectedMiddleAttr = value);
-            middleTargetAttrButton = createAttributeButton("选择属性", new String[]{"映射实体属性"}, value -> selectedMiddleTargetAttr = value);
-            targetAttrButton = createAttributeButton("选择属性", new String[]{"目标实体属性"}, value -> selectedTargetAttr = value);
+            middleAttrButton = createAttributeButton("选择属性", Lists.newArrayList(), value -> selectedMiddleAttr = value);
+            middleTargetAttrButton = createAttributeButton("选择属性", Lists.newArrayList(), value -> selectedMiddleTargetAttr = value);
+            targetAttrButton = createAttributeButton("选择属性", Lists.newArrayList(), value -> selectedTargetAttr = value);
             deleteButton = new JButton("删除");
 
             sourceAttrButton.setBounds(50, yPosition, 150, 30);
@@ -186,7 +188,7 @@ public class NavMappingPanel extends JPanel {
             deleteButton.setVisible(false);
         }
 
-        private JButton createAttributeButton(String defaultText, String[] attributes, Consumer<String> onSelect) {
+        private JButton createAttributeButton(String defaultText, List<Pair<String,String>> attributes, Consumer<String> onSelect) {
             JButton button = new JButton(defaultText);
             button.addActionListener(e -> {
                 EntitySelectDialog dialog = new EntitySelectDialog(
@@ -219,22 +221,22 @@ public class NavMappingPanel extends JPanel {
 
         public void updateAttributes(String middleEntity, String targetEntity) {
             if (middleEntity != null && !middleEntity.isEmpty()) {
-                String[] middleAttributes = entityAttributesMap.getOrDefault(middleEntity,
-                        new String[] { "映射实体属性" });
+                List<Pair<String,String>> middleAttributes = entityAttributesMap.getOrDefault(middleEntity,
+                        Lists.newArrayList());
                 updateAttributeButton(middleAttrButton, middleAttributes);
                 updateAttributeButton(middleTargetAttrButton, middleAttributes);
             }
 
             if (targetEntity != null && !targetEntity.isEmpty()) {
-                String[] targetAttributes = entityAttributesMap.getOrDefault(targetEntity,
-                        new String[] { "目标实体属性" });
+                List<Pair<String,String>> targetAttributes = entityAttributesMap.getOrDefault(targetEntity,
+                        Lists.newArrayList());
                 updateAttributeButton(targetAttrButton, targetAttributes);
             }
         }
 
-        private void updateAttributeButton(JButton button, String[] attributes) {
+        private void updateAttributeButton(JButton button, List<Pair<String,String>> attributes) {
             String currentText = button.getText();
-            if (!Arrays.asList(attributes).contains(currentText)) {
+            if (attributes.stream().noneMatch(attr->attr.getKey().contains(currentText))) {
                 button.setText("选择属性");
                 // 重置对应的属性值
                 if (button == sourceAttrButton) {
@@ -290,13 +292,13 @@ public class NavMappingPanel extends JPanel {
         }
     }
 
-    public NavMappingPanel(String[] availableEntities, String currentEntityName,
-            Map<String, String[]> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
+    public NavMappingPanel(List<Pair<String,String>> availableEntities, String currentEntityName,
+            Map<String, List<Pair<String,String>>> entityAttributesMap, Consumer<NavMappingRelation> confirmCallback) {
         this(availableEntities, currentEntityName, null, entityAttributesMap, confirmCallback);
     }
 
-    public NavMappingPanel(String[] availableEntities, String currentEntityName,
-            String defaultTargetEntity, Map<String, String[]> entityAttributesMap, 
+    public NavMappingPanel(List<Pair<String,String>> availableEntities, String currentEntityName,
+            String defaultTargetEntity, Map<String, List<Pair<String,String>>> entityAttributesMap,
             Consumer<NavMappingRelation> confirmCallback) {
         this.availableEntities = availableEntities;
         this.currentEntityName = currentEntityName;

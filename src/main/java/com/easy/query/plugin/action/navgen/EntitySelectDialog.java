@@ -1,5 +1,7 @@
 package com.easy.query.plugin.action.navgen;
 
+import cn.hutool.core.lang.Pair;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -9,20 +11,22 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Nav 注解生成GUI
+ *
  * @author link2fun
  */
 public class EntitySelectDialog extends JDialog {
-    private String selectedEntity = null;
-    private JList<String> entityList;
+    private Pair<String, String> selectedEntity = null;
+    private JList<Pair<String, String>> entityList;
     private JTextField filterField;
-    private final String[] allEntities;
-    private DefaultListModel<String> listModel;
+    private final List<Pair<String, String>> allEntities;
+    private DefaultListModel<Pair<String, String>> listModel;
 
-    public EntitySelectDialog(Window owner, String title, String[] entities) {
+    public EntitySelectDialog(Window owner, String title, List<Pair<String, String>> entities) {
         super(owner, title, ModalityType.APPLICATION_MODAL);
         this.allEntities = entities;
         initComponents();
@@ -87,7 +91,8 @@ public class EntitySelectDialog extends JDialog {
         entityList.setBorder(new EmptyBorder(5, 5, 5, 5));
 
         // 添加所有实体到列表
-        Arrays.stream(allEntities).forEach(listModel::addElement);
+        allEntities.stream().forEach(listModel::addElement);
+
 
         // 添加双击监听器
         entityList.addMouseListener(new MouseAdapter() {
@@ -137,8 +142,8 @@ public class EntitySelectDialog extends JDialog {
         String filterText = filterField.getText().toLowerCase().trim();
         listModel.clear();
 
-        Stream.of(allEntities)
-                .filter(entity -> entity.toLowerCase().contains(filterText))
+        allEntities.stream()
+                .filter(entity -> entity.getKey().toLowerCase().contains(filterText))
                 .forEach(listModel::addElement);
 
         if (listModel.getSize() > 0) {
@@ -147,6 +152,6 @@ public class EntitySelectDialog extends JDialog {
     }
 
     public String getSelectedEntity() {
-        return selectedEntity;
+        return Optional.ofNullable(selectedEntity).map(Pair::getKey).orElse("");
     }
 }

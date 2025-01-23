@@ -1,12 +1,10 @@
 package com.easy.query.plugin.core.completion;
 
+import cn.hutool.core.lang.Pair;
 import com.easy.query.plugin.action.navgen.NavMappingGUI;
 import com.easy.query.plugin.action.navgen.NavMappingRelation;
 import com.easy.query.plugin.core.icons.Icons;
-import com.easy.query.plugin.core.util.PsiJavaClassUtil;
-import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
-import com.easy.query.plugin.core.util.PsiJavaFileUtil;
-import com.easy.query.plugin.core.util.StrUtil;
+import com.easy.query.plugin.core.util.*;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
@@ -80,9 +78,11 @@ public class NavMappingCompletion extends CompletionContributor {
         }
 
 
-
         String currentClassQualifiedName = currentPsiClass.getQualifiedName();
-        String[] currentClassFields = Arrays.stream(currentPsiClass.getAllFields()).filter(field -> !PsiJavaFieldUtil.ignoreField(field)).map(PsiField::getName).toArray(String[]::new);
+        List<Pair<String, String>> currentClassFields = Arrays.stream(currentPsiClass.getAllFields())
+                .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
+                .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
+                .collect(Collectors.toList());
 
 
         //
@@ -111,9 +111,11 @@ public class NavMappingCompletion extends CompletionContributor {
                                 List<String> entityClassQualifiedNameList = entityClasses.stream().map(PsiClass::getQualifiedName).collect(Collectors.toList());
 
 
-                                String[] entities = entityClassQualifiedNameList.toArray(new String[0]);
+                                List<Pair<String,String>> entities = entityClasses.stream()
+                                        .map(clazz-> Pair.of(clazz.getQualifiedName(),PsiCommentUtil.getCommentDataStr(clazz.getDocComment())))
+                                        .collect(Collectors.toList());
 
-                                Map<String, String[]> entityAttributesMap = new HashMap<>();
+                                Map<String, List<Pair<String,String>>> entityAttributesMap = new HashMap<>();
 
                                 // 当前可能是DTO, 所以直接先加上当前类的, 如果是实体的话后面会覆盖掉
                                 entityAttributesMap.put(currentClassQualifiedName, currentClassFields);
@@ -122,11 +124,12 @@ public class NavMappingCompletion extends CompletionContributor {
                                     PsiField[] allFields = psiClass.getAllFields();
                                     entityAttributesMap.put(psiClass.getQualifiedName(), Arrays.stream(allFields)
                                             .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
-                                            .map(PsiField::getName).toArray(String[]::new));
+                                            .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
+                                            .collect(Collectors.toList()));
                                 }
 
 
-                                NavMappingGUI gui = new NavMappingGUI(entities, currentClassQualifiedName, 
+                                NavMappingGUI gui = new NavMappingGUI(entities, currentClassQualifiedName,
                                         targetEntityClassName, entityAttributesMap, callback);
                                 gui.setVisible(true);
                             });

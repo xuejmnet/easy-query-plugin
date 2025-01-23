@@ -29,6 +29,7 @@ intellij {
 dependencies {
 //    implementation("com.intellij:forms_rt:7.0.3")
     implementation("cn.hutool:hutool-core:5.8.25")
+    implementation("com.google.guava:guava:31.0.1-jre")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.41")
 
     implementation ("ch.qos.logback:logback-classic:1.4.12") // Logback 依赖
