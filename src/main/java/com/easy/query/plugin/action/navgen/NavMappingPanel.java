@@ -795,10 +795,10 @@ public class NavMappingPanel extends JPanel {
         String mappingClass = null;
         if ("ManyToMany".equals(relationType)) {
             mappingClass = getSelectedMiddleEntity();
-            if (mappingClass == null || mappingClass.isEmpty() ||
-                    selfMappingFields.isEmpty() || targetMappingFields.isEmpty()) {
-                return null;
-            }
+//            if (mappingClass == null || mappingClass.isEmpty() ||
+//                    selfMappingFields.isEmpty() || targetMappingFields.isEmpty()) {
+//                return null;
+//            }
         }
 
         return new NavMappingRelation(
