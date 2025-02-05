@@ -3,10 +3,11 @@ package com.easy.query.plugin.core.util;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiAnnotationParameterList;
-import com.intellij.psi.PsiNameValuePair;
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.*;
+import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 import groovy.lang.Tuple3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Function;
@@ -77,5 +78,61 @@ public class PsiJavaAnnotationUtil {
 
 
         return new Tuple3<>(diffList.isEmpty(), diffList, newAttrMap);
+    }
+
+
+    /**
+     * 复制一个注解，并指定保留的属性
+     * @param annotation 注解
+     * @param retainAttrs 保留的属性
+     * @return 新注解
+     */
+    public static PsiAnnotation copyAnnotation(PsiAnnotation annotation, String... retainAttrs) {
+        List<String> retainAttrList = Lists.newArrayList(retainAttrs);
+
+        PsiAnnotation newAnno = (PsiAnnotation) annotation.copy();
+
+        PsiAnnotationParameterList parameterList = newAnno.getParameterList();
+        PsiNameValuePair[] attributes = parameterList.getAttributes();
+        int length = attributes.length;
+        for (int i = length - 1; i >= 0; i--) {
+            PsiNameValuePair attribute = attributes[i];
+            if (!retainAttrList.contains(attribute.getAttributeName())) {
+                attribute.delete();
+            }
+        }
+
+        return newAnno;
+
+    }
+
+
+    /**
+     * 创建注解
+     * @param project 项目
+     * @param relatedElement 关联元素
+     * @param annoName 注解名称 eg: Navigate Column
+     * @param attrMap 属性Map key:属性名 value:属性值
+     * @return 注解
+     */
+    public static PsiAnnotation createAnnotation(Project project,PsiElement relatedElement, String annoName, Map<String, PsiNameValuePair> attrMap) {
+        PsiElementFactory elementFactory = PsiElementFactory.getInstance(project);
+        return createAnnotation(elementFactory, relatedElement, annoName, attrMap);
+    }
+
+    /**
+     * 创建注解
+     * @param elementFactory 元素工厂
+     * @param relatedElement 关联元素
+     * @param annoName 注解名称 eg: Navigate Column
+     * @param attrMap 属性Map key:属性名 value:属性值
+     * @return 注解
+     */
+    public static PsiAnnotation createAnnotation(PsiElementFactory elementFactory, PsiElement relatedElement, String annoName, Map<String, PsiNameValuePair> attrMap) {
+        String attrText = attrMap.values().stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+                .collect(Collectors.joining(", "));
+        // 再拼成 @Navigate 注解文本
+        String replacement = "@"+ annoName +"(" + attrText + ")";
+        return elementFactory.createAnnotationFromText(replacement, relatedElement);
     }
 }
