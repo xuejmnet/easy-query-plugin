@@ -108,7 +108,8 @@ public class ProxyFieldCompletion extends CompletionContributor {
                             .withTypeText("尚未设置")
                             .withInsertHandler((context, item) -> {
                                 String target = methodToCall.getName() + "().set()";
-                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), target + " // " + commentStr);
+                                String comment = StrUtil.isBlank(commentStr) ? "" : " // " + commentStr;
+                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), target + comment);
                                 context.getEditor().getCaretModel().getCurrentCaret().moveToOffset(context.getStartOffset() + target.length() - 1);
                             })
                             .withIcon(Icons.EQ),
@@ -131,7 +132,8 @@ public class ProxyFieldCompletion extends CompletionContributor {
                                         .filter(StrUtil::isNotBlank)
                                         .map(StrUtil::trimToEmpty)
                                         .collect(Collectors.joining("; "));
-                                target.append(".").append(method.getName()).append("().set() // ").append(commentStr).append("\n");
+                                String comment = StrUtil.isBlank(commentStr) ? "" : " // " + commentStr;
+                                target.append(".").append(method.getName()).append("().set()").append(comment).append("\n");
                             }
 
                             context.getDocument().replaceString(context.getStartOffset() - 1, context.getTailOffset(), target.toString());
