@@ -200,11 +200,11 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
     private static final PsiElementPattern.Capture<PsiElement> AFTER_EASY_QUERY_JOIN = PlatformPatterns.psiElement().withParent(PsiReferenceExpression.class).withSuperParent(2, PsiExpressionList.class);
 
     private boolean matchJoin(PsiElement psiElement, String inputText) {
-        boolean match = ON_MATCH_TREE.fstMatch(inputText);
-        if (!match) {
-            return false;
-        }
-        return AFTER_EASY_QUERY_JOIN.accepts(psiElement);
+        return ON_MATCH_TREE.fstMatch(inputText);
+//        if (!match) {
+//            return false;
+//        }
+//        return AFTER_EASY_QUERY_JOIN.accepts(psiElement);
     }
 
     private boolean matchAnonymous(PsiElement psiElement, String inputText) {
@@ -748,10 +748,16 @@ public class KotlinEasyQueryApiCompletionContributor extends BaseKotlinEasyQuery
 
 
         KtDotQualifiedExpression parentOfType = PsiTreeUtil.getParentOfType(psiElement, KtDotQualifiedExpression.class);
+        KtExpression receiverExpression=null;
         if (parentOfType == null) {
-            return null;
+            if(psiElement.getParent() instanceof KtExpression){
+                receiverExpression=  (KtExpression)psiElement.getParent();
+            }else{
+                return null;
+            }
+        }else{
+            receiverExpression = parentOfType.getReceiverExpression();
         }
-        KtExpression receiverExpression = parentOfType.getReceiverExpression();
         BindingContext bindingContext = ResolutionUtils.analyze(receiverExpression, BodyResolveMode.FULL);
         KotlinType expressionType = bindingContext.getType(receiverExpression);
         if (expressionType == null) {

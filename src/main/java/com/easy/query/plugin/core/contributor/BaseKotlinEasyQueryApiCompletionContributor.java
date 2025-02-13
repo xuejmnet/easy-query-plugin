@@ -39,6 +39,7 @@ public class BaseKotlinEasyQueryApiCompletionContributor {
             new EasyKtSelectContributor("includes", "includes"),
 //            new EasySelectEntityVOContributor("select", "selectv", false),
             new EasyKtContributor("where", "where"),
+            new EasyKtContributor("where_block", "where"),
 //            new EasyKtContributor("where", "where_code_block", true)
             new EasyKtIncludeContributor("include", "include"),
             new EasyKtIncludesContributor("includes", "includes"),
