@@ -229,6 +229,18 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         }
                     }
 
+                    InspectionResult annoNavigationInspectionResult = EasyQueryElementUtil.inspectionNavigateAnnotation(holder.getProject(), dtoField, entityField);
+
+                    if (annoNavigationInspectionResult.hasProblem()) {
+                        for (InspectionResult.Problem problem : annoNavigationInspectionResult.getProblemList()) {
+                            // 补充quickFix
+                            ArrayList<LocalQuickFix> quickFixes = Lists.newArrayList(problem.getFixes());
+                            quickFixes.add(createQuickFixForSuppressWarningField("EasyQueryFieldMissMatch"));
+                            quickFixes.add(createQuickFixForCommentField());
+                            holder.registerProblem(problem.getPsiElement(), problem.getDescriptionTemplate(), problem.getHighlightType(),quickFixes.toArray(new LocalQuickFix[0]));
+                        }
+                    }
+
                 }
 
             }
