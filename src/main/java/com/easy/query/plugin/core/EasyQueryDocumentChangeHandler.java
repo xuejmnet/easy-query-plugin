@@ -86,13 +86,13 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     public static void createAptFile(List<VirtualFile> virtualFiles, Project project, boolean allCompileFrom) {
 //        Project project = ProjectUtils.getCurrentProject();
         virtualFiles = virtualFiles.stream()
-                .filter(oldFile -> {
-                    if (Objects.isNull(oldFile)) {
-                        return false;
-                    }
-                    Boolean userData = oldFile.getUserData(CHANGE);
-                    return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
-                }).collect(Collectors.toList());
+            .filter(oldFile -> {
+                if (Objects.isNull(oldFile)) {
+                    return false;
+                }
+                Boolean userData = oldFile.getUserData(CHANGE);
+                return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
+            }).collect(Collectors.toList());
         Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap = new HashMap<>();
 
         try {
@@ -130,10 +130,12 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     String easyQueryRevision = getEasyQueryRevision(entityProxy, entityFileProxy);
                     if (Objects.equals("", easyQueryRevision)) {
                         APTVersion2.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
-                    } else if (Objects.equals("1", easyQueryRevision)){
+                    } else if (Objects.equals("1", easyQueryRevision)) {
                         APTVersion2_1.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
-                    }else {
+                    } else if (Objects.equals("2", easyQueryRevision)) {
                         APTVersion2_2.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
+                    } else {
+                        APTVersion2_5.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
                     }
 
                 }
