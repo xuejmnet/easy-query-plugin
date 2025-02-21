@@ -73,6 +73,7 @@ public class RenderEasyQueryTemplate {
             }
             ColumnInfo columnInfo = new ColumnInfo();
             columnInfo.setName(column.getName());
+            columnInfo.setLowName(column.getName().toLowerCase());
             columnInfo.setFirstLowName(StrUtil.toLowerCaseFirstOne(column.getName()));
             columnInfo.setFieldName(StrUtil.toCamelCase(column.getName().toLowerCase()));
             columnInfo.setJdbcTypeStr(StrUtil.replaceBlank(column.getJdbcTypeStr()));

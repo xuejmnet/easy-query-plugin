@@ -12,6 +12,7 @@ public class ColumnInfo {
      */
     private String name;
     private String firstLowName;
+    private String lowName;
 
     /**
      * 字段名
@@ -144,20 +145,30 @@ public class ColumnInfo {
         this.firstLowName = firstLowName;
     }
 
+    public String getLowName() {
+        return lowName;
+    }
+
+    public void setLowName(String lowName) {
+        this.lowName = lowName;
+    }
+
     @Override
     public String toString() {
         return "ColumnInfo{" +
-                "name='" + name + '\'' +
-                ", fieldName='" + fieldName + '\'' +
-                ", fieldType='" + fieldType + '\'' +
-                ", type='" + type + '\'' +
-                ", comment='" + comment + '\'' +
-                ", primaryKey=" + primaryKey +
-                ", isAutoIncrement=" + isAutoIncrement +
-                ", methodName='" + methodName + '\'' +
-                ", jdbcTypeStr='" + jdbcTypeStr + '\'' +
-                ", notNull=" + notNull +
-                ", size=" + size +
-                '}';
+            "name='" + name + '\'' +
+            ", firstLowName='" + firstLowName + '\'' +
+            ", lowName='" + lowName + '\'' +
+            ", fieldName='" + fieldName + '\'' +
+            ", fieldType='" + fieldType + '\'' +
+            ", type='" + type + '\'' +
+            ", comment='" + comment + '\'' +
+            ", primaryKey=" + primaryKey +
+            ", isAutoIncrement=" + isAutoIncrement +
+            ", methodName='" + methodName + '\'' +
+            ", jdbcTypeStr='" + jdbcTypeStr + '\'' +
+            ", notNull=" + notNull +
+            ", size=" + size +
+            '}';
     }
 }
