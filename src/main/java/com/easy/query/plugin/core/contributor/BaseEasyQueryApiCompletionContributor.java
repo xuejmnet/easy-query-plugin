@@ -67,13 +67,22 @@ public class BaseEasyQueryApiCompletionContributor {
     protected static final Set<EasyContributor> COMPARE_GREATER_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", ">", ".gt()"),
             new EasyCompareContributor("", ">=", ".ge()")));
+
     protected static final Set<EasyContributor> COMPARE_EQUALS_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", "==", ".eq()")));
+
     protected static final Set<EasyContributor> COMPARE_NOT_EQUALS_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", "!=", ".ne()")));
+
     protected static final Set<EasyContributor> SET_VALUE_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", "=", ".set()")));
+
     protected static final Set<EasyContributor> COMPARE_LESS_METHODS = new HashSet<>(Arrays.asList(
             new EasyCompareContributor("", "<", ".lt()"),
             new EasyCompareContributor("", "<=", ".le()")));
+
+    protected static final Set<EasyContributor> COMPARE_LIKE_METHODS = new HashSet<>(Arrays.asList(
+            new EasyCompareContributor("", "like -> %value% -> like()", "like()"),
+            new EasyCompareContributor("", "like -> %value  -> likeMatchRight()", "likeMatchRight()"),
+            new EasyCompareContributor("", "like -> value%  -> likeMatchLeft()", "likeMatchLeft()")));
 }
