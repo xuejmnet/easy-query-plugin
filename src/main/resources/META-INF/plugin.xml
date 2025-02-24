@@ -219,6 +219,8 @@
                                 implementationClass="com.easy.query.plugin.core.completion.NavMappingCompletion"/>
         <completion.contributor language="JAVA"
                                 implementationClass="com.easy.query.plugin.core.completion.JavadocCompletion"/>
+<!--        <completion.contributor language="JAVA"-->
+<!--                                implementationClass="com.easy.query.plugin.core.completion.NavigateCompletionContributor"/>-->
         <completion.contributor language="JAVA"
                                 implementationClass="com.easy.query.plugin.core.completion.ProxyFieldCompletion"/>
         <codeInsight.lineMarkerProvider language="JAVA"
