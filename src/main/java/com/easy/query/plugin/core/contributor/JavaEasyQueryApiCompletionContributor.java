@@ -125,6 +125,9 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
             String matchApiMethodReturnTypeName = matchApi(parameters.getPosition(), inputText);
             if (matchApiMethodReturnTypeName != null) {
                 addApiCodeTip(result, project, psiFile, offset, matchApiMethodReturnTypeName);
+            } else if (StrUtil.equalsAny(inputText, "like")) {
+//                result.restartCompletionOnPrefixChange("like");
+                addCompareCodeTip(result, project, psiFile, offset, COMPARE_LIKE_METHODS);
             }
             //匹配匿名对象
         } else {
