@@ -1,27 +1,13 @@
 package com.easy.query.plugin.windows;
 
+import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.util.BasicFormatter;
 import com.easy.query.plugin.core.util.DialogUtil;
-import com.intellij.openapi.project.Project;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.AbstractMap;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
+import java.awt.event.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -160,9 +146,13 @@ public class SQLPreviewDialog extends JDialog {
             sb.deleteCharAt(i);
 
             if (NEED_BRACKETS.contains(entry.getValue())) {
-                if("LocalDateTime".equals(entry.getValue())){
-                    sb.insert(i, String.format("'%s'", entry.getKey().replace("T"," ")));
-                }else{
+                if ("LocalDateTime".equals(entry.getValue())) {
+                    sb.insert(i, String.format("'%s'", entry.getKey().replace("T", " ")));
+                }
+                // 常见的不需要加引号的类型
+                else if (StrUtil.equalsAnyIgnoreCase(entry.getValue(), "BigDecimal", "Integer", "Long", "Double", "Float", "Short", "Boolean")) {
+                    sb.insert(i, entry.getKey());
+                } else {
                     sb.insert(i, String.format("'%s'", entry.getKey()));
                 }
             } else {
@@ -176,7 +166,7 @@ public class SQLPreviewDialog extends JDialog {
     }
 
     private Queue<Map.Entry<String, String>> parseParams(String line) {
-        if(StringUtils.isBlank(line)){
+        if (StringUtils.isBlank(line)) {
             return new ArrayDeque<>(0);
         }
         line = StringUtils.removeEnd(line, "\n").replaceAll(".*(Parameters[\\s]*(?=:)): ", "");
@@ -190,16 +180,16 @@ public class SQLPreviewDialog extends JDialog {
         Pattern r = Pattern.compile(pattern);
 
         // 创建Matcher对象
-        Matcher m = r.matcher(line+",");
+        Matcher m = r.matcher(line + ",");
 
 
         // 查找所有匹配项
         while (m.find()) {
             String value = m.group(1);
             String type = m.group(2);
-            if(StringUtils.isEmpty(type)){
+            if (StringUtils.isEmpty(type)) {
                 queue.offer(new AbstractMap.SimpleEntry<>(StringUtils.trim(value), null));
-            }else{
+            } else {
                 queue.offer(new AbstractMap.SimpleEntry<>(StringUtils.trim(value), type));
             }
         }
