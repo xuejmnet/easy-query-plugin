@@ -204,6 +204,11 @@
                 id="com.easy.query.plugin.core.config.ProjectSettingsConfigurable"
                 displayName="EasyQuery Project Settings"
                 nonDefaultProject="true"/>
+        <!-- 注册 PathAliasReferenceContributor 为引用贡献者 -->
+        <psi.referenceContributor language="JAVA" implementation="com.easy.query.plugin.core.reference.PathAliasReferenceContributor"/>
+        <!-- 注册 PathAliasAnnotator 为注释器 -->
+        <annotator language="JAVA" implementationClass="com.easy.query.plugin.core.reference.PathAliasAnnotator"/>
+
 
         <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"
                                id="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"/>
