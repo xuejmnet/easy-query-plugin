@@ -222,6 +222,8 @@
 
         <completion.contributor language="JAVA"
                                 implementationClass="com.easy.query.plugin.core.completion.NavMappingCompletion"/>
+<!--        <completion.contributor language="JAVA"-->
+<!--                                implementationClass="com.easy.query.plugin.core.completion.NavFlatCompletion"/>-->
         <completion.contributor language="JAVA"
                                 implementationClass="com.easy.query.plugin.core.completion.JavadocCompletion"/>
 <!--        <completion.contributor language="JAVA"-->
