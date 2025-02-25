@@ -7,6 +7,8 @@ import com.intellij.psi.PsiReferenceBase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static com.easy.query.plugin.core.reference.PathAliasUtils.findSegmentTargetElement;
+
 /**
  * 自定义导航处理器，用于处理 pathAlias 属性值的跳转。
  */
@@ -36,12 +38,22 @@ public class PathAliasNavigationHandler extends PsiReferenceBase<PsiLiteralExpre
         Project project = getElement().getProject();
         // 依次解析每个段落，找到最终的目标元素
         PsiElement targetElement = getElement();
-        for (String segment : pathSegments) {
-            targetElement = findSegmentTargetElement(project, targetElement, segment);
-            if (targetElement == null) {
-                break;
-            }
-        }
+//        for (int i = 0; i < pathSegments.length; i++) {
+//            String[] subPathSegments = new String[i + 1];
+//            System.arraycopy(pathSegments, 0, subPathSegments, 0, i + 1);
+            targetElement = findSegmentTargetElement(project, targetElement, pathSegments);
+//            if (targetElement == null) {
+//                break;
+//            }
+//        }
+//        for (int i = 0; i < pathSegments.length; i++) {
+//            String[] subPathSegments = new String[i + 1];
+//            System.arraycopy(pathSegments, 0, subPathSegments, 0, i + 1);
+//            targetElement = findSegmentTargetElement(project, targetElement, subPathSegments);
+//            if (targetElement == null) {
+//                break;
+//            }
+//        }
         return targetElement != null ? targetElement : getElement();
     }
 
@@ -54,20 +66,5 @@ public class PathAliasNavigationHandler extends PsiReferenceBase<PsiLiteralExpre
     @Override
     public Object[] getVariants() {
         return new Object[0];
-    }
-
-    /**
-     * 查找单个段落的目标元素的逻辑。
-     *
-     * @param project        当前项目
-     * @param currentElement 当前元素
-     * @param segment        当前段落
-     * @return 目标 PsiElement
-     */
-    @Nullable
-    private PsiElement findSegmentTargetElement(Project project, PsiElement currentElement, String segment) {
-        // 在此实现查找目标元素的逻辑
-        // 此处仅作示例，返回 null
-        return null;
     }
 }
