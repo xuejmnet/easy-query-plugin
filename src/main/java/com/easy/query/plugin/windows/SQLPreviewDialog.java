@@ -104,27 +104,29 @@ public class SQLPreviewDialog extends JDialog {
             StringBuilder sqlBuilder = new StringBuilder();
             String[] selectSQLs = selectSQL.split("\n");
             List<String> sqlList = Arrays.stream(selectSQLs)
-                    .filter(o -> StringUtils.contains(o, "Preparing:"))
-                    .map(o -> o.replaceAll(".*(Preparing[\\s]*(?=:)): ", ""))
-                    .collect(Collectors.toList());
+                .filter(o -> StringUtils.contains(o, "Preparing:"))
+                .map(o -> o.replaceAll(".*(Preparing[\\s]*(?=:)): ", ""))
+                .collect(Collectors.toList());
             List<Queue<Map.Entry<String, String>>> parameterList = Arrays.stream(selectSQLs)
-                    .filter(o -> StringUtils.contains(o, "Parameters:"))
-                    .map(o -> parseParams(o))
-                    .collect(Collectors.toList());
-            int min = Math.min(sqlList.size(), parameterList.size());
-            for (int i = 0; i < min; i++) {
+                .filter(o -> StringUtils.contains(o, "Parameters:"))
+                .map(o -> parseParams(o))
+                .collect(Collectors.toList());
+//            int min = Math.min(sqlList.size(), parameterList.size());
+            int j=0;
+            for (int i = 0; i < sqlList.size(); i++) {
                 String sql = sqlList.get(i);
-                Queue<Map.Entry<String, String>> params = parameterList.get(i);
+                Queue<Map.Entry<String, String>> params = i >= parameterList.size() ? new ArrayDeque<>(0) : parameterList.get(i);
 
                 sql = parseSql(sql, params).toString();
 
                 String formatSQL = FORMATTER.format(sql);
-                sqlBuilder.append("\n-- 第").append(i + 1).append("条sql数据\n");
+                j++;
+                sqlBuilder.append("\n-- 第").append(j).append("条sql数据\n");
                 sqlBuilder.append(formatSQL);
             }
 
             previewSQLText.setText(sqlBuilder.toString());
-            convertButton.setText("转换↓ 一共转换成" + min + "条sql");
+            convertButton.setText("转换↓ 一共转换成" + j + "条sql");
         }
     }
 

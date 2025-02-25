@@ -9,6 +9,7 @@
 //import com.intellij.codeInsight.completion.CompletionType;
 //import com.intellij.codeInsight.lookup.LookupElementBuilder;
 //import com.intellij.patterns.PlatformPatterns;
+//import com.intellij.psi.PlainTextTokenTypes;
 //import com.intellij.psi.PsiAnnotation;
 //import com.intellij.psi.PsiClass;
 //import com.intellij.psi.PsiElement;
@@ -37,7 +38,7 @@
 //
 //    public NavigateCompletionContributor() {
 //        extend(CompletionType.BASIC, // Completion type
-//            PlatformPatterns.psiElement(), // Ensure we're dealing with a string literal
+//            PlatformPatterns.psiElement(PlainTextTokenTypes.PLAIN_TEXT), // Ensure we're dealing with a string literal
 //            new CompletionProvider<CompletionParameters>() {
 //                @Override
 //                protected void addCompletions(
@@ -45,13 +46,24 @@
 //                    @NotNull ProcessingContext context,
 //                    @NotNull CompletionResultSet result
 //                ) {
-//                    PsiElement element = parameters.getPosition();
-//                    if (isInAnnotationString(element)) {
-//                        // Example: Add the predefined values for pathAlias
-//                        result.addElement(LookupElementBuilder.create("value1"));
-//                        result.addElement(LookupElementBuilder.create("value2"));
-//                        result.addElement(LookupElementBuilder.create("value3"));
-//                    }
+//                    System.out.println("NavigateCompletionContributor");
+//                    System.out.println("NavigateCompletionContributor");
+//                    System.out.println("NavigateCompletionContributor");
+//                    System.out.println("NavigateCompletionContributor");
+//                    System.out.println("NavigateCompletionContributor");
+//                    System.out.println("NavigateCompletionContributor");
+//                    System.out.println("NavigateCompletionContributor");
+//                    System.out.println("NavigateCompletionContributor");
+//                    result.addElement(LookupElementBuilder.create("value1"));
+//                    result.addElement(LookupElementBuilder.create("value2"));
+//                    result.addElement(LookupElementBuilder.create("value3"));
+////                    PsiElement element = parameters.getPosition();
+////                    if (isInAnnotationString(element)) {
+////                        // Example: Add the predefined values for pathAlias
+////                        result.addElement(LookupElementBuilder.create("value1"));
+////                        result.addElement(LookupElementBuilder.create("value2"));
+////                        result.addElement(LookupElementBuilder.create("value3"));
+////                    }
 //                }
 //            });
 //    }
