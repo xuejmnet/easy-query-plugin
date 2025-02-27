@@ -3,6 +3,7 @@ package com.easy.query.plugin.config;
 import cn.hutool.setting.Setting;
 import lombok.extern.slf4j.Slf4j;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -143,8 +144,15 @@ public class EasyQueryConfigManager {
             writer.write(defaultContent);
         }
         
-        // 刷新文件系统，确保IDE能识别到新文件
-        LocalFileSystem.getInstance().refreshAndFindFileByPath(configFilePath.toString());
+        // 使用异步刷新文件系统，避免在读锁下进行同步刷新导致的死锁
+        ApplicationManager.getApplication().invokeLater(() -> {
+            LocalFileSystem.getInstance().refreshIoFiles(
+                java.util.Collections.singletonList(configFilePath.toFile()),
+                true, 
+                false, 
+                null
+            );
+        });
     }
     
     /**
