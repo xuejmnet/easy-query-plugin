@@ -15,11 +15,6 @@ public class ProjectSettingsPanel {
     private final JPanel panel;
 
     /**
-     * DTO上@Column只有value属性时是否保留
-     */
-    private final JCheckBox featureKeepDtoColumnAnnotationCheckBox;
-
-    /**
      * 数据库类型
      */
     private final JComboBox<String> databaseTypeComboBox;
@@ -33,10 +28,6 @@ public class ProjectSettingsPanel {
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
 
-        featureKeepDtoColumnAnnotationCheckBox = new JCheckBox(
-                "DTO 上 @Column 只有 value 属性时 仍保留, 请确保当前项目映射关系为 PROPERTY_FIRST 或 PROPERTY_ONLY 时取消勾选");
-        topPanel.add(featureKeepDtoColumnAnnotationCheckBox);
-
         JPanel databasePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         List<String> typeList = PreviewEditorSQLAbstractAction.DATABASE_TUPLES.stream()
                 .map(PreviewEditorSQLAbstractAction.DatabaseTuple::getDatabaseType).collect(Collectors.toList());
@@ -48,24 +39,6 @@ public class ProjectSettingsPanel {
         topPanel.add(databasePanel);
         panel.add(topPanel, BorderLayout.NORTH);
 
-    }
-
-    /**
-     * 获取DTO上@Column只有value属性时是否保留
-     * 
-     * @return 是否保留
-     */
-    public Boolean getDtoKeepAnnotationColumn() {
-        return Convert.toBool(featureKeepDtoColumnAnnotationCheckBox.isSelected(), true);
-    }
-
-    /**
-     * 设置DTO上@Column只有value属性时是否保留
-     * 
-     * @param keepDtoColumnAnnotation 是否保留
-     */
-    public void setFeatureKeepDtoColumnAnnotation(Boolean keepDtoColumnAnnotation) {
-        featureKeepDtoColumnAnnotationCheckBox.setSelected(Convert.toBool(keepDtoColumnAnnotation, true));
     }
 
     /**

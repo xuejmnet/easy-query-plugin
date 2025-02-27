@@ -16,7 +16,6 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
     @Getter
     @Setter
     public static class State {
-        private Boolean featureKeepDtoColumnAnnotation;
         private String databaseType = "mysql";
     }
 

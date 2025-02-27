@@ -2,11 +2,13 @@ package com.easy.query.plugin.core.util;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.map.MapUtil;
+import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.config.AppSettings;
 import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.entity.AnnoAttrCompareResult;
 import com.google.common.collect.Maps;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 
@@ -43,9 +45,9 @@ public class PsiJavaFieldUtil {
      * @return dtoField
      */
     public static PsiField copyField(PsiField entityField) {
-        ProjectSettings projectSettings = ProjectSettings.getInstance(entityField.getProject());
+        Project project = entityField.getProject();
         // 项目设置, 是否保留DTO上的@Column注解 value 值
-        Boolean featureKeepDtoColumnAnnotation = Optional.ofNullable(projectSettings).map(ProjectSettings::getState).map(ProjectSettings.State::getFeatureKeepDtoColumnAnnotation).orElse(true);
+        Boolean featureKeepDtoColumnAnnotation = EasyQueryConfigUtil.getProjectSettingBool(project, EasyQueryProjectSettingKey.DTO_KEEP_ANNO_COLUMN, true);
 
         // 先拷贝一份
         PsiField dtoField = (PsiField) entityField.copy();
@@ -61,7 +63,7 @@ public class PsiJavaFieldUtil {
                     .collect(Collectors.joining(", "));
             // 再拼成 @Navigate 注解文本
             String replacement = "@Navigate(" + attrText + ")";
-            PsiElementFactory elementFactory = PsiElementFactory.getInstance(entityField.getProject());
+            PsiElementFactory elementFactory = PsiElementFactory.getInstance(project);
             PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
             psiAnnoNavigate.replace(newAnno);
 
@@ -89,7 +91,7 @@ public class PsiJavaFieldUtil {
                         .collect(Collectors.joining(", "));
                 // 再拼成 @Navigate 注解文本
                 String replacement = "@Column(" + attrText + ")";
-                PsiElementFactory elementFactory = PsiElementFactory.getInstance(entityField.getProject());
+                PsiElementFactory elementFactory = PsiElementFactory.getInstance(project);
                 PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
                 psiAnnoColumn.replace(newAnno);
 //                }
