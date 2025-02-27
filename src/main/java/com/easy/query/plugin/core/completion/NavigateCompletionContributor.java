@@ -3,12 +3,14 @@
 //import com.easy.query.plugin.core.util.PsiJavaClassUtil;
 //import com.easy.query.plugin.core.util.PsiUtil;
 //import com.intellij.codeInsight.completion.CompletionContributor;
+//import com.intellij.codeInsight.completion.CompletionInitializationContext;
 //import com.intellij.codeInsight.completion.CompletionParameters;
 //import com.intellij.codeInsight.completion.CompletionProvider;
 //import com.intellij.codeInsight.completion.CompletionResultSet;
 //import com.intellij.codeInsight.completion.CompletionType;
 //import com.intellij.codeInsight.lookup.LookupElementBuilder;
 //import com.intellij.patterns.PlatformPatterns;
+//import com.intellij.patterns.PsiJavaPatterns;
 //import com.intellij.psi.PlainTextTokenTypes;
 //import com.intellij.psi.PsiAnnotation;
 //import com.intellij.psi.PsiClass;
@@ -38,7 +40,7 @@
 //
 //    public NavigateCompletionContributor() {
 //        extend(CompletionType.BASIC, // Completion type
-//            PlatformPatterns.psiElement(PlainTextTokenTypes.PLAIN_TEXT), // Ensure we're dealing with a string literal
+//            PsiJavaPatterns.literalExpression(), // Ensure we're dealing with a string literal
 //            new CompletionProvider<CompletionParameters>() {
 //                @Override
 //                protected void addCompletions(
@@ -66,6 +68,31 @@
 ////                    }
 //                }
 //            });
+//    }
+//
+//    @Override
+//    public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
+//        System.out.println("fillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariants");
+//        System.out.println("fillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariants");
+//        System.out.println("fillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariantsfillCompletionVariants");
+//        super.fillCompletionVariants(parameters, result);
+//    }
+//
+//    @Override
+//    public void beforeCompletion(@NotNull CompletionInitializationContext context) {
+//        System.out.println("beforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletion");
+//        System.out.println("beforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletion");
+//        System.out.println("beforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletionbeforeCompletion");
+//        super.beforeCompletion(context);
+//    }
+//
+//    @Override
+//    public boolean invokeAutoPopup(@NotNull PsiElement position, char typeChar) {
+//        System.out.println("invokeAutoPopupinvokeAutoPopupinvokeAutoPopupinvokeAutoPopupinvokeAutoPopup");
+//
+//        boolean b = super.invokeAutoPopup(position, typeChar);
+//        System.out.println(b);
+//        return false;
 //    }
 //
 //    // Helper method to check if the cursor is in the annotation's string parameter
