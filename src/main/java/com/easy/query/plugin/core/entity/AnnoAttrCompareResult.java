@@ -173,13 +173,18 @@ public class AnnoAttrCompareResult {
         // 开始统计问题
 
         entityOnlyKeys.stream().filter(key -> !entityOnlyKeysPermit.contains(key))
+                .filter(key -> !ignoredKeys.contains(key))
                 .filter(key -> !dtoRemoveKeys.contains(key)) // 如果实体独有的属性在DTO需要移除的属性里面, 则不报错
                 .forEach(key -> problemMsgList.add("需要添加属性 " + entityAttrMap.get(key).getText()));
 
         dtoOnlyKeys.stream().filter(key -> !dtoOnlyKeysPermit.contains(key))
+                .filter(key -> !ignoredKeys.contains(key))
                 .forEach(key -> problemMsgList.add("需要移除属性 " + dtoAttrMap.get(key).getText()));
 
         diffKeys.forEach(key -> {
+            if (ignoredKeys.contains(key)) {
+                return;
+            }
             if (dtoRemoveKeys.contains(key)) {
                 problemMsgList.add("需要移除属性 " + dtoAttrMap.get(key).getText());
             } else {
@@ -189,6 +194,7 @@ public class AnnoAttrCompareResult {
 
         // 如果是相同的属性, 但是在需要移除的里面, 那么也提示移除
         sameKeys.stream().filter(key -> dtoRemoveKeys.contains(key))
+                .filter(key -> !ignoredKeys.contains(key))
                 .forEach(key -> problemMsgList.add("需要移除属性 " + dtoAttrMap.get(key).getText()));
 
 
