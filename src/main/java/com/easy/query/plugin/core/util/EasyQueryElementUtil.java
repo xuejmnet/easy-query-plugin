@@ -2,7 +2,7 @@ package com.easy.query.plugin.core.util;
 
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.easy.query.plugin.core.config.ProjectSettings;
+import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.entity.AnnoAttrCompareResult;
 import com.easy.query.plugin.core.entity.InspectionResult;
 import com.google.common.collect.Lists;
@@ -25,24 +25,22 @@ import java.util.*;
  */
 public class EasyQueryElementUtil {
 
-
     /**
      * 检查DTO上的 @Column 注解是否需要更新
      *
-     * @param projectSettings 项目级别的设置
-     * @param dtoField        DTO上的字段
-     * @param entityField     实体上的字段
+     * @param project     项目
+     * @param dtoField    DTO上的字段
+     * @param entityField 实体上的字段
      * @return InspectionResult 检查结果
      */
-    public static InspectionResult inspectionColumnAnnotation(ProjectSettings projectSettings, PsiField dtoField, PsiField entityField) {
+    public static InspectionResult inspectionColumnAnnotation(Project project, PsiField dtoField, PsiField entityField) {
 
         if (Objects.isNull(dtoField) || Objects.isNull(entityField)) {
             // 任意一个字段为空, 应该是没法检查的, 直接当做没有问题
             return InspectionResult.noProblem();
         }
-
         // 项目设置, 是否保留DTO上的@Column注解 value 值
-        Boolean featureKeepDtoColumnAnnotation = Optional.ofNullable(projectSettings).map(ProjectSettings::getState).map(ProjectSettings.State::getFeatureKeepDtoColumnAnnotation).orElse(true);
+        Boolean featureKeepDtoColumnAnnotation = EasyQueryConfigUtil.getProjectSettingBool(project, EasyQueryProjectSettingKey.DTO_KEEP_ANNO_COLUMN, true);
 
         // 获取DTO上的 @Column 注解
         PsiAnnotation dtoAnnoColumn = dtoField.getAnnotation("com.easy.query.core.annotation.Column");
@@ -86,7 +84,7 @@ public class EasyQueryElementUtil {
 
 
             return InspectionResult.newResult().addProblem(dtoAnnoColumn, "实体上没有@Column注解,DTO上的@Column应移除", ProblemHighlightType.ERROR,
-                Lists.newArrayList(removeDtoAnnoColumn)
+                    Lists.newArrayList(removeDtoAnnoColumn)
             );
         }
 
@@ -208,6 +206,7 @@ public class EasyQueryElementUtil {
 
     /**
      * 字段上是否有 com.easy.query.core.annotation.Navigate 注解
+     *
      * @param field PsiField
      */
     public static boolean hasNavigateAnnotation(PsiField field) {
@@ -222,18 +221,18 @@ public class EasyQueryElementUtil {
      * 检查DTO上的 @Navigate 注解<br/>
      * 1. Navigate 注解的 type  必须保持一致
      *
-     * @param dtoField DTO上的字段
+     * @param dtoField    DTO上的字段
      * @param entityField 实体上的字段
      * @return InspectionResult 检查结果
      */
-    public static InspectionResult inspectionNavigateAnnotation(Project project,PsiField dtoField, PsiField entityField) {
-        
+    public static InspectionResult inspectionNavigateAnnotation(Project project, PsiField dtoField, PsiField entityField) {
+
         // 1. 如果
 
 
-        PsiAnnotation dtoNavigateAnno = Optional.ofNullable(dtoField).map(field->field.getAnnotation("com.easy.query.core.annotation.Navigate")).orElse(null);
+        PsiAnnotation dtoNavigateAnno = Optional.ofNullable(dtoField).map(field -> field.getAnnotation("com.easy.query.core.annotation.Navigate")).orElse(null);
 
-        PsiAnnotation entityNavigateAnno = Optional.ofNullable(entityField).map(field->field.getAnnotation("com.easy.query.core.annotation.Navigate")).orElse(null);
+        PsiAnnotation entityNavigateAnno = Optional.ofNullable(entityField).map(field -> field.getAnnotation("com.easy.query.core.annotation.Navigate")).orElse(null);
 
         if (Objects.isNull(dtoNavigateAnno) && Objects.isNull(entityNavigateAnno)) {
             // 两个字段都没有 Navigate 注解, 没有问题
@@ -241,7 +240,7 @@ public class EasyQueryElementUtil {
         }
 
         // 1. 如果实体上有 Navigate 注解, 那么 DTO 上必须有 Navigate 注解
-        if (Objects.nonNull(entityNavigateAnno) ) {
+        if (Objects.nonNull(entityNavigateAnno)) {
             // 实体上有这个注解, 那么 DTO 上必须有这个注解
             //1.1. 如果 DTO 上没有这个字段， 那就没问题了
             if (Objects.isNull(dtoField)) {
@@ -250,7 +249,7 @@ public class EasyQueryElementUtil {
             // 1.2. 现在是DTO上有这个字段， 需要看看是否存在注解
             if (Objects.isNull(dtoNavigateAnno)) {
                 SmartPsiElementPointer<PsiField> dtoFieldPointer = SmartPointerManager.getInstance(project).createSmartPsiElementPointer(dtoField);
-                PsiAnnotation navigateAnno = PsiJavaAnnotationUtil.copyAnnotation(entityNavigateAnno,"value");
+                PsiAnnotation navigateAnno = PsiJavaAnnotationUtil.copyAnnotation(entityNavigateAnno, "value");
                 // DTO 上没有这个注解, 需要添加
                 SmartPsiElementPointer<PsiAnnotation> navigateAnnoPointer = SmartPointerManager.getInstance(project).createSmartPsiElementPointer(navigateAnno);
                 LocalQuickFixOnPsiElement addNavigateAnnoToDTO = new LocalQuickFixOnPsiElement(dtoField) {
@@ -324,9 +323,6 @@ public class EasyQueryElementUtil {
 
 
         }
-        
-        
-
 
 
         return InspectionResult.noProblem();

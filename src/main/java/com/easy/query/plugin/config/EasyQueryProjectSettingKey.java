@@ -1,0 +1,10 @@
+package com.easy.query.plugin.config;
+
+/**
+ * 项目配置KEY 常量
+ */
+public interface EasyQueryProjectSettingKey {
+
+    /** DTO是否保留 @Column 注解, 当字段映射为属性优先的时候可以不用保留 Column注解 */
+    String DTO_KEEP_ANNO_COLUMN = "dto.keepAnnoColumn";
+}
