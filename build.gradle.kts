@@ -62,7 +62,7 @@ tasks {
 
     patchPluginXml {
         //插件起始支持版本
-        sinceBuild.set("222")
+        sinceBuild.set("231")
         //插件结束支持版本
         untilBuild.set("243.*")
     }
