@@ -41,14 +41,7 @@ public class PathAliasUtils {
         if (field == null) {
             if (segments.length == 1) {
                 // 尝试从当前类获取一下
-                PsiClass tryClass = javaClass;
-                while (tryClass != null) {
-                    field = tryClass.findFieldByName(segments[0], true);
-                    if (field != null) {
-                        return field;
-                    }
-                    tryClass = PsiTreeUtil.getParentOfType(javaClass, PsiClass.class);
-                }
+                return javaClass.findFieldByName(segments[0], true);
             }
             return null;
         }
