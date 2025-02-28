@@ -2,6 +2,7 @@ package com.easy.query.plugin.core.startup;
 
 import com.easy.query.plugin.config.EasyQueryConfigManager;
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
+import com.easy.query.plugin.core.util.NotificationUtils;
 import com.google.common.collect.Lists;
 import com.intellij.ide.SaveAndSyncHandler;
 import com.intellij.openapi.application.ApplicationManager;
@@ -173,6 +174,9 @@ public class ProjectStartupHelper {
                         break;
                     }
                 }
+
+                // 添加气泡提醒 目录{}已标记为生成的源根目录
+                NotificationUtils.notifySuccess("目录【" + generatedSourcesVFile.getPath() + "】已标记为生成的源根目录", "EasyQuery", module.getProject());
 
                 needCommit = true;
                 JavaSourceRootProperties properties = JpsJavaExtensionService.getInstance().createSourceRootProperties("", true);
