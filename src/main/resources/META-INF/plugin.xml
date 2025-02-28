@@ -357,6 +357,11 @@
 
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- For newer versions (2022.3+) -->
+<!--        <projectActivity implementation="com.easy.query.plugin.activities.MyProjectActivity"/>-->
+        
+        <!-- For older versions and as a fallback -->
         <postStartupActivity implementation="com.easy.query.plugin.components.MyStartupActivity"/>
+        
     </extensions>
 </idea-plugin>

@@ -49,8 +49,6 @@ public class ProjectSettingsConfigurable implements SearchableConfigurable {
     public void apply() {
         ProjectSettings.State state = ProjectSettings.getInstance(project).getState();
 
-        // 设置DTO上@Column只有value属性时是否保留
-        state.setFeatureKeepDtoColumnAnnotation(projectSettingsPanel.getDtoKeepAnnotationColumn());
         // 设置数据库类型
         state.setDatabaseType(projectSettingsPanel.getDatabaseType());
 
@@ -59,8 +57,6 @@ public class ProjectSettingsConfigurable implements SearchableConfigurable {
     @Override
     public void reset() {
         ProjectSettings.State state = ProjectSettings.getInstance(project).getState();
-        // 设置DTO上@Column只有value属性时是否保留
-        projectSettingsPanel.setFeatureKeepDtoColumnAnnotation(state.getFeatureKeepDtoColumnAnnotation());
         // 设置数据库类型
         projectSettingsPanel.setDatabaseType(state.getDatabaseType());
     }

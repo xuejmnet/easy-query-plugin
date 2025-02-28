@@ -82,7 +82,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).collect(Collectors.toMap(PsiField::getName, Function.identity(), (a, b) -> a));
 
 
-                ProjectSettings projectSettings = ProjectSettings.getInstance(currentClass.getProject());
+                Project project = currentClass.getProject();
 
                 for (PsiField dtoField : dtoFields) {
                     boolean ignoreField = PsiJavaFieldUtil.ignoreField(dtoField);
@@ -157,7 +157,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                             } else {
                                 // 复杂类型的, 需要进一步比对
-                                PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(PsiJavaFileUtil.getPsiClass(currentClass.getProject(), dtoTypeRefName));
+                                PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(PsiJavaFileUtil.getPsiClass(project, dtoTypeRefName));
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
                                     holder.registerProblem(dtoField, "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
@@ -193,7 +193,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 PsiJavaCodeReferenceElement dtoFieldTypeParamRef = ((PsiClassReferenceType) dtoFieldTypeParam).getReference();
                                 // 不相同的情况下， 尝试获取DTO泛型上面的 Link
                                 String paramRefTypeName = ((PsiJavaCodeReferenceElement) dtoFieldTypeParamRef).getQualifiedName();
-                                PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(PsiJavaFileUtil.getPsiClass(currentClass.getProject(), ((PsiJavaCodeReferenceElement) dtoFieldTypeParamRef).getQualifiedName()));
+                                PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(PsiJavaFileUtil.getPsiClass(project, ((PsiJavaCodeReferenceElement) dtoFieldTypeParamRef).getQualifiedName()));
                                 PsiJavaCodeReferenceElement entityFieldTypeParamRef = ((PsiClassReferenceType) entityFieldTypeParam).getReference();
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
@@ -216,7 +216,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                     //endregion
 
 
-                    InspectionResult annoColumnInspectionResult = EasyQueryElementUtil.inspectionColumnAnnotation(projectSettings, dtoField, entityField);
+                    InspectionResult annoColumnInspectionResult = EasyQueryElementUtil.inspectionColumnAnnotation(project, dtoField, entityField);
                     if (annoColumnInspectionResult.hasProblem()) {
                         for (InspectionResult.Problem problem : annoColumnInspectionResult.getProblemList()) {
 

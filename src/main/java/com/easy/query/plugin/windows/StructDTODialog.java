@@ -6,6 +6,7 @@ import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
+import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.config.AppSettings;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
@@ -196,13 +197,14 @@ public class StructDTODialog extends JDialog {
             System.out.println(treeModelRoot);
         }
         TreePath[] checkedPaths = entityProps.getCheckedPaths();
+        Project project = structDTOContext.getProject();
         if (checkedPaths == null || checkedPaths.length == 0) {
-            NotificationUtils.notifySuccess("请选择节点", structDTOContext.getProject());
+            NotificationUtils.notifySuccess("请选择节点", project);
             return;
         }
         long count = Arrays.stream(checkedPaths).filter(o -> o.getPathCount() == 2).count();
         if (count != 1) {
-            NotificationUtils.notifySuccess("请选择一个对象节点", structDTOContext.getProject());
+            NotificationUtils.notifySuccess("请选择一个对象节点", project);
             return;
         }
 
@@ -247,7 +249,7 @@ public class StructDTODialog extends JDialog {
             if (dialog.isOK()) {
                 String dtoName = dialog.getInputString();
                 if (StrUtil.isBlank(dtoName)) {
-                    Messages.showErrorDialog(structDTOContext.getProject(), "输入的dto名称为空", "错误提示");
+                    Messages.showErrorDialog(project, "输入的dto名称为空", "错误提示");
                     return;
                 }
                 entityDTOName = dtoName;
@@ -257,7 +259,7 @@ public class StructDTODialog extends JDialog {
         }
 
 
-        RenderStructDTOContext renderContext = new RenderStructDTOContext(structDTOContext.getProject(),
+        RenderStructDTOContext renderContext = new RenderStructDTOContext(project,
                 structDTOContext.getPath(), structDTOContext.getPackageName(), entityDTOName, structDTOApp,
                 structDTOContext.getModule());
         // 设置一下rootEntityPsiClass
@@ -274,7 +276,7 @@ public class StructDTODialog extends JDialog {
         // 获取 app 里面的 import , 那里面的 Imports 也要传递进来
         String selfFullEntityType = app.getSelfFullEntityType();
         // 根据 selfFullEntityType 获取 psiClass
-        PsiClass psiClass = PsiJavaFileUtil.getPsiClass(structDTOContext.getProject(), selfFullEntityType);
+        PsiClass psiClass = PsiJavaFileUtil.getPsiClass(project, selfFullEntityType);
         // 从psiClass 中获取引入的包
         renderContext.getImports()
                 .addAll(PsiJavaFileUtil.getQualifiedNameImportSet((PsiJavaFile) psiClass.getContainingFile()));
@@ -295,7 +297,7 @@ public class StructDTODialog extends JDialog {
 
 
         // 项目设置, 是否保留DTO上的@Column注解
-        Boolean featureKeepDtoColumnAnnotationValue = Optional.ofNullable(ProjectSettings.getInstance(structDTOContext.getProject())).map(ProjectSettings::getState).map(ProjectSettings.State::getFeatureKeepDtoColumnAnnotation).orElse(true);
+        Boolean featureKeepDtoColumnAnnotationValue = EasyQueryConfigUtil.getProjectSettingBool(project, EasyQueryProjectSettingKey.DTO_KEEP_ANNO_COLUMN, true);
 
 
         PropAppendable base = structDTOApp;
@@ -315,7 +317,7 @@ public class StructDTODialog extends JDialog {
             if (StrUtil.isNotBlank(classNode.getSelfFullEntityType())) {
                 // 引入了类, 去把对应类的 import 全都提取出来放到里面
                 // 根据 selfFullEntityType 获取 psiClass
-                PsiClass nodePsiClass = PsiJavaFileUtil.getPsiClass(structDTOContext.getProject(),
+                PsiClass nodePsiClass = PsiJavaFileUtil.getPsiClass(project,
                         classNode.getSelfFullEntityType());
                 // 从psiClass 中获取引入的包
                 renderContext.getImports().addAll(
@@ -553,7 +555,7 @@ public class StructDTODialog extends JDialog {
         if (!b) {
             return;
         }
-        NotificationUtils.notifySuccess("生成成功", structDTOContext.getProject());
+        NotificationUtils.notifySuccess("生成成功", project);
         structDTOContext.setSuccess(true);
         dispose();
     }
