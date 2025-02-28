@@ -1,5 +1,6 @@
 package com.easy.query.plugin.action;
 
+import com.easy.query.plugin.core.startup.ProjectStartupHelper;
 import com.easy.query.plugin.core.util.ProjectUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -17,5 +18,12 @@ public class AutoCompileAction extends AnAction {
         Project project = e.getProject();
 //        VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
         PsiJavaFileUtil.createAptFile(project);
+
+        if (project == null) {
+            return;
+        }
+        // 更新 generated sources root ，生成的代码需要标记一下
+        ProjectStartupHelper.updateGeneratedSourceRoot(project);
+
     }
 }

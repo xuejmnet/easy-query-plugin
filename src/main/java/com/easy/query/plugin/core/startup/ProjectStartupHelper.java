@@ -2,25 +2,51 @@ package com.easy.query.plugin.core.startup;
 
 import com.easy.query.plugin.config.EasyQueryConfigManager;
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
+import com.google.common.collect.Lists;
+import com.intellij.ide.SaveAndSyncHandler;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
+import com.intellij.openapi.roots.ContentEntry;
+import com.intellij.openapi.roots.ModifiableRootModel;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.SourceFolder;
+import com.intellij.openapi.util.Comparing;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.java.JavaSourceRootProperties;
+import org.jetbrains.jps.model.java.JavaSourceRootType;
+import org.jetbrains.jps.model.java.JpsJavaExtensionService;
+
+import java.io.File;
+import java.util.List;
+
+import static com.intellij.ide.projectView.actions.MarkRootActionBase.findContentEntry;
 
 /**
  * 项目启动帮助类
  * 提供共享逻辑，供不同版本的启动活动使用
- *
- * @author link2fun
  */
 public class ProjectStartupHelper {
     private static final Logger log = Logger.getInstance(ProjectStartupHelper.class);
 
+    private static final List<String> GENERATED_SOURCES_PATH_LIST = Lists.newArrayList("target/generated-sources/annotations",
+            "target/generated-sources/kapt/compile",
+            "build/generated/ksp/main/java",
+            "build/generated/sources/annotationProcessor/java/main");
+
     /**
      * 初始化项目
+     *
      * @param project 当前项目
      */
     public static void initializeProject(@NotNull Project project) {
@@ -32,16 +58,33 @@ public class ProjectStartupHelper {
                 log.warn("Failed to preload configuration for project: " + project.getName(), e);
             }
         });
-        
+
         // 2. 注册文件编辑器事件监听
         registerFileEditorListener(project);
-        
-        // 3. 其他初始化逻辑
-        // ...
+
+        // 3. 标记生成的源代码根目录 - 在EDT线程中安全执行（在这里调用总是不生效，可能是太早了，现在放到Action里面）
+//        updateGeneratedSourceRoot(project);
     }
-    
+
+    /**
+     * 更新生成的源代码根目录
+     *
+     * @param project 当前项目
+     */
+    public static void updateGeneratedSourceRoot(@NotNull Project project) {
+        WriteAction.run(() -> {
+            Module[] modules = ReadAction.compute(() -> ModuleManager.getInstance(project).getModules());
+            for (Module module : modules) {
+                if (!module.isDisposed()) {
+                    markGeneratedSourcesRoot(module, GENERATED_SOURCES_PATH_LIST);
+                }
+            }
+        });
+    }
+
     /**
      * 注册文件编辑器事件监听
+     *
      * @param project 当前项目
      */
     public static void registerFileEditorListener(@NotNull Project project) {
@@ -62,5 +105,84 @@ public class ProjectStartupHelper {
                 }
             }
         });
+    }
+
+    /**
+     * 标记生成的源代码根目录
+     *
+     * @param module           当前模块
+     * @param relativePathList 相对路径列表
+     */
+    public static void markGeneratedSourcesRoot(@NotNull Module module, List<String> relativePathList) {
+        if (module.isDisposed()) {
+            return;
+        }
+
+        // 使用ReadAction读取模块路径信息
+        VirtualFile moduleVirtualFile = ProjectUtil.guessModuleDir(module);
+        if (moduleVirtualFile == null) {
+            return;
+        }
+
+        String modulePath = moduleVirtualFile.getPath();
+
+        // 获取模块目录
+        File moduleDir = new File(modulePath);
+
+        boolean needCommit = false;
+
+        for (String GENERATED_SOURCES_PATH : relativePathList) {
+            // 构建生成的源代码路径
+            File generatedSourcesDir = new File(moduleDir, GENERATED_SOURCES_PATH);
+            if (!generatedSourcesDir.exists()) {
+                continue;
+            }
+
+            // 获取虚拟文件
+            VirtualFile generatedSourcesVFile = LocalFileSystem.getInstance().findFileByIoFile(generatedSourcesDir);
+            if (generatedSourcesVFile == null) {
+                continue;
+            }
+
+            // 检查是否已经是源根目录 - 在ReadAction中执行读操作
+            boolean alreadySourceRoot = ReadAction.compute(() -> {
+                final ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+                for (ContentEntry rootContentEntry : moduleRootManager.getContentEntries()) {
+                    for (SourceFolder sourceFolder : rootContentEntry.getSourceFolders()) {
+                        VirtualFile sourceFolderFile = sourceFolder.getFile();
+                        if (sourceFolderFile != null && sourceFolderFile.equals(generatedSourcesVFile)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            });
+
+            // 如果已经是源根目录，则不需要再次标记
+            if (alreadySourceRoot) {
+                continue;
+            }
+
+            // 在写操作中标记为生成的源根目录 - 确保在EDT线程中执行写操作
+            ModifiableRootModel model = ModuleRootManager.getInstance(module).getModifiableModel();
+            ContentEntry entry = findContentEntry(model, generatedSourcesVFile);
+            if (entry != null) {
+                SourceFolder[] sourceFolders = entry.getSourceFolders();
+                for (SourceFolder sourceFolder : sourceFolders) {
+                    if (Comparing.equal(sourceFolder.getFile(), generatedSourcesVFile)) {
+                        break;
+                    }
+                }
+
+                needCommit = true;
+                JavaSourceRootProperties properties = JpsJavaExtensionService.getInstance().createSourceRootProperties("", true);
+                entry.addSourceFolder(generatedSourcesVFile, JavaSourceRootType.SOURCE, properties);
+
+                ApplicationManager.getApplication().runWriteAction(model::commit);
+            }
+        }
+        if (needCommit) {
+            SaveAndSyncHandler.getInstance().scheduleProjectSave(module.getProject());
+        }
     }
 }
