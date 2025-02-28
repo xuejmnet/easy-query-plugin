@@ -284,8 +284,8 @@
                 text="QuickTipSetting">
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
         </action>
-        <action id="com.easy.query.plugin.action.AutoCompileAction"
-                class="com.easy.query.plugin.action.AutoCompileAction" text="AutoCompile"
+        <action id="com.easy.query.plugin.action.CompileAllAction"
+                class="com.easy.query.plugin.action.CompileAllAction" text="CompileAll"
                 icon="/icons/eq.svg">
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
