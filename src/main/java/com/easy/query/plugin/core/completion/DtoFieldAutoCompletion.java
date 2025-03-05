@@ -50,8 +50,8 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
         PsiField[] dtoFields = currentPsiClass.getAllFields();
         Set<String> dtoFieldNameSet = Arrays.stream(dtoFields).filter(field -> !PsiUtil.fieldIsStatic(field)).map(o -> o.getName()).collect(Collectors.toSet());
 
-        PsiField[] psiFields = linkPsiClass.getAllFields();
-        Map<String, PsiField> entityFieldMap = Arrays.stream(psiFields).filter(field -> !PsiUtil.fieldIsStatic(field)).collect(Collectors.toMap(o -> o.getName(), o -> o, (k1, k2) -> k2));
+        PsiField[] entityFields = linkPsiClass.getAllFields();
+        Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).filter(field -> !PsiUtil.fieldIsStatic(field)).collect(Collectors.toMap(o -> o.getName(), o -> o, (k1, k2) -> k2));
         String dtoSchema = PsiJavaClassUtil.getDtoSchema(topLevelDtoClass);
 
 
@@ -95,19 +95,24 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                     LookupElementBuilder.create("EQ实体字段:ALL_FIELDS")
                             .withInsertHandler((context, item) -> {
                                 StringBuilder fieldStringBuilder = new StringBuilder();
-                                int i = 0;
-                                for (Map.Entry<String, PsiField> innerEntityFieldKv : entityFieldMap.entrySet()) {
-                                    String fieldName = innerEntityFieldKv.getKey();
-                                    PsiField entityFieldRaw = innerEntityFieldKv.getValue();
-                                    if (!dtoFieldNameSet.contains(fieldName)) {
-                                        if (i != 0) {
-                                            fieldStringBuilder.append(System.lineSeparator());
-                                        }
-                                        i++;
-                                        PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                                        fieldStringBuilder.append(dtoField.getText());
+
+                                for (int i = 0; i < entityFields.length; i++) {
+                                    PsiField entityField = entityFields[i];
+                                    if (!entityFieldMap.containsKey(entityField.getName())) {
+                                        // 不是需要的字段
+                                        continue;
                                     }
+                                    if (dtoFieldNameSet.contains(entityField.getName())) {
+                                        // 字段已经有了
+                                        continue;
+                                    }
+                                    if (i != 0) {
+                                        fieldStringBuilder.append(System.lineSeparator());
+                                    }
+                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityField, dtoSchema);
+                                    fieldStringBuilder.append(dtoField.getText());
                                 }
+
                                 // 需要将内容中的 \r 替换掉, 否则 win 下会报错 com.intellij.openapi.util.text.StringUtil.assertValidSeparators 将 \r 视作非法字符
                                 String newContent = fieldStringBuilder.toString().replaceAll("\r\n", "\n").replaceAll("\r", "\n");
                                 context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), newContent);
