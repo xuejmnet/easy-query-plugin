@@ -53,8 +53,11 @@ public class PathAliasReferenceContributor extends PsiReferenceContributor {
                         return false;
                     }
                     String qualifiedName = annotation.getQualifiedName();
-                    return "com.easy.query.core.annotation.NavigateFlat".equals(qualifiedName) &&
-                           "pathAlias".equals(((PsiNameValuePair) element.getParent()).getName());
+                    if(element.getParent() instanceof PsiNameValuePair){
+                        return "com.easy.query.core.annotation.NavigateFlat".equals(qualifiedName) &&
+                            "pathAlias".equals(((PsiNameValuePair) element.getParent()).getName());
+                    }
+                    return false;
                 }
             }
         );
