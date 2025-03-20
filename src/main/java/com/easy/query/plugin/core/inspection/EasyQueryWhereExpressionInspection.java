@@ -1,9 +1,8 @@
 package com.easy.query.plugin.core.inspection;
 
 import com.easy.query.plugin.core.util.StrUtil;
-import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool;
-import com.intellij.codeInspection.ProblemHighlightType;
-import com.intellij.codeInspection.ProblemsHolder;
+import com.intellij.codeInspection.*;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -20,6 +19,7 @@ import java.util.Set;
 public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalInspectionTool {
 
     private static final String ABSTRACT_PROXY_ENTITY = "com.easy.query.core.proxy.AbstractProxyEntity";
+    private static final String INSPECTION_SHORT_NAME = "EasyQueryWhereExpressionInspection";
 
     @Override
     public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getDisplayName() {
@@ -29,6 +29,74 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
     @Override
     public boolean runForWholeFile() {
         return true;
+    }
+
+    /**
+     * 修复写反的表达式的 QuickFix
+     */
+    private static class SwapExpressionQuickFix implements LocalQuickFix {
+        private final String methodName;
+        private final String leftText;
+        private final String rightText;
+
+        public SwapExpressionQuickFix(String methodName, String leftText, String rightText) {
+            this.methodName = methodName;
+            this.leftText = leftText;
+            this.rightText = rightText;
+        }
+
+        @Override
+        public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getName() {
+            return "交换表达式左右两边 (修正写反的条件)";
+        }
+
+        @Override
+        public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getFamilyName() {
+            return getName();
+        }
+
+        @Override
+        public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
+            PsiElement element = descriptor.getPsiElement();
+            if (!(element instanceof PsiMethodCallExpression)) {
+                return;
+            }
+
+            PsiElementFactory factory = JavaPsiFacade.getInstance(project).getElementFactory();
+            // 创建新的表达式: rightText.methodName(leftText)
+            String newExpression = rightText + "." + methodName + "(" + leftText + ")";
+            PsiExpression expression = factory.createExpressionFromText(newExpression, element.getContext());
+            element.replace(expression);
+        }
+    }
+
+    /**
+     * 抑制警告的 QuickFix
+     */
+    private static class SuppressWarningQuickFix implements LocalQuickFix {
+        @Override
+        public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getName() {
+            return "抑制警告 (添加 //noinspection " + INSPECTION_SHORT_NAME + ")";
+        }
+
+        @Override
+        public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getFamilyName() {
+            return getName();
+        }
+
+        @Override
+        public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
+            PsiElement element = descriptor.getPsiElement();
+            PsiStatement statement = PsiTreeUtil.getParentOfType(element, PsiStatement.class);
+            if (statement == null) {
+                return;
+            }
+
+            PsiElementFactory factory = JavaPsiFacade.getInstance(project).getElementFactory();
+            // 创建 noinspection 注释
+            PsiComment comment = factory.createCommentFromText("//noinspection " + INSPECTION_SHORT_NAME, statement);
+            statement.getParent().addBefore(comment, statement);
+        }
     }
 
     @Override
@@ -111,6 +179,11 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
              * 检查方法调用是否符合规范
              */
             private void checkMethodCall(PsiMethodCallExpression methodCall, Set<String> queryObjectNames, ProblemsHolder holder) {
+                String methodName = methodCall.getMethodExpression().getReferenceName();
+                if (!StrUtil.equalsAny(methodName, "eq", "ne","like","notLike","likeMatchLeft","likeMatchRight","notLikeMatchLeft","notLikeMatchRight", "in","notIn","le", "lt", "ge", "gt")) {
+                    return;
+                }
+
                 // 获取方法调用链
                 PsiExpression qualifier = methodCall.getMethodExpression().getQualifierExpression();
                 if (qualifier instanceof PsiMethodCallExpression) {
@@ -135,9 +208,23 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
 
                     // 检查左侧是否以任一查询对象开头
                     if (!queryObjectNames.contains(leftSideText)) {
-                        holder.registerProblem(methodCall,
-                                "EQ插件检测：Where 条件表达式可能不正确，左侧应该使用查询对象(" + String.join(", ", queryObjectNames) + ")的字段",
-                                ProblemHighlightType.WARNING);
+                        // 获取右侧表达式文本
+                        PsiExpression[] methodArgs = methodCall.getArgumentList().getExpressions();
+                        if (methodArgs.length > 0) {
+                            String rightSideText = methodArgs[0].getText();
+                            // 创建 QuickFix
+                            LocalQuickFix swapFix = new SwapExpressionQuickFix(
+                                methodName,
+                                leftSide.getText(),  // 完整的左侧表达式
+                                rightSideText
+                            );
+                            LocalQuickFix suppressFix = new SuppressWarningQuickFix();
+                            
+                            holder.registerProblem(methodCall,
+                                    "EQ插件检测：Where 条件表达式可能不正确，左侧应该使用查询对象(" + String.join(", ", queryObjectNames) + ")的字段",
+                                    ProblemHighlightType.WARNING,
+                                    swapFix, suppressFix);
+                        }
                     }
                 }
             }
