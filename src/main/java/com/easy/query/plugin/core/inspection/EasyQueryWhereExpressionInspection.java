@@ -10,7 +10,6 @@ import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,7 +35,7 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
     public @NotNull PsiElementVisitor buildVisitor(@NotNull ProblemsHolder holder, boolean isOnTheFly) {
         return new JavaElementVisitor() {
             @Override
-            public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+            public void visitMethodCallExpression(@NotNull PsiMethodCallExpression expression) {
                 super.visitMethodCallExpression(expression);
 
                 // 检查是否是 where 方法调用
@@ -83,44 +82,63 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
                     return;
                 }
 
-                // 查找所有的方法调用表达式
-                Collection<PsiMethodCallExpression> methodCalls = PsiTreeUtil.findChildrenOfType(lambdaBody, PsiMethodCallExpression.class);
-                for (PsiMethodCallExpression methodCall : methodCalls) {
-                    // 获取 eq 方法的调用链
-                    PsiExpression qualifier = methodCall.getMethodExpression().getQualifierExpression();
-                    if (qualifier instanceof PsiMethodCallExpression) {
-                        PsiMethodCallExpression leftSide = (PsiMethodCallExpression) qualifier;
+                // 获取 Lambda 体中的直接语句
+                PsiStatement[] statements = null;
+                if (lambdaBody instanceof PsiCodeBlock) {
+                    statements = ((PsiCodeBlock) lambdaBody).getStatements();
+                } else if (lambdaBody instanceof PsiExpression) {
+                    statements = new PsiStatement[]{
+                            PsiTreeUtil.getParentOfType(lambdaBody, PsiStatement.class)
+                    };
+                }
 
-                        // 检查方法调用者的类型是否继承自 AbstractProxyEntity
-                        PsiType qualifierType = leftSide.getMethodExpression().getQualifierExpression().getType();
-                        if (qualifierType == null) {
-                            continue;
-                        }
+                if (statements == null) {
+                    return;
+                }
 
-                        if (!(qualifierType instanceof PsiClassType)) {
-                            continue;
-                        }
-
-                        PsiClass psiClass = ((PsiClassType) qualifierType).resolve();
-                        if (psiClass == null) {
-                            continue;
-                        }
-
-                        // 如果不是继承自 AbstractProxyEntity，跳过检查
-                        if (!InheritanceUtil.isInheritor(psiClass, ABSTRACT_PROXY_ENTITY)) {
-                            continue;
-                        }
-
-                        String leftSideText = leftSide.getMethodExpression().getQualifierExpression().getText();
-
-                        // 检查左侧是否以任一查询对象开头
-                        if (!queryObjectNames.contains(leftSideText)) {
-                            holder.registerProblem(methodCall,
-                                    "EQ插件检测：Where 条件表达式可能不正确，左侧应该使用查询对象(" + String.join(", ", queryObjectNames) + ")的字段",
-                                    ProblemHighlightType.WARNING);
+                // 遍历直接语句中的方法调用
+                for (PsiStatement statement : statements) {
+                    if (statement instanceof PsiExpressionStatement) {
+                        PsiExpression statementExpression = ((PsiExpressionStatement) statement).getExpression();
+                        if (statementExpression instanceof PsiMethodCallExpression) {
+                            checkMethodCall((PsiMethodCallExpression) statementExpression, queryObjectNames, holder);
                         }
                     }
+                }
+            }
 
+            /**
+             * 检查方法调用是否符合规范
+             */
+            private void checkMethodCall(PsiMethodCallExpression methodCall, Set<String> queryObjectNames, ProblemsHolder holder) {
+                // 获取方法调用链
+                PsiExpression qualifier = methodCall.getMethodExpression().getQualifierExpression();
+                if (qualifier instanceof PsiMethodCallExpression) {
+                    PsiMethodCallExpression leftSide = (PsiMethodCallExpression) qualifier;
+
+                    // 检查方法调用者的类型是否继承自 AbstractProxyEntity
+                    PsiExpression qualifierExpression = leftSide.getMethodExpression().getQualifierExpression();
+                    if (qualifierExpression == null) {
+                        return;
+                    }
+                    PsiType qualifierType = qualifierExpression.getType();
+                    if (!(qualifierType instanceof PsiClassType)) {
+                        return;
+                    }
+
+                    PsiClass psiClass = ((PsiClassType) qualifierType).resolve();
+                    if (!InheritanceUtil.isInheritor(psiClass, ABSTRACT_PROXY_ENTITY)) {
+                        return;
+                    }
+
+                    String leftSideText = leftSide.getMethodExpression().getQualifierExpression().getText();
+
+                    // 检查左侧是否以任一查询对象开头
+                    if (!queryObjectNames.contains(leftSideText)) {
+                        holder.registerProblem(methodCall,
+                                "EQ插件检测：Where 条件表达式可能不正确，左侧应该使用查询对象(" + String.join(", ", queryObjectNames) + ")的字段",
+                                ProblemHighlightType.WARNING);
+                    }
                 }
             }
 
@@ -132,7 +150,7 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
                 while (parent != null) {
                     if (parent instanceof PsiMethodCallExpression) {
                         PsiMethodCallExpression methodCall = (PsiMethodCallExpression) parent;
-                        if (StrUtil.equalsAny(methodCall.getMethodExpression().getReferenceName(),"exists","notExists")) {
+                        if (StrUtil.equalsAny(methodCall.getMethodExpression().getReferenceName(), "exists", "notExists")) {
                             PsiExpression qualifier = methodCall.getMethodExpression().getQualifierExpression();
                             if (qualifier instanceof PsiMethodCallExpression) {
                                 PsiMethodCallExpression expressionCall = (PsiMethodCallExpression) qualifier;
