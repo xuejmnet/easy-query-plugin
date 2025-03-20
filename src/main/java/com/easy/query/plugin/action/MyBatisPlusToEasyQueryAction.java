@@ -2,6 +2,8 @@ package com.easy.query.plugin.action;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ArrayUtil;
+import com.easy.query.plugin.core.util.PsiJavaAnnotationUtil;
+import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -16,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 public class MyBatisPlusToEasyQueryAction extends AnAction {
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         Project project = event.getProject();
@@ -60,9 +63,14 @@ public class MyBatisPlusToEasyQueryAction extends AnAction {
                 importList.add(JavaPsiFacade.getElementFactory(project).createImportStatement(Objects.requireNonNull(JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.annotation.Table", GlobalSearchScope.allScope(currentClass.getProject())))));
                 importList.add(JavaPsiFacade.getElementFactory(project).createImportStatement(Objects.requireNonNull(JavaPsiFacade.getInstance(project).findClass("com.easy.query.core.annotation.Column", GlobalSearchScope.allScope(currentClass.getProject())))));
 
+                String tableName = PsiJavaAnnotationUtil.getAttributeWrappedValue(myBatisPlusAnnoTableName, "value");
+                String schema = PsiJavaAnnotationUtil.getAttributeWrappedValue(myBatisPlusAnnoTableName, "schema");
 
-                String tableName = ((PsiNameValuePair) myBatisPlusAnnoTableName.findAttribute("value")).getLiteralValue();
-                modifierList.addAnnotation("Table(value=\"" + tableName + "\")");
+                if (StrUtil.isNotEmpty(schema)) {
+                    modifierList.addAnnotation("Table(value=" + tableName + ", schema=" + schema + ")");
+                } else {
+                    modifierList.addAnnotation("Table(value=" + tableName + ")");
+                }
 
 
             }
@@ -109,7 +117,18 @@ public class MyBatisPlusToEasyQueryAction extends AnAction {
 
                 if (Objects.nonNull(mpAnnoVersion) && Objects.isNull(annoVersion)) {
                     // 乐观锁字段, 需要区分字段类型, 先不自动识别类型
-                    fieldModifierList.addAnnotation("com.easy.query.core.annotation.Version");
+                    // 根据字段类型选择不同的乐观锁策略
+                    PsiType fieldType = field.getType();
+                    String typeName = fieldType.getPresentableText();
+                    if ("int".equals(typeName) || "Integer".equals(typeName)) {
+                        fieldModifierList.addAnnotation("com.easy.query.core.annotation.Version(strategy = VersionIntStrategy.class)");
+                    } else if ("long".equals(typeName) || "Long".equals(typeName)) {
+                        fieldModifierList.addAnnotation("com.easy.query.core.annotation.Version(strategy = VersionLongStrategy.class)");
+                    } else if ("Timestamp".equals(typeName) || "Date".equals(typeName)) {
+                        fieldModifierList.addAnnotation("com.easy.query.core.annotation.Version(strategy = VersionTimestampStrategy.class)");
+                    } else {
+                        fieldModifierList.addAnnotation("com.easy.query.core.annotation.Version"); // 
+                    }
                 }
 
 

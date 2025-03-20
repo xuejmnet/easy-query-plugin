@@ -3,11 +3,13 @@ package com.easy.query.plugin.core.util;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 import groovy.lang.Tuple3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
@@ -134,5 +136,33 @@ public class PsiJavaAnnotationUtil {
         // 再拼成 @Navigate 注解文本
         String replacement = "@"+ annoName +"(" + attrText + ")";
         return elementFactory.createAnnotationFromText(replacement, relatedElement);
+    }
+
+    /**
+     * 从注解属性中获取包裹后的值(处理常量引用和字面量)<br/>
+     * 比如 @Column(name = "test") 获取到的值为 "test" 会包含引号<br/>
+     * 比如 @Column(name = DEMO_CLASS.DEMO_FIELD) 获取到的值为 DEMO_CLASS.DEMO_FIELD <br/>
+     * 注意: 如果属性值是字面量, 则不会包含引号<br/>
+     * @param annotation 注解对象
+     * @param attributeName 属性名
+     * @return 处理后的属性值
+     */
+    @Nullable
+    public static String getAttributeWrappedValue(PsiAnnotation annotation, String attributeName) {
+        if (annotation == null || StrUtil.isBlank(attributeName)) {
+            return null;
+        }
+        JvmAnnotationAttribute attribute = annotation.findAttribute(attributeName);
+        if (Objects.nonNull(attribute)) {
+            PsiAnnotationMemberValue attrValue = ((PsiNameValuePair) attribute).getValue();
+            if (attrValue instanceof PsiReferenceExpression) {
+                // 处理常量引用
+                return attrValue.getText();
+            } else {
+                // 处理字面量
+                return "\"" + ((PsiNameValuePair) attribute).getLiteralValue() + "\"";
+            }
+        }
+        return null;
     }
 }
