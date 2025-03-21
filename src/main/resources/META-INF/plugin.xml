@@ -251,6 +251,12 @@
                             groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
                             implementationClass="com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection"/>
 
+        <localInspection language="JAVA" groupPath="Java" shortName="EasyQueryWhereExpressionInspection"
+                         bundle="messages.InspectionGadgetsBundle"
+                            groupBundle="messages.InspectionsBundle"
+                            groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
+                            implementationClass="com.easy.query.plugin.core.inspection.EasyQueryWhereExpressionInspection"/>
+
         <customJavadocTagProvider implementation="com.easy.query.plugin.core.provider.EasyQueryJavaDocTagProvider"/>
 
         <applicationConfigurable instance="com.easy.query.plugin.core.config.AppSettingsConfigurable"/>
