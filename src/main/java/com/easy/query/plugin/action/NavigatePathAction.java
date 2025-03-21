@@ -91,7 +91,6 @@ public class NavigatePathAction extends AnAction {
                             psiFile.addBefore(psiField, elementAt.getParent());
                         });
                     }
-                    System.out.println("123");
                 }
 
             }
