@@ -306,6 +306,7 @@ public class TableUtils {
         list.add(new MatchTypeMapping("REGEX" , "java.lang.String" , "char(\\(\\d+\\))?" ));
         list.add(new MatchTypeMapping("REGEX" , "java.lang.String" , "(tiny|medium|long)*text" ));
         list.add(new MatchTypeMapping("REGEX" , "java.math.BigDecimal" , "decimal(\\(\\d+,\\d+\\))?" ));
+        list.add(new MatchTypeMapping("REGEX" , "java.math.BigDecimal" , "number(\\(\\d+,\\d+\\))?" ));
         list.add(new MatchTypeMapping("REGEX" , "java.lang.Long" , "bigint(\\(\\d+\\))?" ));
         list.add(new MatchTypeMapping("REGEX" , "java.lang.Integer" , "(tiny|small|medium)*int(\\(\\d+\\))?" ));
         return list;
