@@ -1,6 +1,7 @@
 package com.easy.query.plugin.action;
 
 import com.easy.query.plugin.core.util.KtFileUtil;
+import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.ProjectUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
@@ -177,6 +178,7 @@ public class EntityQueryImplementAction extends AnAction {
                     PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy" );
                     PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy" );
                     if (entityProxy == null && entityFileProxy == null) {
+                        NotificationUtils.notifyWarning("未添加注解@EntityProxy", "警告", project);
                         return;
                     }
                     boolean implementInterface = isImplementInterface(psiClass);
@@ -245,6 +247,7 @@ public class EntityQueryImplementAction extends AnAction {
             PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy" );
             PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy" );
             if (entityProxy == null && entityFileProxy == null) {
+                NotificationUtils.notifyWarning("未添加注解@EntityProxy", "警告", project);
                 return;
             }
             String entityProxyName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value", entityName + "Proxy" );

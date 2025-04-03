@@ -19,12 +19,6 @@ import java.util.concurrent.TimeUnit;
  * 通知工具类
  */
 public class NotificationUtils {
-    public static final String URL = "https://plugins.jetbrains.com/plugin/22165-mybatis-flex-helper/reviews";
-    static ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-    private static final String GROUP_LINK = "https://qm.qq.com/q/LgNvWFRdGU";
-    private static final String GITHUB_LINK = "https://github.com/xuejmnet/easy-query";
-    public static final String CONTENT = "如果EasyQueryAssistant插件能减轻您一些繁琐的工作，麻烦您给个免费的star ⭐️";
-    public static boolean isNotified = false;
 
     /**
      * 通知成功
