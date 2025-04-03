@@ -41,13 +41,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.sql.dialects.clickhouse.CHouseDialect;
-import com.intellij.sql.dialects.db2.Db2LUWDialect;
-import com.intellij.sql.dialects.generic.GenericDialect;
-import com.intellij.sql.dialects.h2.H2Dialect;
-import com.intellij.sql.dialects.mssql.MsDialect;
-import com.intellij.sql.dialects.mysql.MysqlDialect;
-import com.intellij.sql.dialects.postgres.PgDialect;
+//import com.intellij.sql.dialects.clickhouse.CHouseDialect;
+//import com.intellij.sql.dialects.db2.Db2LUWDialect;
+//import com.intellij.sql.dialects.generic.GenericDialect;
+//import com.intellij.sql.dialects.h2.H2Dialect;
+//import com.intellij.sql.dialects.mssql.MsDialect;
+//import com.intellij.sql.dialects.mysql.MysqlDialect;
+//import com.intellij.sql.dialects.postgres.PgDialect;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -108,66 +108,66 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
     static {
         // com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration
-        if (isClassExist("com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("clickhouse", "com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration",
-                    CHouseDialect.INSTANCE));
-        }
-
-        // com.easy.query.db2.config.DB2DatabaseConfiguration
-        if (isClassExist("com.easy.query.db2.config.DB2DatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("db2", "com.easy.query.db2.config.DB2DatabaseConfiguration",
-                    Db2LUWDialect.INSTANCE));
-        }
-        // com.easy.query.dameng.config.DamengDatabaseConfiguration
-        if (isClassExist("com.easy.query.dameng.config.DamengDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("dameng", "com.easy.query.dameng.config.DamengDatabaseConfiguration",
-                    GenericDialect.INSTANCE));
-        }
-        // com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration
-        if (isClassExist("com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("default", "com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration",
-                    GenericDialect.INSTANCE));
-        }
-        // com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration
-        if (isClassExist("com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("gaussdb", "com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration",
-                    GenericDialect.INSTANCE));
-        }
-        // com.easy.query.h2.config.H2DatabaseConfiguration
-        if (isClassExist("com.easy.query.h2.config.H2DatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("h2", "com.easy.query.h2.config.H2DatabaseConfiguration",
-                    H2Dialect.INSTANCE));
-        }
-        // com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration
-        if (isClassExist("com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("kingbase-es", "com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration",
-                    GenericDialect.INSTANCE));
-        }
-        // com.easy.query.mssql.config.MsSQLDatabaseConfiguration
-        if (isClassExist("com.easy.query.mssql.config.MsSQLDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("mssql", "com.easy.query.mssql.config.MsSQLDatabaseConfiguration",
-                    MsDialect.INSTANCE));
-        }
-        // com.easy.query.mysql.config.MySQLDatabaseConfiguration
-        if (isClassExist("com.easy.query.mysql.config.MySQLDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("mysql", "com.easy.query.mysql.config.MySQLDatabaseConfiguration",
-                    MysqlDialect.INSTANCE));
-        }
-        // com.easy.query.oracle.config.OracleDatabaseConfiguration
-        if (isClassExist("com.easy.query.oracle.config.OracleDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("oracle", "com.easy.query.oracle.config.OracleDatabaseConfiguration",
-                    GenericDialect.INSTANCE));
-        }
-        // com.easy.query.pgsql.config.PgSQLDatabaseConfiguration
-        if (isClassExist("com.easy.query.pgsql.config.PgSQLDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("pgsql", "com.easy.query.pgsql.config.PgSQLDatabaseConfiguration",
-                    PgDialect.INSTANCE));
-        }
-        // com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration
-        if (isClassExist("com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration")) {
-            DATABASE_TUPLES.add(DatabaseTuple.of("sqllite", "com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration",
-                    GenericDialect.INSTANCE));
-        }
+//        if (isClassExist("com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("clickhouse", "com.easy.query.clickhouse.config.ClickHouseDatabaseConfiguration",
+//                    CHouseDialect.INSTANCE));
+//        }
+//
+//        // com.easy.query.db2.config.DB2DatabaseConfiguration
+//        if (isClassExist("com.easy.query.db2.config.DB2DatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("db2", "com.easy.query.db2.config.DB2DatabaseConfiguration",
+//                    Db2LUWDialect.INSTANCE));
+//        }
+//        // com.easy.query.dameng.config.DamengDatabaseConfiguration
+//        if (isClassExist("com.easy.query.dameng.config.DamengDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("dameng", "com.easy.query.dameng.config.DamengDatabaseConfiguration",
+//                    GenericDialect.INSTANCE));
+//        }
+//        // com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration
+//        if (isClassExist("com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("default", "com.easy.query.core.bootstrapper.DefaultDatabaseConfiguration",
+//                    GenericDialect.INSTANCE));
+//        }
+//        // com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration
+//        if (isClassExist("com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("gaussdb", "com.easy.query.gauss.db.config.GaussDBDatabaseConfiguration",
+//                    GenericDialect.INSTANCE));
+//        }
+//        // com.easy.query.h2.config.H2DatabaseConfiguration
+//        if (isClassExist("com.easy.query.h2.config.H2DatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("h2", "com.easy.query.h2.config.H2DatabaseConfiguration",
+//                    H2Dialect.INSTANCE));
+//        }
+//        // com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration
+//        if (isClassExist("com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("kingbase-es", "com.easy.query.kingbase.es.config.KingbaseESDatabaseConfiguration",
+//                    GenericDialect.INSTANCE));
+//        }
+//        // com.easy.query.mssql.config.MsSQLDatabaseConfiguration
+//        if (isClassExist("com.easy.query.mssql.config.MsSQLDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("mssql", "com.easy.query.mssql.config.MsSQLDatabaseConfiguration",
+//                    MsDialect.INSTANCE));
+//        }
+//        // com.easy.query.mysql.config.MySQLDatabaseConfiguration
+//        if (isClassExist("com.easy.query.mysql.config.MySQLDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("mysql", "com.easy.query.mysql.config.MySQLDatabaseConfiguration",
+//                    MysqlDialect.INSTANCE));
+//        }
+//        // com.easy.query.oracle.config.OracleDatabaseConfiguration
+//        if (isClassExist("com.easy.query.oracle.config.OracleDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("oracle", "com.easy.query.oracle.config.OracleDatabaseConfiguration",
+//                    GenericDialect.INSTANCE));
+//        }
+//        // com.easy.query.pgsql.config.PgSQLDatabaseConfiguration
+//        if (isClassExist("com.easy.query.pgsql.config.PgSQLDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("pgsql", "com.easy.query.pgsql.config.PgSQLDatabaseConfiguration",
+//                    PgDialect.INSTANCE));
+//        }
+//        // com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration
+//        if (isClassExist("com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration")) {
+//            DATABASE_TUPLES.add(DatabaseTuple.of("sqllite", "com.easy.query.sqllite.config.SQLLiteDatabaseConfiguration",
+//                    GenericDialect.INSTANCE));
+//        }
     }
 
     /**

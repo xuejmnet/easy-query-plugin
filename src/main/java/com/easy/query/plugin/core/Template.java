@@ -9,7 +9,7 @@ import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.StrUtil;
-import com.easy.query.plugin.core.util.TableUtils;
+//import com.easy.query.plugin.core.util.TableUtils;
 import com.intellij.ide.fileTemplates.impl.UrlUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -39,19 +39,19 @@ public class Template {
 //        return code;
 //    }
 //
-    public static @NotNull EasyQueryConfig getEasyQueryConfig(Project project,String sinceName) {
-        LinkedHashMap<String, EasyQueryConfig> projectSinceMap = EasyQueryQueryPluginConfigData.getProjectSinceMap();
-        EasyQueryConfig config = projectSinceMap.get(sinceName);
-        if(config==null){
-            config=new EasyQueryConfig();
-            config.setModelTemplate(getTemplateContent(EasyQueryConstant.MODEL_TEMPLATE));
-            config.setModelSuffix(EasyQueryConstant.ENTITY);
-//            config.setModelPackage(EasyQueryConstant.DOMAIN.toLowerCase());
-            config.setTypeMapping(TableUtils.getDefaultTypeMappingMap());
-        }
-
-        return config;
-    }
+//    public static @NotNull EasyQueryConfig getEasyQueryConfig(Project project,String sinceName) {
+//        LinkedHashMap<String, EasyQueryConfig> projectSinceMap = EasyQueryQueryPluginConfigData.getProjectSinceMap();
+//        EasyQueryConfig config = projectSinceMap.get(sinceName);
+//        if(config==null){
+//            config=new EasyQueryConfig();
+//            config.setModelTemplate(getTemplateContent(EasyQueryConstant.MODEL_TEMPLATE));
+//            config.setModelSuffix(EasyQueryConstant.ENTITY);
+////            config.setModelPackage(EasyQueryConstant.DOMAIN.toLowerCase());
+//            config.setTypeMapping(TableUtils.getDefaultTypeMappingMap());
+//        }
+//
+//        return config;
+//    }
 
     /**
      * 得到模板内容
