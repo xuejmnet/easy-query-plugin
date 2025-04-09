@@ -31,6 +31,9 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
 
 
         PsiElement position = parameters.getPosition();
+        if(SkipAutopopupInStrings.isInStringLiteral(position)){
+            return;
+        }
         PsiClass topLevelDtoClass = PsiTreeUtil.getTopmostParentOfType(position, PsiClass.class);
         if (!PsiJavaClassUtil.isElementRelatedToClass(position)) {
             // 只处理类下面的直接元素, 方法内的不处理
