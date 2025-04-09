@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.kotlin.psi.KtFile;
 
 import java.util.*;
@@ -18,6 +19,19 @@ import java.util.regex.Pattern;
  * @author xuejiaming
  */
 public class PsiUtil {
+
+    private static final Set<String> EASY_QUERY_ANNOTATIONS=new HashSet<>(Arrays.asList(
+        "com.easy.query.core.annotation.NavigateFlat",
+        "com.easy.query.core.annotation.NavigateJoin"
+    ));
+    public static boolean isEasyQueryNavigateFlatJoinAnnotation(PsiElement psiElement){
+        PsiAnnotation parentOfType = PsiTreeUtil.getParentOfType(psiElement, PsiAnnotation.class);
+        if(parentOfType!=null){
+            String qualifiedName = parentOfType.getQualifiedName();
+            return EASY_QUERY_ANNOTATIONS.contains(qualifiedName);
+        }
+        return false;
+    }
 
     public static PsiClass getClassByFullName(Project project, String fullClassName) {
         PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(fullClassName,
@@ -152,7 +166,6 @@ public class PsiUtil {
     }
 
     public static String getPsiArrayFieldPropertyType(PsiArrayType fieldType, boolean isInclude) {
-        System.out.println("1");
         return "java.lang.Object";
     }
 

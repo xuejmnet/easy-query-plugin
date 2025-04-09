@@ -26,6 +26,7 @@ public class EasyContributorTypedHandler extends TypedHandlerDelegate {
         }
         return super.checkAutoPopup(charTyped,project,editor,file);
     }
+
 //
 //    @Override
 //    public @NotNull Result charTyped(char c, @NotNull Project project, @NotNull Editor editor, @NotNull PsiFile file) {
