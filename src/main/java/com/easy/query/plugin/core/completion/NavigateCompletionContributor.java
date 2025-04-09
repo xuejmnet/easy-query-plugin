@@ -98,20 +98,23 @@ public class NavigateCompletionContributor extends CompletionContributor {
 //            // 添加建议到结果集
 //            result.addElement(LookupElementBuilder.create(psiFieldEntry.getKey()).withIcon(Icons.EQ));
 //        }
-        List<PsiField> tipFields = getNavigateFields(project, linkPsiClass, annoValue, true);
-        for (PsiField tipField : tipFields) {
+        List<String> tipFields = getNavigateFields(project, linkPsiClass, annoValue, true, annoValue);
+        for (String tipField : tipFields) {
             // 添加建议到结果集
-            if (annoValue.contains(".")) {
-                String prefix = StrUtil.subBefore(annoValue, ".", true);
-                result.addElement(LookupElementBuilder.create(prefix + "." + tipField.getName()).withIcon(Icons.EQ));
-            } else {
-                result.addElement(LookupElementBuilder.create(tipField.getName()).withIcon(Icons.EQ));
-            }
+//            if (annoValue.contains(".")) {
+//                String prefix = StrUtil.subBefore(annoValue, ".", true);
+//            } else {
+//                result.addElement(LookupElementBuilder.create(tipField.getName()).withIcon(Icons.EQ));
+//            }
+            result.addElement(LookupElementBuilder.create(tipField).withIcon(Icons.EQ));
         }
     }
 
-    public List<PsiField> getNavigateFields(Project project, PsiClass linkPsiClass, String annoValue, boolean root) {
+    public List<String> getNavigateFields(Project project, PsiClass linkPsiClass, String annoValue, boolean root, String originalAnnoValue) {
         if (annoValue == null) {
+            return new ArrayList<>();
+        }
+        if (linkPsiClass == null) {
             return new ArrayList<>();
         }
         boolean hasAnnoTable = PsiJavaClassUtil.hasAnnoTable(linkPsiClass);
@@ -120,10 +123,42 @@ public class NavigateCompletionContributor extends CompletionContributor {
         }
         PsiField[] psiFields = linkPsiClass.getAllFields();
         if (!annoValue.contains(".")) {
+
             if (root) {
-                return Arrays.stream(psiFields).filter(field -> !PsiUtil.fieldIsStatic(field) && field.getAnnotation("com.easy.query.core.annotation.Navigate") != null).collect(Collectors.toList());
+                ArrayList<String> results = new ArrayList<>();
+                List<PsiField> navigateFields = Arrays.stream(psiFields).filter(field -> !PsiUtil.fieldIsStatic(field) && field.getAnnotation("com.easy.query.core.annotation.Navigate") != null).collect(Collectors.toList());
+                for (PsiField navigateField : navigateFields) {
+                    results.add(navigateField.getName());
+                    String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(navigateField, true);
+                    PsiClass fieldClass = JavaPsiFacade.getInstance(project).findClass(psiFieldPropertyType, GlobalSearchScope.allScope(project));
+                    if (fieldClass != null) {
+                        PsiField[] fields = fieldClass.getAllFields();
+                        for (PsiField field : fields) {
+                            if (!PsiUtil.fieldIsStatic(field)) {
+                                results.add(navigateField.getName() + "." + field.getName());
+                            }
+                        }
+                    }
+                }
+                return results;
             } else {
-                return Arrays.stream(psiFields).filter(field -> !PsiUtil.fieldIsStatic(field)).collect(Collectors.toList());
+                ArrayList<String> results = new ArrayList<>();
+                String prefix = StrUtil.subBefore(originalAnnoValue, ".", true) + ".";
+                List<PsiField> navigateFields = Arrays.stream(psiFields).filter(field -> !PsiUtil.fieldIsStatic(field)).collect(Collectors.toList());
+                for (PsiField navigateField : navigateFields) {
+                    results.add(prefix + navigateField.getName());
+                    String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(navigateField, true);
+                    PsiClass fieldClass = JavaPsiFacade.getInstance(project).findClass(psiFieldPropertyType, GlobalSearchScope.allScope(project));
+                    if (fieldClass != null) {
+                        PsiField[] fields = fieldClass.getAllFields();
+                        for (PsiField field : fields) {
+                            if (!PsiUtil.fieldIsStatic(field)) {
+                                results.add(prefix + navigateField.getName() + "." + field.getName());
+                            }
+                        }
+                    }
+                }
+                return results;
             }
         }
         String fieldName = StrUtil.subBefore(annoValue, ".", false);
@@ -134,6 +169,6 @@ public class NavigateCompletionContributor extends CompletionContributor {
         String nextAnnoValue = StrUtil.subAfter(annoValue, ".", false);
         String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(psiField, true);
         PsiClass fieldClass = JavaPsiFacade.getInstance(project).findClass(psiFieldPropertyType, GlobalSearchScope.allScope(project));
-        return getNavigateFields(project, fieldClass, nextAnnoValue, false);
+        return getNavigateFields(project, fieldClass, nextAnnoValue, false, originalAnnoValue);
     }
 }
