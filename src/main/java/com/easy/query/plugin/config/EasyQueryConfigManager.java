@@ -1,7 +1,8 @@
 package com.easy.query.plugin.config;
 
 import cn.hutool.setting.Setting;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -33,8 +34,9 @@ import java.util.stream.Collectors;
  * 负责读取、解析、缓存配置文件，并监听文件变化
  * @author link2fun
  */
-@Slf4j
 public class EasyQueryConfigManager {
+
+    private static final Logger log = LoggerFactory.getLogger(EasyQueryConfigManager.class);
 
     /** 配置文件名 */
     private static final String CONFIG_FILE_NAME = "easy-query.setting";
@@ -46,7 +48,7 @@ public class EasyQueryConfigManager {
     /** 配置文件缓存 */
     private final Map<Project, Setting> configCache = new ConcurrentHashMap<>();
     /** 项目是否使用 easy-query 的检查结果缓存 */
-    private final Map<Project, Boolean> projectUsingEasyQuery = new ConcurrentHashMap<>();
+    private static final Map<Project, Boolean> projectUsingEasyQuery = new ConcurrentHashMap<>();
     
     /** 单例实例 */
     private static EasyQueryConfigManager instance;
@@ -81,7 +83,7 @@ public class EasyQueryConfigManager {
             Path configFilePath = Paths.get(projectBasePath, CONFIG_FILE_NAME);
             if (!Files.exists(configFilePath)) {
                 // 检查项目是否使用 easy-query
-                if (isProjectUsingEasyQuery(project)) {
+                if (EasyQueryConfigManager.isProjectUsingEasyQuery(project)) {
                     log.info("检测到项目使用 easy-query，创建默认配置: " + configFilePath);
                     createDefaultConfig(configFilePath);
                 } else {
@@ -109,20 +111,32 @@ public class EasyQueryConfigManager {
      * @param project 当前项目
      * @return 是否使用了 easy-query
      */
-    private boolean isProjectUsingEasyQuery(Project project) {
+    public static boolean isProjectUsingEasyQuery(Project project) {
         return projectUsingEasyQuery.computeIfAbsent(project, p -> {
             try {
                 // 通过查找关键类来判断是否使用了 easy-query
                 PsiClass columnClass = com.intellij.openapi.application.ReadAction.compute(() -> JavaPsiFacade.getInstance(project)
                         .findClass(EASY_QUERY_COLUMN_CLASS, GlobalSearchScope.allScope(project)));
                 boolean result = columnClass != null;
-                log.info("项目 " + project.getName() + " 使用 easy-query: " + result);
+                log.info("项目 {} 使用 easy-query: {}", project.getName(), result);
                 return result;
             } catch (Exception e) {
                 log.warn("检查项目依赖时出错", e);
                 return false;
             }
         });
+    }
+    
+    /**
+     * 清除指定项目的 EasyQuery 使用状态缓存。
+     * 当检测到项目依赖发生变化时（例如通过 ProjectDependencyChangeListener），应调用此方法。
+     * @param project 需要清除缓存的项目
+     */
+    public static void invalidateProjectCache(Project project) {
+        if (project != null) {
+            projectUsingEasyQuery.remove(project);
+            log.info("EasyQuery usage cache invalidated for project: {}", project.getName());
+        }
     }
     
     /**

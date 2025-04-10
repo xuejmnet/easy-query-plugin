@@ -398,8 +398,5 @@
         <!-- For older versions and as a fallback -->
         <postStartupActivity implementation="com.easy.query.plugin.components.MyStartupActivity"/>
         
-        <!-- 项目启动时运行EasyQuery检查 -->
-        <postStartupActivity implementation="com.easy.query.plugin.components.EasyQueryInspectionStartupActivity"/>
-        
     </extensions>
 </idea-plugin>

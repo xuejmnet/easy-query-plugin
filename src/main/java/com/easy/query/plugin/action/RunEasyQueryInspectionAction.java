@@ -1,5 +1,6 @@
 package com.easy.query.plugin.action;
 
+import com.easy.query.plugin.config.EasyQueryConfigManager;
 import com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection;
 import com.easy.query.plugin.core.inspection.EasyQuerySetColumnsInspection;
@@ -139,6 +140,10 @@ public class RunEasyQueryInspectionAction extends AnAction {
      */
     public void runInspectionForProject(Project project) {
         if (project == null) {
+            return;
+        }
+        if (!EasyQueryConfigManager.isProjectUsingEasyQuery(project)) {
+            // 项目没有使用easy-query，不进行检查
             return;
         }
         runInspection(project);

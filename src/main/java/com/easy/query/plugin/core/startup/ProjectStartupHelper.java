@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.startup;
 
+import com.easy.query.plugin.action.RunEasyQueryInspectionAction;
 import com.easy.query.plugin.config.EasyQueryConfigManager;
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
 import com.easy.query.plugin.core.util.NotificationUtils;
@@ -65,6 +66,9 @@ public class ProjectStartupHelper {
 
         // 3. 标记生成的源代码根目录 - 在EDT线程中安全执行（在这里调用总是不生效，可能是太早了，现在放到Action里面）
 //        updateGeneratedSourceRoot(project);
+
+        // 4. 在项目启动时运行EasyQuery检查
+        runEasyQueryInspection(project);
     }
 
     /**
@@ -187,6 +191,24 @@ public class ProjectStartupHelper {
         }
         if (needCommit) {
             SaveAndSyncHandler.getInstance().scheduleProjectSave(module.getProject());
+        }
+    }
+
+    private static void runEasyQueryInspection(Project project) {
+        try {
+            // 在后台线程中执行检查，避免EDT线程阻塞
+            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    log.info("启动时运行EasyQuery检查：" + project.getName());
+                    // 使用RunEasyQueryInspectionAction中的方法运行检查
+                    RunEasyQueryInspectionAction inspectionAction = new RunEasyQueryInspectionAction();
+                    inspectionAction.runInspectionForProject(project);
+                } catch (Exception e) {
+                    log.warn("后台线程中运行EasyQuery检查失败", e);
+                }
+            });
+        } catch (Exception e) {
+            log.warn("启动时运行EasyQuery检查失败", e);
         }
     }
 }
