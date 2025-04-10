@@ -264,16 +264,6 @@
                          enabledByDefault="true"
                          level="ERROR"
                          implementationClass="com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection"/>
-
-        <localInspection language="JAVA"
-                         shortName="EasyQueryWhereExpression"
-                         bundle="messages.EasyQueryBundle"
-                         key="inspection.where.expression.display.name"
-                         groupKey="easy-query.probable.bugs"
-                         enabledByDefault="true"
-                         level="ERROR"
-                         implementationClass="com.easy.query.plugin.core.inspection.EasyQueryWhereExpressionInspection"/>
-
         <localInspection language="JAVA"
                          shortName="EasyQuerySetColumns"
                          bundle="messages.EasyQueryBundle"

@@ -2,7 +2,6 @@ package com.easy.query.plugin.action;
 
 import com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection;
-import com.easy.query.plugin.core.inspection.EasyQueryWhereExpressionInspection;
 import com.easy.query.plugin.core.inspection.EasyQuerySetColumnsInspection;
 import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool;
 import com.intellij.codeInspection.InspectionManager;
@@ -54,8 +53,6 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -104,7 +101,6 @@ public class RunEasyQueryInspectionAction extends AnAction {
             LOG.error("扫描检查器时出错", e);
             // 如果动态扫描失败，回退到手动列表
             result.addAll(Arrays.asList(
-                new EasyQueryWhereExpressionInspection(),
                 new EasyQueryOrderByIncorrectInspection(),
                 new EasyQueryFieldMissMatchInspection(),
                 new EasyQuerySetColumnsInspection()
