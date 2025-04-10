@@ -49,6 +49,7 @@ import com.intellij.openapi.util.Pair;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
+import com.easy.query.plugin.core.util.NotificationUtils;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -294,12 +295,16 @@ public class RunEasyQueryInspectionAction extends AnAction {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     if (project.isDisposed()) return;
                     // 使用字段 displayItems
-                    if (displayItems.isEmpty()) {
-                        Messages.showInfoMessage(project, "未发现 EasyQuery 问题。", "扫描完成");
-                    } else {
-                        // 传递字段 displayItems
-                        showResultsInToolWindow(project, displayItems);
+                    boolean hasReportableIssues = displayItems.stream().anyMatch(item ->
+                                !item.isSuppressed() &&
+                                (item.getSeverity() == ProblemSeverity.ERROR || item.getSeverity() == ProblemSeverity.WARNING)
+                        );
+                    if (!hasReportableIssues) {
+                        // 使用 NotificationUtils 显示成功通知
+                        NotificationUtils.notifySuccess("未发现 EasyQuery 问题。", "扫描完成", project);
                     }
+                    // 传递 displayItems 和激活标志
+                    showResultsInToolWindow(project, displayItems, hasReportableIssues);
                 });
             }
 
@@ -367,7 +372,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
         });
     }
 
-    private void showResultsInToolWindow(Project project, List<ProblemDisplayItem> allItems) {
+    private void showResultsInToolWindow(Project project, List<ProblemDisplayItem> allItems, boolean activateWindow) {
         ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
         ToolWindow toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID);
 
@@ -907,7 +912,10 @@ public class RunEasyQueryInspectionAction extends AnAction {
             if (project.isDisposed() || tw.isDisposed()) return;
             tw.getContentManager().removeAllContents(true);
             tw.getContentManager().addContent(content);
-            tw.activate(null);
+            // 仅当需要时激活窗口
+            if (activateWindow) {
+                tw.activate(null);
+            }
         });
     }
 
