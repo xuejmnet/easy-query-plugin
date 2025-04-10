@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInspectionTool {
 
+    private static final String INSPECTION_PREFIX = "[EQ插件检查-DTO字段] ";
 
     @Override
     public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getDisplayName() {
@@ -134,7 +135,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                         // 这个字段不在实体类中, 需要警告
 
-                        holder.registerProblem(dtoField, "[EQ插件检查-DTO字段] 当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在", ProblemHighlightType.WARNING, localQuickFixes.toArray(new LocalQuickFix[0]));
+                        holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在", ProblemHighlightType.WARNING, localQuickFixes.toArray(new LocalQuickFix[0]));
                         continue;
                     }
                     //endregion
@@ -152,7 +153,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         if (!StrUtil.equals(dtoTypeRefName, entityTypeRefName)) {
                             if (StrUtil.startWithAny(dtoTypeRefName, "java.")) { // 常见包下面的视作基础类型
                                 // 类型不一致
-                                holder.registerProblem(dtoField, "[EQ插件检查-DTO字段] 当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
                                 continue;
 
                             } else {
@@ -160,13 +161,13 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(PsiJavaFileUtil.getPsiClass(project, dtoTypeRefName));
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
-                                    holder.registerProblem(dtoField, "[EQ插件检查-DTO字段] 当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
                                     continue;
                                 }
                                 String linkPsiClassName = linkPsiClass.getQualifiedName();
                                 if (!StrUtil.equals(linkPsiClassName, entityTypeRefName)) {
                                     // 类型不一致
-                                    holder.registerProblem(dtoField, "[EQ插件检查-DTO字段] 当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO", ProblemHighlightType.ERROR);
                                     continue;
                                 }
                             }
@@ -175,7 +176,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         // 外围的一致，尝试匹配泛型
                         if (dtoFieldTypeRef.getTypeParameterCount() != entityFieldTypeRef.getTypeParameterCount()) {
                             // 泛型的个数不一致,肯定不对
-                            holder.registerProblem(dtoField, "[EQ插件检查-DTO字段] 当前字段泛型数量和实体类中不一致,应为 " + entityFieldTypeRef.getText(), ProblemHighlightType.ERROR);
+                            holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段泛型数量和实体类中不一致,应为 " + entityFieldTypeRef.getText(), ProblemHighlightType.ERROR);
                             continue;
                         }
                         // 现在进行内部泛型匹配
@@ -197,14 +198,14 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 PsiJavaCodeReferenceElement entityFieldTypeParamRef = ((PsiClassReferenceType) entityFieldTypeParam).getReference();
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
-                                    holder.registerProblem(dtoField, "[EQ插件检查-DTO字段] 当前字段泛型和实体类中不一致,应为 " + entityFieldTypeParamRef.getQualifiedName() + " 或其生成的DTO", ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段泛型和实体类中不一致,应为 " + entityFieldTypeParamRef.getQualifiedName() + " 或其生成的DTO", ProblemHighlightType.ERROR);
                                     continue;
                                 }
                                 String linkPsiClassName = linkPsiClass.getQualifiedName();
 
                                 if (!StrUtil.equals(linkPsiClassName, entityFieldTypeParamRef.getQualifiedName())) {
                                     // 类型不一致
-                                    holder.registerProblem(dtoField, "[EQ插件检查-DTO字段] 当前字段泛型和实体类中不一致,应为 " + entityFieldTypeParamRef.getQualifiedName(), ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段泛型和实体类中不一致,应为 " + entityFieldTypeParamRef.getQualifiedName(), ProblemHighlightType.ERROR);
                                 }
                             } else {
                                 // 其他情况, 暂不处理
@@ -219,25 +220,28 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                     InspectionResult annoColumnInspectionResult = EasyQueryElementUtil.inspectionColumnAnnotation(project, dtoField, entityField);
                     if (annoColumnInspectionResult.hasProblem()) {
                         for (InspectionResult.Problem problem : annoColumnInspectionResult.getProblemList()) {
-
                             // 补充quickFix
                             ArrayList<LocalQuickFix> quickFixes = Lists.newArrayList(problem.getFixes());
                             quickFixes.add(createQuickFixForSuppressWarningField("EasyQueryFieldMissMatch"));
                             quickFixes.add(createQuickFixForCommentField());
 
-                            holder.registerProblem(problem.getPsiElement(), problem.getDescriptionTemplate(), problem.getHighlightType(), quickFixes.toArray(new LocalQuickFix[0]));
+                            // 添加前缀到问题描述
+                            String description = INSPECTION_PREFIX + problem.getDescriptionTemplate();
+                            holder.registerProblem(problem.getPsiElement(), description, problem.getHighlightType(), quickFixes.toArray(new LocalQuickFix[0]));
                         }
                     }
 
                     InspectionResult annoNavigationInspectionResult = EasyQueryElementUtil.inspectionNavigateAnnotation(holder.getProject(), dtoField, entityField);
-
                     if (annoNavigationInspectionResult.hasProblem()) {
                         for (InspectionResult.Problem problem : annoNavigationInspectionResult.getProblemList()) {
                             // 补充quickFix
                             ArrayList<LocalQuickFix> quickFixes = Lists.newArrayList(problem.getFixes());
                             quickFixes.add(createQuickFixForSuppressWarningField("EasyQueryFieldMissMatch"));
                             quickFixes.add(createQuickFixForCommentField());
-                            holder.registerProblem(problem.getPsiElement(), problem.getDescriptionTemplate(), problem.getHighlightType(),quickFixes.toArray(new LocalQuickFix[0]));
+
+                            // 添加前缀到问题描述
+                            String description = INSPECTION_PREFIX + problem.getDescriptionTemplate();
+                            holder.registerProblem(problem.getPsiElement(), description, problem.getHighlightType(), quickFixes.toArray(new LocalQuickFix[0]));
                         }
                     }
 

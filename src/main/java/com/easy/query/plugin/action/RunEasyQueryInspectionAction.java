@@ -3,6 +3,8 @@ package com.easy.query.plugin.action;
 import com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryWhereExpressionInspection;
+import com.easy.query.plugin.core.inspection.EasyQuerySetColumnsInspection;
+import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool;
 import com.intellij.codeInspection.InspectionManager;
 import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemDescriptor;
@@ -43,6 +45,10 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.util.Pair;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -68,6 +74,45 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
     private static final Logger LOG = Logger.getInstance(RunEasyQueryInspectionAction.class);
     private static final String TOOL_WINDOW_ID = "EasyQuery Issues";
+
+    /**
+     * 动态扫描并查找所有检查器
+     */
+    private List<AbstractBaseJavaLocalInspectionTool> findAllInspections() {
+        List<AbstractBaseJavaLocalInspectionTool> result = new ArrayList<>();
+        
+        try (ScanResult scanResult = new ClassGraph()
+                .enableClassInfo()
+                .acceptPackages("com.easy.query.plugin")
+                .scan()) {
+            
+            // 查找所有继承自 AbstractBaseJavaLocalInspectionTool 的类
+            for (ClassInfo classInfo : scanResult.getSubclasses(AbstractBaseJavaLocalInspectionTool.class.getName())) {
+                try {
+                    // 确保类不是抽象的
+                    if (!classInfo.isAbstract()) {
+                        Class<?> clazz = classInfo.loadClass();
+                        AbstractBaseJavaLocalInspectionTool inspection = 
+                            (AbstractBaseJavaLocalInspectionTool) clazz.getDeclaredConstructor().newInstance();
+                        result.add(inspection);
+                    }
+                } catch (Exception e) {
+                    LOG.warn("实例化检查器失败: " + classInfo.getName(), e);
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("扫描检查器时出错", e);
+            // 如果动态扫描失败，回退到手动列表
+            result.addAll(Arrays.asList(
+                new EasyQueryWhereExpressionInspection(),
+                new EasyQueryOrderByIncorrectInspection(),
+                new EasyQueryFieldMissMatchInspection(),
+                new EasyQuerySetColumnsInspection()
+            ));
+        }
+        
+        return result;
+    }
 
     @Override
     public void update(@NotNull AnActionEvent e) {
@@ -112,10 +157,17 @@ public class RunEasyQueryInspectionAction extends AnAction {
         // 在带进度的后台任务中运行检查
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "扫描 EasyQuery 问题", true) {
             private final List<ProblemDescriptor> allProblems = new ArrayList<>();
-            private final EasyQueryWhereExpressionInspection whereInspection = new EasyQueryWhereExpressionInspection();
-            private final EasyQueryOrderByIncorrectInspection orderByInspection = new EasyQueryOrderByIncorrectInspection();
-            private final EasyQueryFieldMissMatchInspection fieldInspection = new EasyQueryFieldMissMatchInspection();
+            private final List<AbstractBaseJavaLocalInspectionTool> inspections;
             private final InspectionManager manager = InspectionManager.getInstance(project);
+
+            {
+                // 动态扫描并初始化所有检查器
+                inspections = findAllInspections();
+                LOG.info("发现检查器: " + inspections.size() + " 个");
+                for (AbstractBaseJavaLocalInspectionTool inspection : inspections) {
+                    LOG.info("已加载检查器: " + inspection.getClass().getName());
+                }
+            }
 
             // 1. 添加字段来存储结果
             private final List<ProblemDisplayItem> displayItems = new ArrayList<>();
@@ -144,41 +196,37 @@ public class RunEasyQueryInspectionAction extends AnAction {
                     DumbService.getInstance(project).runReadActionInSmartMode(() -> {
                         PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
                         if (psiFile instanceof PsiJavaFile && psiFile.isValid()) {
-                            // Where 检查
-                            ProblemsHolder whereHolder = new ProblemsHolder(manager, psiFile, false);
-                            PsiElementVisitor whereVisitor = whereInspection.buildVisitor(whereHolder, false);
-
-                            // OrderBy 检查
-                            ProblemsHolder orderByHolder = new ProblemsHolder(manager, psiFile, false);
-                            PsiElementVisitor orderByVisitor = orderByInspection.buildVisitor(orderByHolder, false);
-
-                            // DTO 字段检查
-                            ProblemsHolder fieldHolder = new ProblemsHolder(manager, psiFile, false);
-                            PsiElementVisitor fieldVisitor = fieldInspection.buildVisitor(fieldHolder, false);
+                            // 为每个检查器创建 holder 和 visitor
+                            List<Pair<ProblemsHolder, PsiElementVisitor>> visitors = new ArrayList<>();
+                            for (AbstractBaseJavaLocalInspectionTool inspection : inspections) {
+                                ProblemsHolder holder = new ProblemsHolder(manager, psiFile, false);
+                                PsiElementVisitor visitor = inspection.buildVisitor(holder, false);
+                                visitors.add(Pair.create(holder, visitor));
+                            }
 
                             // 使用标准访问者遍历文件元素
                             psiFile.accept(new JavaRecursiveElementWalkingVisitor() {
                                 @Override
                                 public void visitElement(@NotNull PsiElement element) {
                                     try {
-                                        // 委托访问到检查的访问者
-                                        element.accept(whereVisitor);
-                                        element.accept(orderByVisitor);
-                                        element.accept(fieldVisitor);
+                                        // 委托访问到所有检查器的访问者
+                                        for (Pair<ProblemsHolder, PsiElementVisitor> pair : visitors) {
+                                            element.accept(pair.getSecond());
+                                        }
                                     } catch (Exception ex) {
                                         // 记录元素访问期间的错误
                                         LOG.warn("在文件 " + virtualFile.getName() + " 中访问元素时出错: " + element.getTextRange(), ex);
                                     }
-                                    // 至关重要的是，调用 super 继续遍历树
+                                    // 继续遍历树
                                     super.visitElement(element);
                                 }
                             });
 
-                            // 添加在此文件中发现的问题（如果有）
+                            // 收集所有检查器的结果
                             synchronized (allProblems) {
-                                allProblems.addAll(whereHolder.getResults());
-                                allProblems.addAll(orderByHolder.getResults());
-                                allProblems.addAll(fieldHolder.getResults());
+                                for (Pair<ProblemsHolder, PsiElementVisitor> pair : visitors) {
+                                    allProblems.addAll(pair.getFirst().getResults());
+                                }
                             }
                         }
                     }); // DumbService 结束
