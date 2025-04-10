@@ -195,11 +195,15 @@ public class EasyQueryElementUtil {
             dtoRemoveKeys.add("value");
         }
         dtoRemoveKeys.add("sqlExpression"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("sqlConversion"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+
+        List<String> ignoreKeys = Lists.newArrayList();
 
         return AnnoAttrCompareResult.newCompare(entityAnnoColumnAttrMap, dtoAnnoColumnAttrMap)
                 .withEntityOnlyKeysPermit(entityOnlyKeysPermit)
                 .withDtoOnlyKeysPermit(dtoOnlyKeysPermit)
                 .withDtoRemoveKeys(dtoRemoveKeys)
+                .withIgnoredKeys(ignoreKeys)
                 .compare();
     }
 
@@ -293,7 +297,7 @@ public class EasyQueryElementUtil {
 
             AnnoAttrCompareResult compareResult = AnnoAttrCompareResult.newCompare(entityAnnoAttrMap, dtoAnnoAttrMap)
                     .withDtoRemoveKeys(Lists.newArrayList(dtoRemoveKeys))
-                    .withIgnoredKeys(Lists.newArrayList("orderByProps")) // 忽略 orderByProps 检查
+                    .withIgnoredKeys(Lists.newArrayList("orderByProps","limit","offset")) // 忽略 orderByProps 检查
                     .compare();
             Map<String, PsiNameValuePair> fixedAttrMap = compareResult.getFixedAttrMap();
             List<String> problemMsgList = compareResult.getProblemMsgList();
