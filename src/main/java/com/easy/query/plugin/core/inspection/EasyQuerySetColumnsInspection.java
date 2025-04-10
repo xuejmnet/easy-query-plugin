@@ -4,6 +4,7 @@ import com.intellij.codeInspection.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.InheritanceUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -179,16 +180,36 @@ public class EasyQuerySetColumnsInspection extends AbstractBaseJavaLocalInspecti
                     return;
                 }
                 PsiMethodCallExpression topCall = (PsiMethodCallExpression) expression;
+                PsiReferenceExpression methodExpression = topCall.getMethodExpression();
+                PsiExpression qualifier = methodExpression.getQualifierExpression();
+                String methodName = methodExpression.getReferenceName();
 
-                PsiExpression qualifier = topCall.getMethodExpression().getQualifierExpression();
-                String methodName = topCall.getMethodExpression().getReferenceName();
-
-                // 情况 1: 检查是否为独立的 row.property()
+                // 新增检查：是否为 lambdaParam.column(...) 模式 (来自 SQLColumnOnlySelector)
                 if (qualifier instanceof PsiReferenceExpression && Objects.equals(qualifier.getText(), rowParamName)) {
-                    // 结构是 row.property()，这是不允许的独立调用
+                    PsiMethod resolvedMethod = topCall.resolveMethod();
+                    if (resolvedMethod != null) {
+                        PsiClass containingClass = resolvedMethod.getContainingClass();
+                        // 获取 SQLColumnOnlySelector 的 PsiClass
+                        PsiClass sqlColumnSelectorClass = JavaPsiFacade.getInstance(expression.getProject())
+                                .findClass("com.easy.query.api4j.sql.SQLColumnOnlySelector", expression.getResolveScope());
+
+                        // 检查方法的所属类是否是 SQLColumnOnlySelector 或其子类/实现类
+                        if (sqlColumnSelectorClass != null && containingClass != null &&
+                            InheritanceUtil.isInheritorOrSelf(containingClass, sqlColumnSelectorClass, true)) {
+                            // 这是有效的选择器调用，例如 o.column(Entity::getProperty)，跳过后续检查
+                            return;
+                        }
+                    }
+                    // 如果不是 SQLColumnOnlySelector 的方法，则可能是无效的独立调用，继续进行后续检查
+                }
+
+                // 情况 1: 检查是否为独立的 row.property() 或其他不允许的直接调用
+                if (qualifier instanceof PsiReferenceExpression && Objects.equals(qualifier.getText(), rowParamName)) {
+                    // 结构是 row.method()，并且该方法不是上面允许的 SQLColumnOnlySelector 方法
+                    // 这通常是错误的，比如仅调用 getter
                     LocalQuickFix suppressFix = new SuppressWarningQuickFix();
-                    holder.registerProblem(topCall, // 在 property() 调用上报告问题
-                            INSPECTION_PREFIX + "SetColumns 中不允许仅调用属性访问器，请使用 'set', 'increment', 'decrement' 等方法进行更新",
+                    holder.registerProblem(topCall, // 在方法调用上报告问题
+                            INSPECTION_PREFIX + "SetColumns 中不允许仅调用属性访问器或选择器方法，请使用 'set', 'increment', 'decrement' 等更新方法", // 调整了警告信息
                             ProblemHighlightType.WARNING,
                             suppressFix);
                     return; // 模式匹配，处理完毕
