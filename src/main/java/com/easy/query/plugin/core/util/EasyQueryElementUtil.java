@@ -194,8 +194,8 @@ public class EasyQueryElementUtil {
             entityOnlyKeysPermit.add("value");
             dtoRemoveKeys.add("value");
         }
+        dtoRemoveKeys.add("sqlExpression"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
 
-        ;
         return AnnoAttrCompareResult.newCompare(entityAnnoColumnAttrMap, dtoAnnoColumnAttrMap)
                 .withEntityOnlyKeysPermit(entityOnlyKeysPermit)
                 .withDtoOnlyKeysPermit(dtoOnlyKeysPermit)
