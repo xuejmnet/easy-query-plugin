@@ -4,8 +4,10 @@ import com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryWhereExpressionInspection;
 import com.intellij.codeInspection.InspectionManager;
+import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.codeInspection.ProblemHighlightType;
+import com.intellij.codeInspection.QuickFix;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -37,12 +39,17 @@ import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.treeStructure.Tree;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
+import com.intellij.openapi.project.DumbService;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -55,6 +62,7 @@ import java.util.stream.Collectors;
 /**
  * 在整个项目上运行 EasyQuery 检查的 Action
  * 并在工具窗口中显示结果。
+ * @author link2fun
  */
 public class RunEasyQueryInspectionAction extends AnAction {
 
@@ -69,12 +77,29 @@ public class RunEasyQueryInspectionAction extends AnAction {
     }
 
     @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.EDT;
+    }
+
+    @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
         if (project == null) {
             return;
         }
 
+        runInspection(project);
+    }
+
+    /**
+     * 提供给外部调用的方法，不需要AnActionEvent参数
+     *
+     * @param project 当前项目
+     */
+    public void runInspectionForProject(Project project) {
+        if (project == null) {
+            return;
+        }
         runInspection(project);
     }
 
@@ -91,6 +116,9 @@ public class RunEasyQueryInspectionAction extends AnAction {
             private final EasyQueryOrderByIncorrectInspection orderByInspection = new EasyQueryOrderByIncorrectInspection();
             private final EasyQueryFieldMissMatchInspection fieldInspection = new EasyQueryFieldMissMatchInspection();
             private final InspectionManager manager = InspectionManager.getInstance(project);
+
+            // 1. 添加字段来存储结果
+            private final List<ProblemDisplayItem> displayItems = new ArrayList<>();
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -112,8 +140,8 @@ public class RunEasyQueryInspectionAction extends AnAction {
                     indicator.setFraction((double) processedFiles / totalFiles);
                     indicator.setText2(virtualFile.getName());
 
-                    // 在 ReadAction 中处理每个文件
-                    ReadAction.run(() -> {
+                    // 1. 使用 DumbService 包裹文件处理的 ReadAction
+                    DumbService.getInstance(project).runReadActionInSmartMode(() -> {
                         PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
                         if (psiFile instanceof PsiJavaFile && psiFile.isValid()) {
                             // Where 检查
@@ -153,20 +181,75 @@ public class RunEasyQueryInspectionAction extends AnAction {
                                 allProblems.addAll(fieldHolder.getResults());
                             }
                         }
-                    });
+                    }); // DumbService 结束
                     processedFiles++;
                 }
+
+                // 2. 使用 DumbService 包裹最终问题处理的 ReadAction
+                DumbService.getInstance(project).runReadActionInSmartMode(() -> {
+                    PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
+                    for (ProblemDescriptor problem : allProblems) {
+                        PsiElement element = problem.getPsiElement();
+                        if (element != null && element.isValid()) {
+                            PsiFile file = element.getContainingFile();
+                            if (file != null && file.isValid()) {
+                                VirtualFile virtualFile = file.getVirtualFile();
+                                // 在 ReadAction 内部获取 Document
+                                Document document = psiDocumentManager.getDocument(file);
+                                if (virtualFile != null && document != null) {
+                                    int offset = element.getTextOffset();
+                                    if (offset >= 0 && offset <= document.getTextLength()) {
+                                         int correctedOffset = Math.min(offset, Math.max(0, document.getTextLength() -1));
+                                         if(correctedOffset<0){
+                                             correctedOffset=0;
+                                         }
+                                        int displayLineNumber = document.getLineNumber(correctedOffset) + 1;
+                                        String description = problem.getDescriptionTemplate();
+                                        ProblemHighlightType highlightType = problem.getHighlightType();
+
+                                        String inspectionName = "其他检查";
+                                        // 首先尝试从前缀中提取检查类型
+                                        if (description.startsWith("[EQ插件检查-")) {
+                                            int prefixStart = "[EQ插件检查-".length();
+                                            int endIndex = description.indexOf(']');
+                                            if (endIndex > prefixStart) {
+                                                inspectionName = description.substring(prefixStart, endIndex) + "检查";
+                                            }
+                                        }
+
+                                        // *** 调用 checkSuppressed 在 run 方法的 ReadAction 中 ***
+                                        boolean isSuppressed = checkSuppressed(element);
+                                        QuickFix[] currentFixes = problem.getFixes();
+
+                                        // 添加到字段 displayItems
+                                        displayItems.add(new ProblemDisplayItem(
+                                                String.format("%s:%d - %s", file.getName(), displayLineNumber, description),
+                                                virtualFile,
+                                                offset,
+                                                highlightType,
+                                                inspectionName,
+                                                isSuppressed,
+                                                problem,
+                                                currentFixes));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }); // DumbService 结束
             }
 
             @Override
             public void onSuccess() {
-                // 在 UI 线程中显示结果
+                // 3. onSuccess 只负责调度UI更新，使用字段 displayItems
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    if (project.isDisposed()) return; // 项目可能已关闭
-                    if (allProblems.isEmpty()) {
+                    if (project.isDisposed()) return;
+                    // 使用字段 displayItems
+                    if (displayItems.isEmpty()) {
                         Messages.showInfoMessage(project, "未发现 EasyQuery 问题。", "扫描完成");
                     } else {
-                        showResultsInToolWindow(project, allProblems);
+                        // 传递字段 displayItems
+                        showResultsInToolWindow(project, displayItems);
                     }
                 });
             }
@@ -187,10 +270,55 @@ public class RunEasyQueryInspectionAction extends AnAction {
                     Messages.showErrorDialog(project, "扫描期间发生错误: " + error.getMessage(), "扫描错误");
                 });
             }
+
+            // 从 run 的 ReadAction 调用
+            private boolean checkSuppressed(PsiElement element) {
+                boolean isSuppressed = false;
+                // 检查元素上的抑制注解
+                if (element instanceof PsiModifierListOwner) {
+                    PsiModifierListOwner modifierListOwner = (PsiModifierListOwner) element;
+                    PsiModifierList modifierList = modifierListOwner.getModifierList();
+                    if (modifierList != null) {
+                        PsiAnnotation[] annotations = modifierList.getAnnotations();
+                        for (PsiAnnotation annotation : annotations) {
+                            // 优化：先简单比较名字，如果匹配再解析qualifiedName
+                            String name = annotation.getNameReferenceElement() != null ? annotation.getNameReferenceElement().getReferenceName() : null;
+                            if ("SuppressWarnings".equals(name) && "java.lang.SuppressWarnings".equals(annotation.getQualifiedName())) {
+                                isSuppressed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // 如果元素不是 PsiModifierListOwner，尝试获取父元素
+                if (!isSuppressed) {
+                    PsiElement parent = element.getParent();
+                    while (parent != null && !(parent instanceof PsiFile)) {
+                        if (parent instanceof PsiModifierListOwner) {
+                            PsiModifierListOwner parentOwner = (PsiModifierListOwner) parent;
+                            PsiModifierList parentModifierList = parentOwner.getModifierList();
+                            if (parentModifierList != null) {
+                                PsiAnnotation[] parentAnnotations = parentModifierList.getAnnotations();
+                                for (PsiAnnotation annotation : parentAnnotations) {
+                                    String name = annotation.getNameReferenceElement() != null ? annotation.getNameReferenceElement().getReferenceName() : null;
+                                     if ("SuppressWarnings".equals(name) && "java.lang.SuppressWarnings".equals(annotation.getQualifiedName())) {
+                                        isSuppressed = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (isSuppressed) break;
+                        }
+                        parent = parent.getParent();
+                    }
+                }
+                return isSuppressed;
+            }
         });
     }
 
-    private void showResultsInToolWindow(Project project, List<ProblemDescriptor> problems) {
+    private void showResultsInToolWindow(Project project, List<ProblemDisplayItem> allItems) {
         ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
         ToolWindow toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID);
 
@@ -212,101 +340,6 @@ public class RunEasyQueryInspectionAction extends AnAction {
                 return;
             }
         }
-
-        // 准备问题列表
-        List<ProblemDisplayItem> allItems = new ArrayList<>();
-
-        ReadAction.run(() -> {
-            PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
-            for (ProblemDescriptor problem : problems) {
-                PsiElement element = problem.getPsiElement();
-                if (element != null && element.isValid()) {
-                    PsiFile file = element.getContainingFile();
-                    if (file != null && file.isValid()) {
-                        VirtualFile virtualFile = file.getVirtualFile();
-                        Document document = psiDocumentManager.getDocument(file);
-                        if (virtualFile != null && document != null) {
-                            int offset = element.getTextOffset();
-                            if (offset >= 0 && offset < document.getTextLength()) {
-                                int displayLineNumber = document.getLineNumber(offset) + 1;
-                                String description = problem.getDescriptionTemplate();
-                                ProblemHighlightType highlightType = problem.getHighlightType();
-
-                                // 通过问题描述判断问题类型，而不是使用 ProblemDescriptorImpl
-                                String inspectionName = "一般检查";
-                                String desc = description.toLowerCase();
-
-                                // 首先尝试从前缀中提取检查类型
-                                if (description.startsWith("[EQ插件检查-")) {
-                                    int prefixStart = "[EQ插件检查-".length();
-                                    int endIndex = description.indexOf(']');
-                                    if (endIndex > prefixStart) {
-                                        // 直接提取[EQ插件检查-XXX]中的XXX部分
-                                        String extractedType = description.substring(prefixStart, endIndex);
-                                        inspectionName = extractedType + "检查";
-                                    }
-                                }
-                                // 如果没有前缀或无法从前缀中识别，将其归类为"其他检查"
-                                else {
-                                    inspectionName = "其他检查";
-                                }
-
-                                // 检测是否有抑制注解
-                                boolean isSuppressed = false;
-
-                                // 检查元素上的抑制注解
-                                if (element instanceof PsiModifierListOwner) {
-                                    PsiModifierListOwner modifierListOwner = (PsiModifierListOwner) element;
-                                    PsiModifierList modifierList = modifierListOwner.getModifierList();
-                                    if (modifierList != null) {
-                                        // 检查是否有 @SuppressWarnings 注解
-                                        PsiAnnotation[] annotations = modifierList.getAnnotations();
-                                        for (PsiAnnotation annotation : annotations) {
-                                            String qualifiedName = annotation.getQualifiedName();
-                                            if ("java.lang.SuppressWarnings".equals(qualifiedName)) {
-                                                isSuppressed = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // 如果元素不是 PsiModifierListOwner，尝试获取父元素
-                                if (!isSuppressed) {
-                                    PsiElement parent = element.getParent();
-                                    while (parent != null && !(parent instanceof PsiFile)) {
-                                        if (parent instanceof PsiModifierListOwner) {
-                                            PsiModifierListOwner parentOwner = (PsiModifierListOwner) parent;
-                                            PsiModifierList parentModifierList = parentOwner.getModifierList();
-                                            if (parentModifierList != null) {
-                                                PsiAnnotation[] parentAnnotations = parentModifierList.getAnnotations();
-                                                for (PsiAnnotation annotation : parentAnnotations) {
-                                                    String qualifiedName = annotation.getQualifiedName();
-                                                    if ("java.lang.SuppressWarnings".equals(qualifiedName)) {
-                                                        isSuppressed = true;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            if (isSuppressed) break;
-                                        }
-                                        parent = parent.getParent();
-                                    }
-                                }
-
-                                allItems.add(new ProblemDisplayItem(
-                                        String.format("%s:%d - %s", file.getName(), displayLineNumber, description),
-                                        virtualFile,
-                                        offset,
-                                        highlightType,
-                                        inspectionName,
-                                        isSuppressed));
-                            }
-                        }
-                    }
-                }
-            }
-        });
 
         // 创建主面板
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -369,67 +402,109 @@ public class RunEasyQueryInspectionAction extends AnAction {
         problemTree.setCellRenderer(new DefaultTreeCellRenderer() {
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-                super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+                // 先调用父类方法获取基本组件
+                Component c = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
 
                 if (value instanceof DefaultMutableTreeNode) {
                     Object userObject = ((DefaultMutableTreeNode) value).getUserObject();
 
                     if (userObject instanceof ProblemDisplayItem) {
                         ProblemDisplayItem item = (ProblemDisplayItem) userObject;
-                        setText(item.toString());
+                        String originalText = item.toString();
+                        String displayText = originalText;
 
-                        if (item.isSuppressed()) {
-                            // 抑制问题使用特殊图标
+                        // 应用删除线和/或灰色效果
+                        boolean applyStrike = item.isFixed();
+                        boolean applyGray = item.isFixed() || item.isSuppressed(); // 已修复或已抑制的都变灰
+
+                        if (applyStrike) {
+                             // 使用 HTML 添加删除线
+                            displayText = "<html><strike>" + escapeHtml(originalText) + "</strike></html>";
+                        } else {
+                            // 如果不需要删除线，确保文本不是 HTML（除非原本就是）
+                            // 这里简单处理，假设原始文本不是 HTML
+                             setText(originalText); // 设置非 HTML 文本
+                        }
+
+                        // 如果需要 HTML (因为有删除线)，则设置 HTML 文本
+                        if (applyStrike) {
+                             setText(displayText);
+                        }
+
+
+                        // 设置图标
+                        if (item.isFixed()) {
+                            setIcon(AllIcons.Actions.Checked); // 使用 "Checked" 图标表示已修复
+                        } else if (item.isSuppressed()) {
                             setIcon(AllIcons.Nodes.C_private);
-                            if (!selected) {
-                                setForeground(JBColor.GRAY);
-                            }
                         } else if (item.getSeverity() == ProblemSeverity.ERROR) {
                             setIcon(AllIcons.General.Error);
-                            if (!selected) {
-                                setForeground(JBColor.RED);
-                            }
                         } else if (item.getSeverity() == ProblemSeverity.WARNING) {
                             setIcon(AllIcons.General.Warning);
-                            if (!selected) {
-                                setForeground(JBColor.ORANGE);
-                            }
+                        } else {
+                             setIcon(AllIcons.General.Information);
                         }
+
+                        // 设置颜色 (灰色优先)
+                        if (applyGray && !selected) {
+                            setForeground(JBColor.GRAY);
+                        } else if (!item.isFixed() && !item.isSuppressed() && !selected) { // 仅对未修复且未抑制的项应用严重性颜色
+                             if (item.getSeverity() == ProblemSeverity.ERROR) {
+                                setForeground(JBColor.RED);
+                             } else if (item.getSeverity() == ProblemSeverity.WARNING) {
+                                setForeground(JBColor.ORANGE);
+                             } else {
+                                 // 如果不是 Error 或 Warning，使用默认前景色
+                                 setForeground(UIManager.getColor("Tree.textForeground"));
+                             }
+                        } else if (selected) {
+                             // 使用选中的前景色
+                             setForeground(UIManager.getColor("Tree.selectionForeground"));
+                        }
+
+
                     } else if (userObject instanceof String) {
+                        // 分组节点的渲染不变
                         String nodeText = (String) userObject;
                         setText(nodeText);
-
                         if (nodeText.startsWith("错误")) {
                             setIcon(AllIcons.General.Error);
-                            if (!selected) {
-                                setFont(getFont().deriveFont(Font.BOLD));
-                            }
+                            if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else if (nodeText.startsWith("警告")) {
                             setIcon(AllIcons.General.Warning);
-                            if (!selected) {
-                                setFont(getFont().deriveFont(Font.BOLD));
-                            }
+                             if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else if (nodeText.startsWith("已抑制")) {
                             setIcon(AllIcons.Nodes.Locked);
-                            if (!selected) {
-                                setFont(getFont().deriveFont(Font.BOLD));
-                            }
+                            if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else if (nodeText.equals("EasyQuery检查结果")) {
-                            setIcon(AllIcons.General.Information);
-                            if (!selected) {
-                                setFont(getFont().deriveFont(Font.BOLD));
-                            }
+                            setIcon(AllIcons.Toolwindows.ToolWindowInspection);
+                             if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else {
-                            setIcon(AllIcons.Nodes.Folder);
+                             setIcon(AllIcons.Nodes.Folder);
                         }
+                         // 分组节点使用默认颜色
+                         if (!selected) {
+                            setForeground(UIManager.getColor("Tree.textForeground"));
+                         } else {
+                            setForeground(UIManager.getColor("Tree.selectionForeground"));
+                         }
                     }
                 }
+                return c; // 返回修改后的组件
+            }
 
-                return this;
+            // 简单的 HTML 转义方法，防止文本中的特殊字符破坏 HTML 结构
+            private String escapeHtml(String text) {
+                if (text == null) return "";
+                return text.replace("&", "&amp;")
+                           .replace("<", "&lt;")
+                           .replace(">", "&gt;")
+                           .replace("\"", "&quot;")
+                           .replace("'", "&#39;");
             }
         });
 
-        // 添加双击处理器
+        // 添加双击处理器和右键菜单
         problemTree.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -447,6 +522,93 @@ public class RunEasyQueryInspectionAction extends AnAction {
                             OpenFileDescriptor descriptor = new OpenFileDescriptor(
                                     project, item.getVirtualFile(), item.getOffset());
                             FileEditorManager.getInstance(project).openTextEditor(descriptor, true);
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void mousePressed(MouseEvent e) {
+                handlePopup(e);
+            }
+            
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                handlePopup(e);
+            }
+            
+            private void handlePopup(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    // 获取鼠标点击位置的树节点
+                    int row = problemTree.getRowForLocation(e.getX(), e.getY());
+                    if (row >= 0) {
+                        problemTree.setSelectionRow(row);
+                        // final 关键字可能需要，以便在 lambda 中访问
+                        final DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+                                problemTree.getLastSelectedPathComponent();
+                        if (node != null && node.getUserObject() instanceof ProblemDisplayItem) {
+                            // final 关键字可能需要
+                            final ProblemDisplayItem item = (ProblemDisplayItem) node.getUserObject();
+                            ProblemDescriptor problemDescriptor = item.getDescriptor();
+                            QuickFix[] fixes = item.getFixes();
+                            if (problemDescriptor != null && fixes != null && fixes.length > 0) {
+                                JPopupMenu popupMenu = new JPopupMenu();
+                                for (final QuickFix fix : fixes) { // final for lambda
+                                    if (fix != null) {
+                                        JMenuItem menuItem = new JMenuItem(fix.getFamilyName());
+                                        menuItem.addActionListener(action -> {
+                                            PsiElement element = problemDescriptor.getPsiElement();
+                                            if (element != null && element.isValid()) {
+                                                com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(
+                                                    project,
+                                                    "ApplyQuickFix: " + fix.getFamilyName(), // 更具体的命令名
+                                                    null,
+                                                    () -> {
+                                                        if (fix instanceof LocalQuickFix) {
+                                                            ((LocalQuickFix) fix).applyFix(project, problemDescriptor);
+                                                            PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
+                                                            PsiFile file = element.getContainingFile();
+                                                            if (file != null && file.isValid()) {
+                                                                Document document = psiDocumentManager.getDocument(file);
+                                                                if (document != null) {
+                                                                    psiDocumentManager.doPostponedOperationsAndUnblockDocument(document); // 确保操作完成
+                                                                    psiDocumentManager.commitDocument(document);
+                                                                    // FileDocumentManager.getInstance().saveDocument(document); // 可选：立即保存文件
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                     // 应用修复的文件
+                                                    element.getContainingFile()
+                                                );
+
+                                                // 标记为已修复并更新节点UI
+                                                item.setFixed(true);
+                                                final DefaultTreeModel model = (DefaultTreeModel) problemTree.getModel();
+                                                // 在EDT线程更新UI
+                                                ApplicationManager.getApplication().invokeLater(() -> {
+                                                      model.nodeChanged(node);
+                                                });
+                                            }
+                                        });
+                                        popupMenu.add(menuItem);
+                                    }
+                                }
+                                // 添加导航选项
+                                popupMenu.addSeparator();
+                                JMenuItem gotoItem = new JMenuItem("跳转到源代码");
+                                gotoItem.addActionListener(action -> {
+                                    if (item.getVirtualFile().isValid()) {
+                                        OpenFileDescriptor descriptor = new OpenFileDescriptor(
+                                                project, item.getVirtualFile(), item.getOffset());
+                                        FileEditorManager.getInstance(project).openTextEditor(descriptor, true);
+                                    }
+                                });
+                                popupMenu.add(gotoItem);
+                                
+                                // 显示弹出菜单
+                                popupMenu.show(problemTree, e.getX(), e.getY());
+                            }
                         }
                     }
                 }
@@ -596,12 +758,9 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
             // 更新树模型
             treeModel.reload();
-
-            // 展开节点
-            problemTree.expandRow(0); // 根节点
-            for (int i = 1; i < Math.min(4, problemTree.getRowCount()); i++) {
-                problemTree.expandRow(i);
-            }
+            
+            // 展开根节点
+            problemTree.expandRow(0);
 
             // 更新汇总信息
             summaryLabel.setText(String.format("共发现 %d 个问题: %d 个错误, %d 个警告, %d 个已抑制 (已过滤显示 %d 个)",
@@ -641,6 +800,11 @@ public class RunEasyQueryInspectionAction extends AnAction {
                         // 重新运行扫描
                         runInspection(project);
                     }
+
+                    @Override
+                    public @NotNull ActionUpdateThread getActionUpdateThread() {
+                        return ActionUpdateThread.EDT;
+                    }
                 })
                 .addExtraAction(new AnActionButton("全部展开", AllIcons.Actions.Expandall) {
                     @Override
@@ -648,6 +812,11 @@ public class RunEasyQueryInspectionAction extends AnAction {
                         for (int i = 0; i < problemTree.getRowCount(); i++) {
                             problemTree.expandRow(i);
                         }
+                    }
+
+                    @Override
+                    public @NotNull ActionUpdateThread getActionUpdateThread() {
+                        return ActionUpdateThread.EDT;
                     }
                 })
                 .addExtraAction(new AnActionButton("全部折叠", AllIcons.Actions.Collapseall) {
@@ -658,6 +827,11 @@ public class RunEasyQueryInspectionAction extends AnAction {
                         }
                         // 只展开根节点
                         problemTree.expandRow(0);
+                    }
+
+                    @Override
+                    public @NotNull ActionUpdateThread getActionUpdateThread() {
+                        return ActionUpdateThread.EDT;
                     }
                 });
 
@@ -702,40 +876,45 @@ public class RunEasyQueryInspectionAction extends AnAction {
      */
     private static class ProblemDisplayItem {
         private final String displayString;
+        @Getter
         private final VirtualFile virtualFile;
+        @Getter
         private final int offset;
+        @Getter
         private final ProblemHighlightType highlightType;
+        @Getter
         private final String inspectionName;
-        private final boolean isSuppressed;  // 是否被抑制
+        private final boolean isSuppressed;
+        @Getter
+        private final ProblemDescriptor descriptor;
+        private boolean isFixed = false; // 添加 isFixed 标志
+        // <-- 添加 getter
+        @Getter
+        private final QuickFix[] fixes; // <-- 添加字段
 
         public ProblemDisplayItem(String displayString, VirtualFile virtualFile, int offset,
-                                  ProblemHighlightType highlightType, String inspectionName, boolean isSuppressed) {
+                                  ProblemHighlightType highlightType, String inspectionName, boolean isSuppressed,
+                                  ProblemDescriptor descriptor, QuickFix[] fixes) { // <-- 添加到构造函数
             this.displayString = displayString;
             this.virtualFile = virtualFile;
             this.offset = offset;
             this.highlightType = highlightType;
             this.inspectionName = inspectionName;
             this.isSuppressed = isSuppressed;
-        }
-
-        public VirtualFile getVirtualFile() {
-            return virtualFile;
-        }
-
-        public int getOffset() {
-            return offset;
-        }
-
-        public ProblemHighlightType getHighlightType() {
-            return highlightType;
-        }
-
-        public String getInspectionName() {
-            return inspectionName;
+            this.descriptor = descriptor;
+            this.fixes = fixes; // <-- 赋值
         }
 
         public boolean isSuppressed() {
             return isSuppressed;
+        }
+
+        public boolean isFixed() { // 添加 getter
+            return isFixed;
+        }
+
+        public void setFixed(boolean fixed) { // 添加 setter
+            isFixed = fixed;
         }
 
         /**
