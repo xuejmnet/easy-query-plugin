@@ -89,7 +89,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
                                     }
                                 }
 
-                                holder.registerProblem(expression, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
+                                holder.registerProblem(expression, "[EQ插件检查-ORDER BY] OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
                             }
                         }
                         Collection<PsiLambdaExpression> lambdaExpressions = PsiTreeUtil.findChildrenOfType(parentNextSibling, PsiLambdaExpression.class);
@@ -109,18 +109,18 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
                                         return methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression");
                                     });
                                 if (!correct) {
-                                    holder.registerProblem(expression, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
+                                    holder.registerProblem(expression, "[EQ插件检查-ORDER BY] OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
                                 }
 
                             }
                         }
 
                         if (CollectionUtil.isEmpty(normalExpressions) && CollectionUtil.isEmpty(lambdaExpressions)) {
-                            holder.registerProblem(parentNextSibling, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾, 请不要直接使用 lambda 字段");
+                            holder.registerProblem(parentNextSibling, "[EQ插件检查-ORDER BY] OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾, 请不要直接使用 lambda 字段");
                         }
 
                     } else {
-                        holder.registerProblem(identifier, "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
+                        holder.registerProblem(identifier, "[EQ插件检查-ORDER BY] OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾");
                     }
                 }
 

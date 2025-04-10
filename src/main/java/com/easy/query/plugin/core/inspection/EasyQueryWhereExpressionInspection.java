@@ -242,7 +242,7 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
                         LocalQuickFix suppressFix = new SuppressWarningQuickFix();
 
                         holder.registerProblem(methodCall,
-                                "EQ插件检测：Where 条件表达式左侧 '" + baseIdentifier + "' 不是有效的查询对象 (" + String.join(", ", queryObjectNames) + ")，可能写反或范围错误",
+                                "[EQ插件检查-WHERE表达式] Where 条件表达式左侧 '" + baseIdentifier + "' 不是有效的查询对象 (" + String.join(", ", queryObjectNames) + ")，可能写反或范围错误",
                                 ProblemHighlightType.WARNING,
                                 swapFix, suppressFix); // 提供交换和抑制选项
                     }
@@ -337,7 +337,7 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
                     // 结构是 row.property()，这是不允许的独立调用
                     LocalQuickFix suppressFix = new SuppressWarningQuickFix();
                     holder.registerProblem(topCall, // 在 property() 调用上报告问题
-                            "EQ插件检测：SetColumns 中不允许仅调用属性访问器，请使用 'set', 'increment', 'decrement' 等方法进行更新",
+                            "[EQ插件检查-WHERE表达式] SetColumns 中不允许仅调用属性访问器，请使用 'set', 'increment', 'decrement' 等方法进行更新",
                             ProblemHighlightType.WARNING,
                             suppressFix);
                     return; // 模式匹配，处理完毕
@@ -390,7 +390,7 @@ public class EasyQueryWhereExpressionInspection extends AbstractBaseJavaLocalIns
                 LocalQuickFix changeToSetFix = new ChangeToSetQuickFix(propertyChainText, argsText);
                 LocalQuickFix suppressFix = new SuppressWarningQuickFix();
                 holder.registerProblem(invalidCall, // 在最终的无效方法调用上报告问题
-                        "EQ插件检测：SetColumns 中应使用以 'set' 开头、'increment' 或 'decrement' 的方法更新字段，而不是 '" + disallowedMethodName + "'",
+                        "[EQ插件检查-WHERE表达式] SetColumns 中应使用以 'set' 开头、'increment' 或 'decrement' 的方法更新字段，而不是 '" + disallowedMethodName + "'",
                         ProblemHighlightType.WARNING,
                         changeToSetFix, suppressFix);
             }

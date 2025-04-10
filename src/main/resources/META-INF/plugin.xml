@@ -358,12 +358,21 @@
                 text="TableEntityGenerate">
             <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>
         </action>
+        <action id="com.easy.query.plugin.action.RunEasyQueryInspectionAction"
+                class="com.easy.query.plugin.action.RunEasyQueryInspectionAction"
+                icon="/icons/eq.svg"
+                text="Run EasyQuery Project Scan"
+                description="Scans the project for potential EasyQuery expression issues.">
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+        </action>
         <action id="com.easy.query.plugin.action.EntityQueryImplementAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.EntityQueryImplementAction"
                 text="EntityQueryImplement">
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
+
     </actions>
     <!--    <project-components>-->
     <!--        <component>-->
