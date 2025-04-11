@@ -383,4 +383,37 @@ public class EasyQueryElementUtil {
     }
 
 
+    /**
+     * 拿到直接树形直接关联的 T 类型元素
+     * 也就是 从顶级一直往下找 找到  T 类型元素 就放到结果中， 不再寻找  T 类型元素 的子节点
+     * @param psiElement
+     * @param expectClass
+     * @reutrn List
+     */
+    public static <T> List<T> getDirectChildOfType(PsiElement psiElement, Class<T> expectClass) {
+        List<T> result = Lists.newArrayList();
+        if (psiElement == null) {
+            return result;
+        }
+        
+        // 使用队列进行广度优先搜索
+        Queue<PsiElement> queue = new LinkedList<>();
+        queue.offer(psiElement);
+        
+        while (!queue.isEmpty()) {
+            PsiElement current = queue.poll();
+            PsiElement[] children = current.getChildren();
+            
+            for (PsiElement child : children) {
+                if (expectClass.isInstance(child)) {
+                    result.add((T) child);
+                } else {
+                    queue.offer(child);
+                }
+            }
+        }
+        
+        return result;
+        }
+
 }
