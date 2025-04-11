@@ -52,23 +52,32 @@ public class ProjectStartupHelper {
      * @param project 当前项目
      */
     public static void initializeProject(@NotNull Project project) {
-        // 1. 预加载配置，避免在需要时出现同步问题
+        // 在非EDT线程中执行，避免UI卡顿
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                EasyQueryConfigManager.getInstance().getConfig(project);
-            } catch (Exception e) {
-                log.warn("Failed to preload configuration for project: " + project.getName(), e);
-            }
+            // 等待索引完成后再执行初始化操作
+            com.intellij.openapi.project.DumbService.getInstance(project).runWhenSmart(() -> {
+                log.info("索引已完成，开始初始化EasyQuery插件：" + project.getName());
+                
+                // 1. 预加载配置，避免在需要时出现同步问题
+                try {
+                    EasyQueryConfigManager.getInstance().getConfig(project);
+                } catch (Exception e) {
+                    log.warn("Failed to preload configuration for project: " + project.getName(), e);
+                }
+
+                // 2. 注册文件编辑器事件监听
+                // 必须在EDT线程中执行UI相关操作
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    registerFileEditorListener(project);
+                });
+
+                // 3. 标记生成的源代码根目录 - 在EDT线程中安全执行（在这里调用总是不生效，可能是太早了，现在放到Action里面）
+        //        updateGeneratedSourceRoot(project);
+
+                // 4. 在项目启动时运行EasyQuery检查（已在后台线程中）
+                runEasyQueryInspection(project);
+            });
         });
-
-        // 2. 注册文件编辑器事件监听
-        registerFileEditorListener(project);
-
-        // 3. 标记生成的源代码根目录 - 在EDT线程中安全执行（在这里调用总是不生效，可能是太早了，现在放到Action里面）
-//        updateGeneratedSourceRoot(project);
-
-        // 4. 在项目启动时运行EasyQuery检查
-        runEasyQueryInspection(project);
     }
 
     /**
@@ -196,19 +205,22 @@ public class ProjectStartupHelper {
 
     private static void runEasyQueryInspection(Project project) {
         try {
-            // 在后台线程中执行检查，避免EDT线程阻塞
-            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                try {
-                    log.info("启动时运行EasyQuery检查：" + project.getName());
-                    // 使用RunEasyQueryInspectionAction中的方法运行检查
-                    RunEasyQueryInspectionAction inspectionAction = new RunEasyQueryInspectionAction();
-                    inspectionAction.runInspectionForProject(project);
-                } catch (Exception e) {
-                    log.warn("后台线程中运行EasyQuery检查失败", e);
-                }
-            });
+            // 确保在非EDT线程执行
+            if (ApplicationManager.getApplication().isDispatchThread()) {
+                log.info("在EDT线程中调用runEasyQueryInspection，转移到后台线程执行");
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    runEasyQueryInspection(project);
+                });
+                return;
+            }
+            
+            // 索引已经准备好了（由于外层的DumbService.runWhenSmart），直接执行
+            log.info("启动时运行EasyQuery检查：" + project.getName());
+            // 使用RunEasyQueryInspectionAction中的方法运行检查
+            RunEasyQueryInspectionAction inspectionAction = new RunEasyQueryInspectionAction();
+            inspectionAction.runInspectionForProject(project);
         } catch (Exception e) {
-            log.warn("启动时运行EasyQuery检查失败", e);
+            log.warn("运行EasyQuery检查失败", e);
         }
     }
 }

@@ -112,8 +112,47 @@ public class EasyQueryConfigManager {
      * @return 是否使用了 easy-query
      */
     public static boolean isProjectUsingEasyQuery(Project project) {
+        // 检查当前是否在EDT线程上
+        if (com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread()) {
+            log.info("在EDT线程上调用isProjectUsingEasyQuery，返回缓存结果或默认值，避免EDT线程阻塞");
+            
+            // 如果已有缓存结果，直接返回
+            Boolean result = projectUsingEasyQuery.get(project);
+            if (result != null) {
+                return result;
+            }
+            
+            // 没有缓存结果，在后台线程中进行实际检查
+            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                isProjectUsingEasyQueryInBackground(project); // 在后台线程中执行实际检查
+            });
+            
+            // 默认返回false，避免EDT线程阻塞
+            return false;
+        }
+
+        return isProjectUsingEasyQueryInBackground(project);
+    }
+    
+    /**
+     * 在后台线程中检查项目是否使用了 easy-query
+     * @param project 当前项目
+     * @return 是否使用了 easy-query
+     */
+    private static boolean isProjectUsingEasyQueryInBackground(Project project) {
         return projectUsingEasyQuery.computeIfAbsent(project, p -> {
             try {
+                // 检查索引是否已准备好
+                if (com.intellij.openapi.project.DumbService.getInstance(project).isDumb()) {
+                    log.info("索引未准备好，默认返回false，将在索引完成后重新检查");
+                    // 在DumbService中安排任务，当索引准备好时执行
+                    com.intellij.openapi.project.DumbService.getInstance(project).runWhenSmart(() -> {
+                        // 清除缓存，以便下次检查时重新计算
+                        invalidateProjectCache(project);
+                    });
+                    return false;
+                }
+                
                 // 通过查找关键类来判断是否使用了 easy-query
                 PsiClass columnClass = com.intellij.openapi.application.ReadAction.compute(() -> JavaPsiFacade.getInstance(project)
                         .findClass(EASY_QUERY_COLUMN_CLASS, GlobalSearchScope.allScope(project)));
