@@ -562,6 +562,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
         problemTree.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                // 双击: 跳转并显示 QuickFix
                 if (e.getClickCount() == 2) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)
                             problemTree.getLastSelectedPathComponent();
@@ -570,12 +571,35 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
                     Object userObject = node.getUserObject();
                     if (userObject instanceof ProblemDisplayItem) {
-                        ProblemDisplayItem item = (ProblemDisplayItem) userObject;
+                        final ProblemDisplayItem item = (ProblemDisplayItem) userObject; // final for popup logic
 
+                        // 1. 执行导航 (现有代码)
                         if (item.getVirtualFile().isValid()) {
                             OpenFileDescriptor descriptor = new OpenFileDescriptor(
                                     project, item.getVirtualFile(), item.getOffset());
-                            FileEditorManager.getInstance(project).openTextEditor(descriptor, true);
+                            FileEditorManager.getInstance(project).openTextEditor(descriptor, true); // 使用 openTextEditor 确保编辑器打开
+                        }
+
+                        // 2. 显示 QuickFix 弹出菜单 (调用公共方法)
+                        showQuickFixPopupIfAvailable(e, item, node, project, problemTree);
+                    }
+                // 单击: 只跳转
+                } else if (e.getClickCount() == 1) {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+                            problemTree.getLastSelectedPathComponent();
+
+                    if (node == null) return;
+
+                    Object userObject = node.getUserObject();
+                    if (userObject instanceof ProblemDisplayItem) {
+                        final ProblemDisplayItem item = (ProblemDisplayItem) userObject;
+
+                        // 单击跳转到对应位置
+                        if (item.getVirtualFile().isValid()) {
+                            OpenFileDescriptor descriptor = new OpenFileDescriptor(
+                                    project, item.getVirtualFile(), item.getOffset());
+                            // 使用 navigate(true) 打开文件并尝试获取焦点
+                            descriptor.navigate(true);
                         }
                     }
                 }
@@ -597,73 +621,90 @@ public class RunEasyQueryInspectionAction extends AnAction {
                     int row = problemTree.getRowForLocation(e.getX(), e.getY());
                     if (row >= 0) {
                         problemTree.setSelectionRow(row);
-                        // final 关键字可能需要，以便在 lambda 中访问
                         final DefaultMutableTreeNode node = (DefaultMutableTreeNode)
                                 problemTree.getLastSelectedPathComponent();
                         if (node != null && node.getUserObject() instanceof ProblemDisplayItem) {
-                            // final 关键字可能需要
                             final ProblemDisplayItem item = (ProblemDisplayItem) node.getUserObject();
-                            ProblemDescriptor problemDescriptor = item.getDescriptor();
-                            QuickFix[] fixes = item.getFixes();
-                            if (problemDescriptor != null && fixes != null && fixes.length > 0) {
-                                JPopupMenu popupMenu = new JPopupMenu();
-                                for (final QuickFix fix : fixes) { // final for lambda
-                                    if (fix != null) {
-                                        JMenuItem menuItem = new JMenuItem(fix.getFamilyName());
-                                        menuItem.addActionListener(action -> {
-                                            PsiElement element = problemDescriptor.getPsiElement();
-                                            if (element != null && element.isValid()) {
-                                                com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(
-                                                    project,
-                                                    "ApplyQuickFix: " + fix.getFamilyName(), // 更具体的命令名
-                                                    null,
-                                                    () -> {
-                                                        if (fix instanceof LocalQuickFix) {
-                                                            ((LocalQuickFix) fix).applyFix(project, problemDescriptor);
-                                                            PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
-                                                            PsiFile file = element.getContainingFile();
-                                                            if (file != null && file.isValid()) {
-                                                                Document document = psiDocumentManager.getDocument(file);
-                                                                if (document != null) {
-                                                                    psiDocumentManager.doPostponedOperationsAndUnblockDocument(document); // 确保操作完成
-                                                                    psiDocumentManager.commitDocument(document);
-                                                                    // FileDocumentManager.getInstance().saveDocument(document); // 可选：立即保存文件
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                     // 应用修复的文件
-                                                    element.getContainingFile()
-                                                );
-
-                                                // 标记为已修复并更新节点UI
-                                                item.setFixed(true);
-                                                final DefaultTreeModel model = (DefaultTreeModel) problemTree.getModel();
-                                                // 在EDT线程更新UI
-                                                ApplicationManager.getApplication().invokeLater(() -> {
-                                                      model.nodeChanged(node);
-                                                });
-                                            }
-                                        });
-                                        popupMenu.add(menuItem);
-                                    }
-                                }
-                                // 添加导航选项
-                                popupMenu.addSeparator();
-                                JMenuItem gotoItem = new JMenuItem("跳转到源代码");
-                                gotoItem.addActionListener(action -> {
-                                    if (item.getVirtualFile().isValid()) {
-                                        OpenFileDescriptor descriptor = new OpenFileDescriptor(
-                                                project, item.getVirtualFile(), item.getOffset());
-                                        FileEditorManager.getInstance(project).openTextEditor(descriptor, true);
-                                    }
-                                });
-                                popupMenu.add(gotoItem);
-                                
-                                // 显示弹出菜单
-                                popupMenu.show(problemTree, e.getX(), e.getY());
+                            
+                            // 添加导航逻辑: 右键也跳转到对应位置
+                            if (item.getVirtualFile().isValid()) {
+                                OpenFileDescriptor descriptor = new OpenFileDescriptor(
+                                        project, item.getVirtualFile(), item.getOffset());
+                                // 使用 navigate(true) 来打开文件并尝试获取焦点
+                                descriptor.navigate(true);
                             }
+                            
+                            // 调用新方法显示 QuickFix 菜单
+                            showQuickFixPopupIfAvailable(e, item, node, project, problemTree);
                         }
+                    }
+                }
+            }
+
+            /**
+             * 如果有可用的 QuickFix，则创建并显示弹出菜单。
+             * @param e 鼠标事件，用于定位
+             * @param item 问题项
+             * @param node 对应的树节点
+             * @param project 当前项目
+             * @param problemTree 结果树
+             */
+            private void showQuickFixPopupIfAvailable(MouseEvent e, ProblemDisplayItem item, DefaultMutableTreeNode node, Project project, JTree problemTree) {
+                ProblemDescriptor problemDescriptor = item.getDescriptor();
+                QuickFix[] fixes = item.getFixes();
+
+                // 检查是否有有效的修复项
+                if (problemDescriptor != null && fixes != null && fixes.length > 0) {
+                    JPopupMenu popupMenu = new JPopupMenu();
+                    for (final QuickFix fix : fixes) { // final for lambda
+                        if (fix != null) {
+                            JMenuItem menuItem = new JMenuItem(fix.getFamilyName());
+                            menuItem.addActionListener(action -> {
+                                PsiElement element = problemDescriptor.getPsiElement();
+                                if (element != null && element.isValid()) {
+                                    // 在写入操作中应用修复
+                                    com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(
+                                        project,
+                                        "应用QuickFix: " + fix.getFamilyName(), // 更具体的命令名
+                                        null, // 分组ID，可以为null
+                                        () -> {
+                                            if (fix instanceof LocalQuickFix) {
+                                                ((LocalQuickFix) fix).applyFix(project, problemDescriptor);
+                                                // 提交文档更改
+                                                PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
+                                                PsiFile file = element.getContainingFile();
+                                                if (file != null && file.isValid()) {
+                                                    Document document = psiDocumentManager.getDocument(file);
+                                                    if (document != null) {
+                                                        psiDocumentManager.doPostponedOperationsAndUnblockDocument(document); // 确保操作完成
+                                                        psiDocumentManager.commitDocument(document);
+                                                        // FileDocumentManager.getInstance().saveDocument(document); // 可选：立即保存文件
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        // 应用修复的文件
+                                        element.getContainingFile()
+                                    );
+
+                                    // 标记为已修复并更新节点UI
+                                    item.setFixed(true);
+                                    final DefaultTreeModel model = (DefaultTreeModel) problemTree.getModel();
+                                    // 在EDT线程更新UI
+                                    ApplicationManager.getApplication().invokeLater(() -> {
+                                          model.nodeChanged(node);
+                                    });
+                                }
+                            });
+                            popupMenu.add(menuItem);
+                        }
+                    }
+
+                    // 如果菜单中有修复项，则显示菜单
+                    if (popupMenu.getComponentCount() > 0) {
+                         // 注意：这里不再添加右键菜单独有的 "跳转到源代码" 项
+                         // 如果需要在右键菜单中保留，可以在 handlePopup 调用前或 showQuickFixPopupIfAvailable 内部添加逻辑判断 e.isPopupTrigger()
+                        popupMenu.show(problemTree, e.getX(), e.getY());
                     }
                 }
             }
