@@ -1,14 +1,14 @@
 package com.easy.query.plugin.core.inspection;
 
 import cn.hutool.core.collection.CollectionUtil;
+import com.easy.query.plugin.core.util.EasyQueryElementUtil;
 import com.easy.query.plugin.core.util.StrUtil;
-import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool;
-import com.intellij.codeInspection.LocalQuickFix;
-import com.intellij.codeInspection.ProblemDescriptor;
-import com.intellij.codeInspection.ProblemsHolder;
+import com.intellij.codeInspection.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.InheritanceUtil;
+import com.intellij.psi.JavaPsiFacade;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -75,7 +75,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
             @Override
             public void visitClass(@NotNull PsiClass currentClass) {
                 // 检查当前类是否注入了 EasyEntityQuery，如果没有则无需检查
-                if (Arrays.stream(currentClass.getFields()).noneMatch(field -> field.getType().getCanonicalText().equals("com.easy.query.api.proxy.client.EasyEntityQuery"))) {
+                if (Arrays.stream(currentClass.getAllFields()).noneMatch(field -> field.getType().getCanonicalText().equals("com.easy.query.api.proxy.client.EasyEntityQuery"))) {
                     return;
                 }
 
@@ -110,7 +110,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
                         checkOrderByArguments((PsiExpressionList) argumentsListElement, holder);
                     } else {
                         // 如果 orderBy 后面没有参数列表（可能是不完整的代码），直接报告问题
-                        holder.registerProblem(identifier, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾", addAscQuickFix, addDescQuickFix);
+                        holder.registerProblem(identifier, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
                     }
                 }
             }
@@ -145,7 +145,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
         } else {
             // 如果参数列表为空或包含无法识别的结构 (e.g., orderBy(Function<Proxy, SQLSelectExpression>)), 报告问题
             // 这种情况通常意味着用户可能直接传递了一个字段引用或不完整的 lambda，这在 EasyQuery 中是不推荐的
-            holder.registerProblem(argumentsList, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾, 请不要直接使用 lambda 字段或空参数", addAscQuickFix, addDescQuickFix);
+            holder.registerProblem(argumentsList, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾, 请不要直接使用 lambda 字段或空参数", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
         }
     }
 
@@ -169,7 +169,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
             }
         }
         // 如果不是以 .asc() 或 .desc() 结尾的方法调用，报告问题
-        holder.registerProblem(expression, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾", addAscQuickFix, addDescQuickFix);
+        holder.registerProblem(expression, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() 方法调用作为结尾", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
     }
 
     /**
@@ -181,6 +181,40 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
      * @param holder           用于注册问题的持有者
      */
     private void checkLambdaArgument(PsiLambdaExpression lambdaExpression, ProblemsHolder holder) {
+
+        if (lambdaExpression.getBody() instanceof PsiMethodCallExpression) {
+            // 如果 Lambda 体本身就是一个方法调用，直接检查该调用
+            PsiMethodCallExpression methodCall = (PsiMethodCallExpression) lambdaExpression.getBody();
+            PsiMethod resolvedMethod = methodCall.resolveMethod();
+            if (resolvedMethod == null) {
+                // 这里是异常情况，暂时不考虑
+                return;
+            }
+            // 期待的是调用 asc / desc / expression 方法
+            PsiClass methodContainingClazz = resolvedMethod.getContainingClass();
+            if (methodContainingClazz == null) {
+                return;
+            }
+            if (EasyQueryElementUtil.isExtendAbstractProxyEntity(methodContainingClazz)) {
+                // 这里是异常的，是 Proxy 类里面的方法， 大概率是字段，不能以字段作为结尾
+                holder.registerProblem(methodCall, PROBLEM_PREFIX + "Lambda 体内需要返回以 .asc() / .desc() 结尾的方法调用", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
+                return;
+            }
+
+            String methodContainingClass = methodContainingClazz.getQualifiedName();
+            String methodName = resolvedMethod.getName();
+            if (StrUtil.equalsAny(methodContainingClass, "com.easy.query.core.proxy.SQLSelectExpression")) {
+                if (StrUtil.equalsAny(methodName, "asc", "desc")) {
+                    // 这里是正常的
+                    return;
+                }
+            } else if (StrUtil.equalsAny(methodContainingClass, "com.easy.query.api.proxy.extension.casewhen.CaseWhenEntityBuilder")) {
+                // 这里是正常的
+                return;
+            }
+
+        }
+
         // 查找 Lambda 体内的方法调用
         Collection<PsiMethodCallExpression> methodCalls = PsiTreeUtil.findChildrenOfType(lambdaExpression.getBody(), PsiMethodCallExpression.class);
 
@@ -188,7 +222,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
             // Lambda 体内没有方法调用，可能直接返回了字段，报告问题
             PsiElement lambdaBody = lambdaExpression.getBody();
             if (lambdaBody != null) {
-                holder.registerProblem(lambdaBody, PROBLEM_PREFIX + "Lambda 体内需要返回以 .asc() / .desc() 结尾的方法调用", addAscQuickFix, addDescQuickFix);
+                holder.registerProblem(lambdaBody, PROBLEM_PREFIX + "Lambda 体内需要返回以 .asc() / .desc() 结尾的方法调用", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
             }
             return;
         }
@@ -204,7 +238,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
             // 检查当前方法调用链是否以 .asc() 或 .desc() 结尾
             if (!isMethodChainEndingWithAscDesc(methodCall)) {
                 // 如果调用链没有以 .asc() 或 .desc() 结尾，报告问题
-                holder.registerProblem(methodCall, PROBLEM_PREFIX + "OrderBy语句(Lambda内)需要以 .asc() / .desc() 方法调用作为结尾", addAscQuickFix, addDescQuickFix);
+                holder.registerProblem(methodCall, PROBLEM_PREFIX + "OrderBy语句(Lambda内)需要以 .asc() / .desc() 方法调用作为结尾", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
             }
         }
     }
@@ -228,16 +262,25 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
 
             // 检查当前方法名是否是 asc 或 desc
             if ("asc".equals(methodName) || "desc".equals(methodName)) {
-                // **关键验证**: 检查该 asc/desc 调用是否来自正确的类 (SQLSelectExpression)
+                // **关键验证**: 使用 InheritanceUtil 检查该 asc/desc 调用是否来自正确的类 (SQLSelectExpression 或其子类)
                 PsiMethod resolvedMethod = currentCall.resolveMethod();
-                String methodClassQualifiedName = Optional.ofNullable(resolvedMethod)
-                        .map(PsiMember::getContainingClass)
-                        .map(PsiClass::getQualifiedName)
-                        .orElse(StrUtil.EMPTY);
-                if (methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression")) {
-                    return true; // 找到合法的 .asc() 或 .desc() 结尾
+                if (resolvedMethod != null) {
+                    PsiClass containingClass = resolvedMethod.getContainingClass();
+                    if (containingClass != null) {
+                        // 获取目标基类 SQLSelectExpression
+                        String sqlSelectExpressionFQN = "com.easy.query.core.proxy.SQLSelectExpression";
+                        PsiClass sqlSelectExpressionClass = JavaPsiFacade.getInstance(currentCall.getProject())
+                                .findClass(sqlSelectExpressionFQN, currentCall.getResolveScope());
+
+                        if (sqlSelectExpressionClass != null) {
+                            // 检查当前方法所属的类是否是 SQLSelectExpression 或其子类
+                            if (InheritanceUtil.isInheritorOrSelf(containingClass, sqlSelectExpressionClass, true)) {
+                                return true; // 找到合法的 .asc() 或 .desc() 结尾
+                            }
+                        }
+                    }
                 }
-                // 如果是 asc/desc 但来自错误的类，则继续向上查找，因为它可能是其他方法的调用
+                // 如果类型检查不通过或无法解析，则继续向上查找链，因为它可能是其他方法的调用
             }
 
             // 获取调用链中的前一个表达式

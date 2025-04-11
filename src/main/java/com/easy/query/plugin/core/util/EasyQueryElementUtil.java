@@ -334,4 +334,24 @@ public class EasyQueryElementUtil {
     }
 
 
+    /**
+     * 判断实体类是否继承自 AbstractProxyEntity
+     * @param psiClass 实体类
+     * @return true: 继承了 AbstractProxyEntity, false: 没有继承
+     */
+    public static boolean isExtendAbstractProxyEntity(PsiClass psiClass) {
+        if (psiClass == null) {
+            return false;
+        }
+        PsiClassType[] superTypes = psiClass.getSuperTypes();
+        for (PsiClassType superType : superTypes) {
+            PsiClass resolvedClass = superType.resolve();
+            if (resolvedClass != null && "com.easy.query.core.proxy.AbstractProxyEntity".equals(resolvedClass.getQualifiedName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }
