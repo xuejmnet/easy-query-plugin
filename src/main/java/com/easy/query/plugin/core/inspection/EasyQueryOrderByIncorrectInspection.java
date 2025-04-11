@@ -159,12 +159,19 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
         PsiExpression expression = expressionStatement.getExpression();
         if (expression instanceof PsiMethodCallExpression) {
             // 检查表达式是否已经是 .asc() 或 .desc() 调用
+            // PsiTreeUtil.findChildrenOfType(expression,PsiMethodCallExpression.class).stream().collect(Collectors.toList()).get(1).resolveMethod()
+            // com.easy.query.core.proxy.AbstractProxyEntity#expression
+            // 看看 表达式里面是否有 expression ，如果有的话，则不进行校验， 因为表达式能实现的太多了
+            if (EasyQueryElementUtil.hasAbstractExpressionMethodCall((PsiMethodCallExpression) expression)) {
+                return;
+            }
+
             PsiMethod resolvedMethod = ((PsiMethodCallExpression) expression).resolveMethod();
             String resolvedMethodName = Optional.ofNullable(resolvedMethod).map(PsiMethod::getName).orElse(StrUtil.EMPTY);
             String methodClassQualifiedName = Optional.ofNullable(resolvedMethod).map(PsiMember::getContainingClass).map(PsiClass::getQualifiedName).orElse(StrUtil.EMPTY);
 
             // 如果已经是来自 SQLSelectExpression 的 asc 或 desc 调用，则认为是合法的
-            if (StrUtil.equalsAny(resolvedMethodName, "asc", "desc") && methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression")) {
+            if ( methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression")) {
                 return; // 合法调用，无需报告
             }
         }
@@ -185,6 +192,10 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
         if (lambdaExpression.getBody() instanceof PsiMethodCallExpression) {
             // 如果 Lambda 体本身就是一个方法调用，直接检查该调用
             PsiMethodCallExpression methodCall = (PsiMethodCallExpression) lambdaExpression.getBody();
+
+            if (EasyQueryElementUtil.hasAbstractExpressionMethodCall(methodCall)) {
+                return;
+            }
             PsiMethod resolvedMethod = methodCall.resolveMethod();
             if (resolvedMethod == null) {
                 // 这里是异常情况，暂时不考虑
@@ -204,10 +215,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
             String methodContainingClass = methodContainingClazz.getQualifiedName();
             String methodName = resolvedMethod.getName();
             if (StrUtil.equalsAny(methodContainingClass, "com.easy.query.core.proxy.SQLSelectExpression")) {
-                if (StrUtil.equalsAny(methodName, "asc", "desc")) {
-                    // 这里是正常的
-                    return;
-                }
+                return;
             } else if (StrUtil.equalsAny(methodContainingClass, "com.easy.query.api.proxy.extension.casewhen.CaseWhenEntityBuilder")) {
                 // 这里是正常的
                 return;

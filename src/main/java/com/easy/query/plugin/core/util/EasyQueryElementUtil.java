@@ -14,6 +14,7 @@ import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -351,6 +352,34 @@ public class EasyQueryElementUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * 查看方法调用中是否包含 com.easy.query.core.proxy.AbstractProxyEntity#expression 的调用
+     * @param methodCallExpression 方法调用表达式
+     * @return true: 包含, false: 不包含
+     */
+    public static boolean hasAbstractExpressionMethodCall(PsiMethodCallExpression methodCallExpression) {
+        if (methodCallExpression == null) {
+            return false;
+        }
+        return PsiTreeUtil.findChildrenOfType(methodCallExpression, PsiMethodCallExpression.class).stream()
+                .anyMatch(exp -> {
+                    PsiMethod expMethod = exp.resolveMethod();
+                    if (expMethod == null) {
+                        return false;
+                    }
+
+                    PsiClass expMethodClass = expMethod.getContainingClass();
+                    if (expMethodClass == null) {
+                        return false;
+                    }
+
+                    String expMethodClassName = expMethodClass.getQualifiedName();
+                    String expMethodName = expMethod.getName();
+
+                    return "com.easy.query.core.proxy.AbstractProxyEntity".equals(expMethodClassName) && "expression".equals(expMethodName);
+                });
     }
 
 
