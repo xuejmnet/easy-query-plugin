@@ -85,6 +85,17 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
 
     public static void createAptFile(List<VirtualFile> virtualFiles, Project project, boolean allCompileFrom) {
 //        Project project = ProjectUtils.getCurrentProject();
+        // 检查索引是否已准备好
+        if (DumbService.getInstance(project).isDumb()) {
+            log.info("索引未准备好，将在索引完成后重新执行");
+            // 复制列表，避免在lambda中引用非final变量
+            final List<VirtualFile> finalVirtualFiles = new ArrayList<>(virtualFiles);
+            DumbService.getInstance(project).runWhenSmart(() -> {
+                createAptFile(finalVirtualFiles, project, allCompileFrom);
+            });
+            return;
+        }
+        
         virtualFiles = virtualFiles.stream()
             .filter(oldFile -> {
                 if (Objects.isNull(oldFile)) {
@@ -267,6 +278,11 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         if (!currentFile.isValid()) {
             return false;
         }
+        // 检查索引是否准备好
+        if (DumbService.getInstance(project).isDumb()) {
+            return false; // 在索引未准备好时返回false，稍后会重试
+        }
+        
         PsiManager psiManager = PsiManager.getInstance(project);
         PsiFile psiFile = psiManager.findFile(currentFile);
         // 支持java和kotlin

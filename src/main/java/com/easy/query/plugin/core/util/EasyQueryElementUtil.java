@@ -14,6 +14,7 @@ import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -194,12 +195,16 @@ public class EasyQueryElementUtil {
             entityOnlyKeysPermit.add("value");
             dtoRemoveKeys.add("value");
         }
+        dtoRemoveKeys.add("sqlExpression"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("sqlConversion"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
 
-        ;
+        List<String> ignoreKeys = Lists.newArrayList();
+
         return AnnoAttrCompareResult.newCompare(entityAnnoColumnAttrMap, dtoAnnoColumnAttrMap)
                 .withEntityOnlyKeysPermit(entityOnlyKeysPermit)
                 .withDtoOnlyKeysPermit(dtoOnlyKeysPermit)
                 .withDtoRemoveKeys(dtoRemoveKeys)
+                .withIgnoredKeys(ignoreKeys)
                 .compare();
     }
 
@@ -293,7 +298,7 @@ public class EasyQueryElementUtil {
 
             AnnoAttrCompareResult compareResult = AnnoAttrCompareResult.newCompare(entityAnnoAttrMap, dtoAnnoAttrMap)
                     .withDtoRemoveKeys(Lists.newArrayList(dtoRemoveKeys))
-                    .withIgnoredKeys(Lists.newArrayList("orderByProps")) // 忽略 orderByProps 检查
+                    .withIgnoredKeys(Lists.newArrayList("orderByProps","limit","offset")) // 忽略 orderByProps 检查
                     .compare();
             Map<String, PsiNameValuePair> fixedAttrMap = compareResult.getFixedAttrMap();
             List<String> problemMsgList = compareResult.getProblemMsgList();
@@ -329,5 +334,86 @@ public class EasyQueryElementUtil {
 
     }
 
+
+    /**
+     * 判断实体类是否继承自 AbstractProxyEntity
+     * @param psiClass 实体类
+     * @return true: 继承了 AbstractProxyEntity, false: 没有继承
+     */
+    public static boolean isExtendAbstractProxyEntity(PsiClass psiClass) {
+        if (psiClass == null) {
+            return false;
+        }
+        PsiClassType[] superTypes = psiClass.getSuperTypes();
+        for (PsiClassType superType : superTypes) {
+            PsiClass resolvedClass = superType.resolve();
+            if (resolvedClass != null && "com.easy.query.core.proxy.AbstractProxyEntity".equals(resolvedClass.getQualifiedName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 查看方法调用中是否包含 com.easy.query.core.proxy.AbstractProxyEntity#expression 的调用
+     * @param methodCallExpression 方法调用表达式
+     * @return true: 包含, false: 不包含
+     */
+    public static boolean hasAbstractExpressionMethodCall(PsiMethodCallExpression methodCallExpression) {
+        if (methodCallExpression == null) {
+            return false;
+        }
+        return PsiTreeUtil.findChildrenOfType(methodCallExpression, PsiMethodCallExpression.class).stream()
+                .anyMatch(exp -> {
+                    PsiMethod expMethod = exp.resolveMethod();
+                    if (expMethod == null) {
+                        return false;
+                    }
+
+                    PsiClass expMethodClass = expMethod.getContainingClass();
+                    if (expMethodClass == null) {
+                        return false;
+                    }
+
+                    String expMethodClassName = expMethodClass.getQualifiedName();
+                    String expMethodName = expMethod.getName();
+
+                    return "com.easy.query.core.proxy.AbstractProxyEntity".equals(expMethodClassName) && "expression".equals(expMethodName);
+                });
+    }
+
+
+    /**
+     * 拿到直接树形直接关联的 T 类型元素
+     * 也就是 从顶级一直往下找 找到  T 类型元素 就放到结果中， 不再寻找  T 类型元素 的子节点
+     * @param psiElement
+     * @param expectClass
+     * @reutrn List
+     */
+    public static <T> List<T> getDirectChildOfType(PsiElement psiElement, Class<T> expectClass) {
+        List<T> result = Lists.newArrayList();
+        if (psiElement == null) {
+            return result;
+        }
+        
+        // 使用队列进行广度优先搜索
+        Queue<PsiElement> queue = new LinkedList<>();
+        queue.offer(psiElement);
+        
+        while (!queue.isEmpty()) {
+            PsiElement current = queue.poll();
+            PsiElement[] children = current.getChildren();
+            
+            for (PsiElement child : children) {
+                if (expectClass.isInstance(child)) {
+                    result.add((T) child);
+                } else {
+                    queue.offer(child);
+                }
+            }
+        }
+        
+        return result;
+        }
 
 }

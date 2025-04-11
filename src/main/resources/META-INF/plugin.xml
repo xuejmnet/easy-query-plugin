@@ -10,6 +10,9 @@
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="326308290@qq.com" url="https://github.com/xuejmnet">xuejiaming</vendor>
 
+    <!-- 多语资源，没有的话 会一直WARNING -->
+    <resource-bundle>messages.EasyQueryBundle</resource-bundle>
+
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
@@ -246,22 +249,29 @@
         <typedHandler implementation="com.easy.query.plugin.core.contributor.EasyContributorTypedHandler"/>
 
         <localInspection groupPath="Java" language="JAVA" shortName="EasyQueryFieldMissMatch"
-                         bundle="messages.InspectionGadgetsBundle"
-                         groupBundle="messages.InspectionsBundle"
-                         groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
+                         bundle="messages.EasyQueryBundle"
+                         key="inspection.field.miss.match.display.name"
+                         groupKey="easy-query.probable.bugs"
+                         enabledByDefault="true"
+                         level="ERROR"
                          implementationClass="com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection"/>
 
-        <localInspection language="JAVA" groupPath="Java" shortName="EasyQueryOrderByIncorrectInspection"
-                         bundle="messages.InspectionGadgetsBundle"
-                            groupBundle="messages.InspectionsBundle"
-                            groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
-                            implementationClass="com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection"/>
-
-        <localInspection language="JAVA" groupPath="Java" shortName="EasyQueryWhereExpressionInspection"
-                         bundle="messages.InspectionGadgetsBundle"
-                            groupBundle="messages.InspectionsBundle"
-                            groupKey="group.names.probable.bugs" enabledByDefault="true" level="ERROR"
-                            implementationClass="com.easy.query.plugin.core.inspection.EasyQueryWhereExpressionInspection"/>
+        <localInspection language="JAVA"
+                         shortName="EasyQueryOrderByIncorrect"
+                         bundle="messages.EasyQueryBundle"
+                         key="inspection.order.by.incorrect.display.name"
+                         groupKey="easy-query.probable.bugs"
+                         enabledByDefault="true"
+                         level="ERROR"
+                         implementationClass="com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection"/>
+        <localInspection language="JAVA"
+                         shortName="EasyQuerySetColumns"
+                         bundle="messages.EasyQueryBundle"
+                         key="inspection.set.columns.display.name"
+                         groupKey="easy-query.probable.bugs"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         implementationClass="com.easy.query.plugin.core.inspection.EasyQuerySetColumnsInspection"/>
 
         <customJavadocTagProvider implementation="com.easy.query.plugin.core.provider.EasyQueryJavaDocTagProvider"/>
 
@@ -358,12 +368,21 @@
                 text="TableEntityGenerate">
             <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>
         </action>
+        <action id="com.easy.query.plugin.action.RunEasyQueryInspectionAction"
+                class="com.easy.query.plugin.action.RunEasyQueryInspectionAction"
+                icon="/icons/eq.svg"
+                text="Run EasyQuery Project Scan"
+                description="Scans the project for potential EasyQuery expression issues.">
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+        </action>
         <action id="com.easy.query.plugin.action.EntityQueryImplementAction"
                 icon="/icons/eq.svg"
                 class="com.easy.query.plugin.action.EntityQueryImplementAction"
                 text="EntityQueryImplement">
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
+
     </actions>
     <!--    <project-components>-->
     <!--        <component>-->
