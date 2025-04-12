@@ -18,6 +18,7 @@ public class SQLPreviewDialog extends JDialog {
     private JTextArea selectSQLText;
     private JTextArea previewSQLText;
     private JButton convertButton;
+    private JButton mergeButton;
     private static final char MARK = '?';
     private static final BasicFormatter FORMATTER = new BasicFormatter();
 
@@ -48,6 +49,12 @@ public class SQLPreviewDialog extends JDialog {
         convertButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onConvert();
+            }
+        });
+
+        mergeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                mergeNewlinesSQL();
             }
         });
 
@@ -88,6 +95,23 @@ public class SQLPreviewDialog extends JDialog {
 //        System.exit(0);
 //    }
 
+    private void mergeNewlinesSQL(){
+
+        String selectSQL = selectSQLText.getText();
+        if (StringUtils.isNotBlank(selectSQL)) {
+            String selectedText = selectSQLText.getSelectedText();
+            if(StringUtils.isNotBlank(selectedText)){
+                int selectionStart = selectSQLText.getSelectionStart();
+                int selectionEnd = selectSQLText.getSelectionEnd();
+                String prefix = selectSQL.substring(0, selectionStart);
+                String next = selectSQL.substring(selectionEnd);
+                String newSelectedText = removeNewlines(selectedText);
+                selectSQL = prefix + newSelectedText + next;
+                selectSQLText.setText(selectSQL);
+            }
+        }
+    }
+
     private void onConvert() {
         try {
             onConvert0();
@@ -96,11 +120,18 @@ public class SQLPreviewDialog extends JDialog {
         }
     }
 
+    public static String removeNewlines(String input) {
+        if (input == null) {
+            return null; // 或返回空字符串 "" 根据需求调整
+        }
+        return input.replaceAll("[\\r\\n]", "");
+    }
     private void onConvert0() {
         String selectSQL = selectSQLText.getText();
         if (StringUtils.isBlank(selectSQL)) {
             previewSQLText.setText("");
         } else {
+
             StringBuilder sqlBuilder = new StringBuilder();
             String[] selectSQLs = selectSQL.split("\n");
             List<String> sqlList = Arrays.stream(selectSQLs)
