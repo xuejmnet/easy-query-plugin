@@ -48,9 +48,9 @@ public class BasicFormatter {
 
         LOGICAL.add("and");
         LOGICAL.add("or");
-        LOGICAL.add("when");
-        LOGICAL.add("else");
-        LOGICAL.add("end");
+//        LOGICAL.add("when");
+//        LOGICAL.add("else");
+//        LOGICAL.add("end");
 
         QUANTIFIERS.add("in");
         QUANTIFIERS.add("all");
@@ -110,44 +110,44 @@ public class BasicFormatter {
                 lcToken = token.toLowerCase(Locale.ROOT);
 
                 switch (token) {
-                case "`": {
-                    String t;
-                    do {
-                        t = tokens.nextToken();
-                        token += t;
+                    case "`": {
+                        String t;
+                        do {
+                            t = tokens.nextToken();
+                            token += t;
+                        }
+                        // cannot handle single quotes
+                        while (!"`".equals(t) && tokens.hasMoreTokens());
+                        break;
                     }
-                    // cannot handle single quotes
-                    while (!"`".equals(t) && tokens.hasMoreTokens());
-                    break;
-                }
-                case "'": {
-                    String t;
-                    do {
-                        t = tokens.nextToken();
-                        token += t;
+                    case "'": {
+                        String t;
+                        do {
+                            t = tokens.nextToken();
+                            token += t;
+                        }
+                        // cannot handle single quotes
+                        while (!"'".equals(t) && tokens.hasMoreTokens());
+                        break;
                     }
-                    // cannot handle single quotes
-                    while (!"'".equals(t) && tokens.hasMoreTokens());
-                    break;
-                }
-                case "\"": {
-                    String t;
-                    do {
-                        t = tokens.nextToken();
-                        token += t;
-                    } while (!"\"".equals(t) && tokens.hasMoreTokens());
-                    break;
-                }
-                // SQL Server uses "[" and "]" to escape reserved words
-                // see SQLServerDialect.openQuote and SQLServerDialect.closeQuote
-                case "[": {
-                    String t;
-                    do {
-                        t = tokens.nextToken();
-                        token += t;
-                    } while (!"]".equals(t) && tokens.hasMoreTokens());
-                    break;
-                }
+                    case "\"": {
+                        String t;
+                        do {
+                            t = tokens.nextToken();
+                            token += t;
+                        } while (!"\"".equals(t) && tokens.hasMoreTokens());
+                        break;
+                    }
+                    // SQL Server uses "[" and "]" to escape reserved words
+                    // see SQLServerDialect.openQuote and SQLServerDialect.closeQuote
+                    case "[": {
+                        String t;
+                        do {
+                            t = tokens.nextToken();
+                            token += t;
+                        } while (!"]".equals(t) && tokens.hasMoreTokens());
+                        break;
+                    }
                 }
 
                 if (afterByOrSetOrFromOrSelect && ",".equals(token)) {
@@ -353,7 +353,7 @@ public class BasicFormatter {
             final char begin = tok.charAt(0);
             final boolean isIdentifier = Character.isJavaIdentifierStart(begin) || '"' == begin;
             return isIdentifier && !LOGICAL.contains(tok) && !END_CLAUSES.contains(tok) && !QUANTIFIERS.contains(tok)
-                    && !DML.contains(tok) && !MISC.contains(tok);
+                && !DML.contains(tok) && !MISC.contains(tok);
         }
 
         private static boolean isWhitespace(String token) {
