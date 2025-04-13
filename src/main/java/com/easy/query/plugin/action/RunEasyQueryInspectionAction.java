@@ -1,5 +1,6 @@
 package com.easy.query.plugin.action;
 
+import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.ReflectUtil;
 import com.easy.query.plugin.config.EasyQueryConfigManager;
 import com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection;
@@ -383,16 +384,25 @@ public class RunEasyQueryInspectionAction extends AnAction {
         if (toolWindow == null) {
             // 使用 RegisterToolWindowTask.closable 正确注册工具窗口
             // 提供默认图标，因为参数不能为 null
-            RegisterToolWindowTask task = RegisterToolWindowTask.closable(
+            Class<Object> objectClass = ClassUtil.loadClass("com.intellij.openapi.wm.RegisterToolWindowTask");
+            Method closable = ReflectUtil.getMethod(objectClass, "closable", String.class, Icon.class, ToolWindowAnchor.class);
+            if(closable!=null){
+                Object task = ReflectUtil.invoke(null, closable,
                     TOOL_WINDOW_ID,
                     AllIcons.General.Information, // 使用默认图标
                     ToolWindowAnchor.BOTTOM // 直接设置锚点
-            );
+                    );
+//                RegisterToolWindowTask.closable(
+//                    TOOL_WINDOW_ID,
+//                    AllIcons.General.Information, // 使用默认图标
+//                    ToolWindowAnchor.BOTTOM // 直接设置锚点
+//                );
 
 
-            Method registerToolWindowMethod = ReflectUtil.getMethod(ToolWindowManager.class, "registerToolWindow",RegisterToolWindowTask.class);
-            if (registerToolWindowMethod != null) {
-                toolWindow =  ReflectUtil.invoke(toolWindowManager, registerToolWindowMethod,task);
+                Method registerToolWindowMethod = ReflectUtil.getMethod(ToolWindowManager.class, "registerToolWindow",RegisterToolWindowTask.class);
+                if (registerToolWindowMethod != null) {
+                    toolWindow =  ReflectUtil.invoke(toolWindowManager, registerToolWindowMethod,task);
+                }
             }
             // 在继续之前检查注册是否成功
             if (toolWindow == null) {

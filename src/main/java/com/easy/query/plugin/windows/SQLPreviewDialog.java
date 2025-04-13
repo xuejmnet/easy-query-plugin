@@ -20,7 +20,6 @@ public class SQLPreviewDialog extends JDialog {
     private JTextArea previewSQLText;
     private JButton convertButton;
     private JButton mergeButton;
-    private JButton convertButton2;
     private static final char MARK = '?';
     private static final BasicFormatter FORMATTER = new BasicFormatter();
     private static final BasicFormatter2 FORMATTER2 = new BasicFormatter2();
@@ -50,12 +49,6 @@ public class SQLPreviewDialog extends JDialog {
         DialogUtil.centerShow(this);
 
         convertButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onConvert(false);
-            }
-        });
-
-        convertButton2.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onConvert(true);
             }
@@ -167,11 +160,7 @@ public class SQLPreviewDialog extends JDialog {
             }
 
             previewSQLText.setText(sqlBuilder.toString());
-            if(newConvert){
-                convertButton2.setText("转换↓ 一共转换成" + j + "条sql");
-            }else{
-                convertButton.setText("转换↓ 一共转换成" + j + "条sql");
-            }
+            convertButton.setText("转换↓ 一共转换成" + j + "条sql");
         }
     }
 
