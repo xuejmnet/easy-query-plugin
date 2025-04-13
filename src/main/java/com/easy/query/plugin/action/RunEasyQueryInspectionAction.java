@@ -399,7 +399,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
 //                );
 
 
-                Method registerToolWindowMethod = ReflectUtil.getMethod(ToolWindowManager.class, "registerToolWindow",RegisterToolWindowTask.class);
+                Method registerToolWindowMethod = ReflectUtil.getMethod(ToolWindowManager.class, "registerToolWindow",objectClass);
                 if (registerToolWindowMethod != null) {
                     toolWindow =  ReflectUtil.invoke(toolWindowManager, registerToolWindowMethod,task);
                 }
