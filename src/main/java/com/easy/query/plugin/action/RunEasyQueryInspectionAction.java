@@ -6,6 +6,7 @@ import com.easy.query.plugin.config.EasyQueryConfigManager;
 import com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection;
 import com.easy.query.plugin.core.inspection.EasyQuerySetColumnsInspection;
+import com.easy.query.plugin.core.util.MyRegisterToolWindowTask;
 import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool;
 import com.intellij.codeInspection.InspectionManager;
 import com.intellij.codeInspection.LocalQuickFix;
@@ -72,31 +73,31 @@ import java.util.stream.Collectors;
 /**
  * 在整个项目上运行 EasyQuery 检查的 Action
  * 并在工具窗口中显示结果。
+ *
  * @author link2fun
  */
 public class RunEasyQueryInspectionAction extends AnAction {
 
     private static final Logger LOG = Logger.getInstance(RunEasyQueryInspectionAction.class);
-    private static final String TOOL_WINDOW_ID = "EasyQuery Issues";
 
     /**
      * 动态扫描并查找所有检查器
      */
     private List<AbstractBaseJavaLocalInspectionTool> findAllInspections() {
         List<AbstractBaseJavaLocalInspectionTool> result = new ArrayList<>();
-        
+
         try (ScanResult scanResult = new ClassGraph()
-                .enableClassInfo()
-                .acceptPackages("com.easy.query.plugin")
-                .scan()) {
-            
+            .enableClassInfo()
+            .acceptPackages("com.easy.query.plugin")
+            .scan()) {
+
             // 查找所有继承自 AbstractBaseJavaLocalInspectionTool 的类
             for (ClassInfo classInfo : scanResult.getSubclasses(AbstractBaseJavaLocalInspectionTool.class.getName())) {
                 try {
                     // 确保类不是抽象的
                     if (!classInfo.isAbstract()) {
                         Class<?> clazz = classInfo.loadClass();
-                        AbstractBaseJavaLocalInspectionTool inspection = 
+                        AbstractBaseJavaLocalInspectionTool inspection =
                             (AbstractBaseJavaLocalInspectionTool) clazz.getDeclaredConstructor().newInstance();
                         result.add(inspection);
                     }
@@ -113,7 +114,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
                 new EasyQuerySetColumnsInspection()
             ));
         }
-        
+
         return result;
     }
 
@@ -186,7 +187,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
                 // 定义搜索 Java 文件的范围
                 GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
                 Collection<VirtualFile> javaFiles = ReadAction.compute(() ->
-                        FileTypeIndex.getFiles(StdFileTypes.JAVA, projectScope));
+                    FileTypeIndex.getFiles(StdFileTypes.JAVA, projectScope));
 
                 int processedFiles = 0;
                 int totalFiles = javaFiles.size();
@@ -254,10 +255,10 @@ public class RunEasyQueryInspectionAction extends AnAction {
                                 if (virtualFile != null && document != null) {
                                     int offset = element.getTextOffset();
                                     if (offset >= 0 && offset <= document.getTextLength()) {
-                                         int correctedOffset = Math.min(offset, Math.max(0, document.getTextLength() -1));
-                                         if(correctedOffset<0){
-                                             correctedOffset=0;
-                                         }
+                                        int correctedOffset = Math.min(offset, Math.max(0, document.getTextLength() - 1));
+                                        if (correctedOffset < 0) {
+                                            correctedOffset = 0;
+                                        }
                                         int displayLineNumber = document.getLineNumber(correctedOffset) + 1;
                                         String description = problem.getDescriptionTemplate();
                                         ProblemHighlightType highlightType = problem.getHighlightType();
@@ -278,14 +279,14 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
                                         // 添加到字段 displayItems
                                         displayItems.add(new ProblemDisplayItem(
-                                                String.format("%s:%d - %s", file.getName(), displayLineNumber, description),
-                                                virtualFile,
-                                                offset,
-                                                highlightType,
-                                                inspectionName,
-                                                isSuppressed,
-                                                problem,
-                                                currentFixes));
+                                            String.format("%s:%d - %s", file.getName(), displayLineNumber, description),
+                                            virtualFile,
+                                            offset,
+                                            highlightType,
+                                            inspectionName,
+                                            isSuppressed,
+                                            problem,
+                                            currentFixes));
                                     }
                                 }
                             }
@@ -301,9 +302,9 @@ public class RunEasyQueryInspectionAction extends AnAction {
                     if (project.isDisposed()) return;
                     // 使用字段 displayItems
                     boolean hasReportableIssues = displayItems.stream().anyMatch(item ->
-                                !item.isSuppressed() &&
-                                (item.getSeverity() == ProblemSeverity.ERROR || item.getSeverity() == ProblemSeverity.WARNING)
-                        );
+                        !item.isSuppressed() &&
+                            (item.getSeverity() == ProblemSeverity.ERROR || item.getSeverity() == ProblemSeverity.WARNING)
+                    );
                     if (!hasReportableIssues) {
                         // 使用 NotificationUtils 显示成功通知
                         NotificationUtils.notifySuccess("未发现 EasyQuery 问题。", "扫描完成", project);
@@ -361,7 +362,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
                                 PsiAnnotation[] parentAnnotations = parentModifierList.getAnnotations();
                                 for (PsiAnnotation annotation : parentAnnotations) {
                                     String name = annotation.getNameReferenceElement() != null ? annotation.getNameReferenceElement().getReferenceName() : null;
-                                     if ("SuppressWarnings".equals(name) && "java.lang.SuppressWarnings".equals(annotation.getQualifiedName())) {
+                                    if ("SuppressWarnings".equals(name) && "java.lang.SuppressWarnings".equals(annotation.getQualifiedName())) {
                                         isSuppressed = true;
                                         break;
                                     }
@@ -379,34 +380,19 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
     private void showResultsInToolWindow(Project project, List<ProblemDisplayItem> allItems, boolean activateWindow) {
         ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-        ToolWindow toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID);
+        ToolWindow toolWindow = toolWindowManager.getToolWindow(MyRegisterToolWindowTask.TOOL_WINDOW_ID);
         // 如果工具窗口不存在，则注册
         if (toolWindow == null) {
             // 使用 RegisterToolWindowTask.closable 正确注册工具窗口
             // 提供默认图标，因为参数不能为 null
-            Class<Object> objectClass = ClassUtil.loadClass("com.intellij.openapi.wm.RegisterToolWindowTask");
-            Method closable = ReflectUtil.getMethod(objectClass, "closable", String.class, Icon.class, ToolWindowAnchor.class);
-            if(closable!=null){
-                Object task = ReflectUtil.invoke(null, closable,
-                    TOOL_WINDOW_ID,
-                    AllIcons.General.Information, // 使用默认图标
-                    ToolWindowAnchor.BOTTOM // 直接设置锚点
-                    );
-//                RegisterToolWindowTask.closable(
-//                    TOOL_WINDOW_ID,
-//                    AllIcons.General.Information, // 使用默认图标
-//                    ToolWindowAnchor.BOTTOM // 直接设置锚点
-//                );
 
-
-                Method registerToolWindowMethod = ReflectUtil.getMethod(ToolWindowManager.class, "registerToolWindow",objectClass);
-                if (registerToolWindowMethod != null) {
-                    toolWindow =  ReflectUtil.invoke(toolWindowManager, registerToolWindowMethod,task);
-                }
+            Object task = MyRegisterToolWindowTask.closable(MyRegisterToolWindowTask.TOOL_WINDOW_ID, AllIcons.General.Information, ToolWindowAnchor.BOTTOM);
+            if (task != null) {
+                toolWindow = MyRegisterToolWindowTask.registerToolWindow(toolWindowManager, task);
             }
             // 在继续之前检查注册是否成功
             if (toolWindow == null) {
-                LOG.error("注册工具窗口失败: " + TOOL_WINDOW_ID);
+                LOG.error("注册工具窗口失败: " + MyRegisterToolWindowTask.TOOL_WINDOW_ID);
                 Messages.showErrorDialog(project, "无法创建 EasyQuery Issues 工具窗口。", "错误");
                 return;
             }
@@ -428,8 +414,8 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
         // 获取所有不同的检查类型
         Set<String> inspectionTypes = allItems.stream()
-                .map(ProblemDisplayItem::getInspectionName)
-                .collect(Collectors.toSet());
+            .map(ProblemDisplayItem::getInspectionName)
+            .collect(Collectors.toSet());
 
         // 创建检查类型筛选器
         JLabel typeFilterLabel = new JLabel("按检查类型过滤:");
@@ -489,17 +475,17 @@ public class RunEasyQueryInspectionAction extends AnAction {
                         boolean applyGray = item.isFixed() || item.isSuppressed(); // 已修复或已抑制的都变灰
 
                         if (applyStrike) {
-                             // 使用 HTML 添加删除线
+                            // 使用 HTML 添加删除线
                             displayText = "<html><strike>" + escapeHtml(originalText) + "</strike></html>";
                         } else {
                             // 如果不需要删除线，确保文本不是 HTML（除非原本就是）
                             // 这里简单处理，假设原始文本不是 HTML
-                             setText(originalText); // 设置非 HTML 文本
+                            setText(originalText); // 设置非 HTML 文本
                         }
 
                         // 如果需要 HTML (因为有删除线)，则设置 HTML 文本
                         if (applyStrike) {
-                             setText(displayText);
+                            setText(displayText);
                         }
 
 
@@ -513,24 +499,24 @@ public class RunEasyQueryInspectionAction extends AnAction {
                         } else if (item.getSeverity() == ProblemSeverity.WARNING) {
                             setIcon(AllIcons.General.Warning);
                         } else {
-                             setIcon(AllIcons.General.Information);
+                            setIcon(AllIcons.General.Information);
                         }
 
                         // 设置颜色 (灰色优先)
                         if (applyGray && !selected) {
                             setForeground(JBColor.GRAY);
                         } else if (!item.isFixed() && !item.isSuppressed() && !selected) { // 仅对未修复且未抑制的项应用严重性颜色
-                             if (item.getSeverity() == ProblemSeverity.ERROR) {
+                            if (item.getSeverity() == ProblemSeverity.ERROR) {
                                 setForeground(JBColor.RED);
-                             } else if (item.getSeverity() == ProblemSeverity.WARNING) {
+                            } else if (item.getSeverity() == ProblemSeverity.WARNING) {
                                 setForeground(JBColor.ORANGE);
-                             } else {
-                                 // 如果不是 Error 或 Warning，使用默认前景色
-                                 setForeground(UIManager.getColor("Tree.textForeground"));
-                             }
+                            } else {
+                                // 如果不是 Error 或 Warning，使用默认前景色
+                                setForeground(UIManager.getColor("Tree.textForeground"));
+                            }
                         } else if (selected) {
-                             // 使用选中的前景色
-                             setForeground(UIManager.getColor("Tree.selectionForeground"));
+                            // 使用选中的前景色
+                            setForeground(UIManager.getColor("Tree.selectionForeground"));
                         }
 
 
@@ -543,22 +529,22 @@ public class RunEasyQueryInspectionAction extends AnAction {
                             if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else if (nodeText.startsWith("警告")) {
                             setIcon(AllIcons.General.Warning);
-                             if (!selected) setFont(getFont().deriveFont(Font.BOLD));
+                            if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else if (nodeText.startsWith("已抑制")) {
                             setIcon(AllIcons.Nodes.Locked);
                             if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else if (nodeText.equals("EasyQuery检查结果")) {
                             setIcon(AllIcons.Toolwindows.ToolWindowInspection);
-                             if (!selected) setFont(getFont().deriveFont(Font.BOLD));
+                            if (!selected) setFont(getFont().deriveFont(Font.BOLD));
                         } else {
-                             setIcon(AllIcons.Nodes.Folder);
+                            setIcon(AllIcons.Nodes.Folder);
                         }
-                         // 分组节点使用默认颜色
-                         if (!selected) {
+                        // 分组节点使用默认颜色
+                        if (!selected) {
                             setForeground(UIManager.getColor("Tree.textForeground"));
-                         } else {
+                        } else {
                             setForeground(UIManager.getColor("Tree.selectionForeground"));
-                         }
+                        }
                     }
                 }
                 return c; // 返回修改后的组件
@@ -568,10 +554,10 @@ public class RunEasyQueryInspectionAction extends AnAction {
             private String escapeHtml(String text) {
                 if (text == null) return "";
                 return text.replace("&", "&amp;")
-                           .replace("<", "&lt;")
-                           .replace(">", "&gt;")
-                           .replace("\"", "&quot;")
-                           .replace("'", "&#39;");
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#39;");
             }
         });
 
@@ -582,7 +568,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
                 // 双击: 跳转并显示 QuickFix
                 if (e.getClickCount() == 2) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)
-                            problemTree.getLastSelectedPathComponent();
+                        problemTree.getLastSelectedPathComponent();
 
                     if (node == null) return;
 
@@ -593,17 +579,17 @@ public class RunEasyQueryInspectionAction extends AnAction {
                         // 1. 执行导航 (现有代码)
                         if (item.getVirtualFile().isValid()) {
                             OpenFileDescriptor descriptor = new OpenFileDescriptor(
-                                    project, item.getVirtualFile(), item.getOffset());
+                                project, item.getVirtualFile(), item.getOffset());
                             FileEditorManager.getInstance(project).openTextEditor(descriptor, true); // 使用 openTextEditor 确保编辑器打开
                         }
 
                         // 2. 显示 QuickFix 弹出菜单 (调用公共方法)
                         showQuickFixPopupIfAvailable(e, item, node, project, problemTree);
                     }
-                // 单击: 只跳转
+                    // 单击: 只跳转
                 } else if (e.getClickCount() == 1) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)
-                            problemTree.getLastSelectedPathComponent();
+                        problemTree.getLastSelectedPathComponent();
 
                     if (node == null) return;
 
@@ -614,24 +600,24 @@ public class RunEasyQueryInspectionAction extends AnAction {
                         // 单击跳转到对应位置
                         if (item.getVirtualFile().isValid()) {
                             OpenFileDescriptor descriptor = new OpenFileDescriptor(
-                                    project, item.getVirtualFile(), item.getOffset());
+                                project, item.getVirtualFile(), item.getOffset());
                             // 使用 navigate(true) 打开文件并尝试获取焦点
                             descriptor.navigate(true);
                         }
                     }
                 }
             }
-            
+
             @Override
             public void mousePressed(MouseEvent e) {
                 handlePopup(e);
             }
-            
+
             @Override
             public void mouseReleased(MouseEvent e) {
                 handlePopup(e);
             }
-            
+
             private void handlePopup(MouseEvent e) {
                 if (e.isPopupTrigger()) {
                     // 获取鼠标点击位置的树节点
@@ -639,18 +625,18 @@ public class RunEasyQueryInspectionAction extends AnAction {
                     if (row >= 0) {
                         problemTree.setSelectionRow(row);
                         final DefaultMutableTreeNode node = (DefaultMutableTreeNode)
-                                problemTree.getLastSelectedPathComponent();
+                            problemTree.getLastSelectedPathComponent();
                         if (node != null && node.getUserObject() instanceof ProblemDisplayItem) {
                             final ProblemDisplayItem item = (ProblemDisplayItem) node.getUserObject();
-                            
+
                             // 添加导航逻辑: 右键也跳转到对应位置
                             if (item.getVirtualFile().isValid()) {
                                 OpenFileDescriptor descriptor = new OpenFileDescriptor(
-                                        project, item.getVirtualFile(), item.getOffset());
+                                    project, item.getVirtualFile(), item.getOffset());
                                 // 使用 navigate(true) 来打开文件并尝试获取焦点
                                 descriptor.navigate(true);
                             }
-                            
+
                             // 调用新方法显示 QuickFix 菜单
                             showQuickFixPopupIfAvailable(e, item, node, project, problemTree);
                         }
@@ -709,7 +695,7 @@ public class RunEasyQueryInspectionAction extends AnAction {
                                     final DefaultTreeModel model = (DefaultTreeModel) problemTree.getModel();
                                     // 在EDT线程更新UI
                                     ApplicationManager.getApplication().invokeLater(() -> {
-                                          model.nodeChanged(node);
+                                        model.nodeChanged(node);
                                     });
                                 }
                             });
@@ -719,8 +705,8 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
                     // 如果菜单中有修复项，则显示菜单
                     if (popupMenu.getComponentCount() > 0) {
-                         // 注意：这里不再添加右键菜单独有的 "跳转到源代码" 项
-                         // 如果需要在右键菜单中保留，可以在 handlePopup 调用前或 showQuickFixPopupIfAvailable 内部添加逻辑判断 e.isPopupTrigger()
+                        // 注意：这里不再添加右键菜单独有的 "跳转到源代码" 项
+                        // 如果需要在右键菜单中保留，可以在 handlePopup 调用前或 showQuickFixPopupIfAvailable 内部添加逻辑判断 e.isPopupTrigger()
                         popupMenu.show(problemTree, e.getX(), e.getY());
                     }
                 }
@@ -733,9 +719,9 @@ public class RunEasyQueryInspectionAction extends AnAction {
         // 创建汇总面板
         JPanel summaryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel summaryLabel = new JLabel(String.format("共发现 %d 个问题: %d 个错误, %d 个警告",
-                allItems.size(),
-                allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.ERROR).count(),
-                allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.WARNING).count()));
+            allItems.size(),
+            allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.ERROR).count(),
+            allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.WARNING).count()));
         summaryLabel.setIcon(AllIcons.General.Information);
         summaryPanel.add(summaryLabel);
 
@@ -743,30 +729,30 @@ public class RunEasyQueryInspectionAction extends AnAction {
         Runnable updateTree = () -> {
             // 应用过滤
             List<ProblemDisplayItem> filteredItems = allItems.stream()
-                    .filter(item -> {
-                        // 按严重程度过滤
-                        if (item.getSeverity() == ProblemSeverity.ERROR && !errorCheckBox.isSelected()) {
-                            return false;
-                        }
-                        if (item.getSeverity() == ProblemSeverity.WARNING && !warningCheckBox.isSelected()) {
-                            return false;
-                        }
+                .filter(item -> {
+                    // 按严重程度过滤
+                    if (item.getSeverity() == ProblemSeverity.ERROR && !errorCheckBox.isSelected()) {
+                        return false;
+                    }
+                    if (item.getSeverity() == ProblemSeverity.WARNING && !warningCheckBox.isSelected()) {
+                        return false;
+                    }
 
-                        // 按抑制状态过滤
-                        if (item.isSuppressed() && !suppressedCheckBox.isSelected()) {
-                            return false;
-                        }
+                    // 按抑制状态过滤
+                    if (item.isSuppressed() && !suppressedCheckBox.isSelected()) {
+                        return false;
+                    }
 
-                        // 按检查类型过滤
-                        String type = item.getInspectionName();
-                        JCheckBox typeCheckBox = inspectionTypeCheckBoxes.get(type);
-                        if (typeCheckBox != null && !typeCheckBox.isSelected()) {
-                            return false;
-                        }
+                    // 按检查类型过滤
+                    String type = item.getInspectionName();
+                    JCheckBox typeCheckBox = inspectionTypeCheckBoxes.get(type);
+                    if (typeCheckBox != null && !typeCheckBox.isSelected()) {
+                        return false;
+                    }
 
-                        return true;
-                    })
-                    .collect(Collectors.toList());
+                    return true;
+                })
+                .collect(Collectors.toList());
 
             // 应用排序
             Comparator<ProblemDisplayItem> comparator;
@@ -806,22 +792,22 @@ public class RunEasyQueryInspectionAction extends AnAction {
             }
 
             List<ProblemDisplayItem> sortedItems = filteredItems.stream()
-                    .sorted(comparator)
-                    .collect(Collectors.toList());
+                .sorted(comparator)
+                .collect(Collectors.toList());
 
             // 重新构建树
             rootNode.removeAllChildren();
 
             // 获取不同类型的项目数量
             long errorCount = sortedItems.stream()
-                    .filter(item -> item.getSeverity() == ProblemSeverity.ERROR && !item.isSuppressed())
-                    .count();
+                .filter(item -> item.getSeverity() == ProblemSeverity.ERROR && !item.isSuppressed())
+                .count();
             long warningCount = sortedItems.stream()
-                    .filter(item -> item.getSeverity() == ProblemSeverity.WARNING && !item.isSuppressed())
-                    .count();
+                .filter(item -> item.getSeverity() == ProblemSeverity.WARNING && !item.isSuppressed())
+                .count();
             long suppressedCount = sortedItems.stream()
-                    .filter(ProblemDisplayItem::isSuppressed)
-                    .count();
+                .filter(ProblemDisplayItem::isSuppressed)
+                .count();
 
             // 创建顶级节点
             DefaultMutableTreeNode errorNode = new DefaultMutableTreeNode("错误 (" + errorCount + ")");
@@ -870,17 +856,17 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
             // 更新树模型
             treeModel.reload();
-            
+
             // 展开根节点
             problemTree.expandRow(0);
 
             // 更新汇总信息
             summaryLabel.setText(String.format("共发现 %d 个问题: %d 个错误, %d 个警告, %d 个已抑制 (已过滤显示 %d 个)",
-                    allItems.size(),
-                    allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.ERROR && !item.isSuppressed()).count(),
-                    allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.WARNING && !item.isSuppressed()).count(),
-                    allItems.stream().filter(ProblemDisplayItem::isSuppressed).count(),
-                    sortedItems.size()));
+                allItems.size(),
+                allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.ERROR && !item.isSuppressed()).count(),
+                allItems.stream().filter(item -> item.getSeverity() == ProblemSeverity.WARNING && !item.isSuppressed()).count(),
+                allItems.stream().filter(ProblemDisplayItem::isSuppressed).count(),
+                sortedItems.size()));
         };
 
         // 添加过滤器变化监听器
@@ -901,51 +887,51 @@ public class RunEasyQueryInspectionAction extends AnAction {
 
         // 创建带有工具栏的面板
         ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(problemTree)
-                .setAddAction(null)  // 禁用添加按钮
-                .setRemoveAction(null)  // 禁用删除按钮
-                .setEditAction(null)  // 禁用编辑按钮
-                .setMoveUpAction(null)  // 禁用上移按钮
-                .setMoveDownAction(null)  // 禁用下移按钮
-                .addExtraAction(new AnActionButton("刷新", AllIcons.Actions.Refresh) {
-                    @Override
-                    public void actionPerformed(@NotNull AnActionEvent e) {
-                        // 重新运行扫描
-                        runInspection(project);
-                    }
+            .setAddAction(null)  // 禁用添加按钮
+            .setRemoveAction(null)  // 禁用删除按钮
+            .setEditAction(null)  // 禁用编辑按钮
+            .setMoveUpAction(null)  // 禁用上移按钮
+            .setMoveDownAction(null)  // 禁用下移按钮
+            .addExtraAction(new AnActionButton("刷新", AllIcons.Actions.Refresh) {
+                @Override
+                public void actionPerformed(@NotNull AnActionEvent e) {
+                    // 重新运行扫描
+                    runInspection(project);
+                }
 
-                    @Override
-                    public @NotNull ActionUpdateThread getActionUpdateThread() {
-                        return ActionUpdateThread.EDT;
+                @Override
+                public @NotNull ActionUpdateThread getActionUpdateThread() {
+                    return ActionUpdateThread.EDT;
+                }
+            })
+            .addExtraAction(new AnActionButton("全部展开", AllIcons.Actions.Expandall) {
+                @Override
+                public void actionPerformed(@NotNull AnActionEvent e) {
+                    for (int i = 0; i < problemTree.getRowCount(); i++) {
+                        problemTree.expandRow(i);
                     }
-                })
-                .addExtraAction(new AnActionButton("全部展开", AllIcons.Actions.Expandall) {
-                    @Override
-                    public void actionPerformed(@NotNull AnActionEvent e) {
-                        for (int i = 0; i < problemTree.getRowCount(); i++) {
-                            problemTree.expandRow(i);
-                        }
-                    }
+                }
 
-                    @Override
-                    public @NotNull ActionUpdateThread getActionUpdateThread() {
-                        return ActionUpdateThread.EDT;
+                @Override
+                public @NotNull ActionUpdateThread getActionUpdateThread() {
+                    return ActionUpdateThread.EDT;
+                }
+            })
+            .addExtraAction(new AnActionButton("全部折叠", AllIcons.Actions.Collapseall) {
+                @Override
+                public void actionPerformed(@NotNull AnActionEvent e) {
+                    for (int i = problemTree.getRowCount() - 1; i >= 0; i--) {
+                        problemTree.collapseRow(i);
                     }
-                })
-                .addExtraAction(new AnActionButton("全部折叠", AllIcons.Actions.Collapseall) {
-                    @Override
-                    public void actionPerformed(@NotNull AnActionEvent e) {
-                        for (int i = problemTree.getRowCount() - 1; i >= 0; i--) {
-                            problemTree.collapseRow(i);
-                        }
-                        // 只展开根节点
-                        problemTree.expandRow(0);
-                    }
+                    // 只展开根节点
+                    problemTree.expandRow(0);
+                }
 
-                    @Override
-                    public @NotNull ActionUpdateThread getActionUpdateThread() {
-                        return ActionUpdateThread.EDT;
-                    }
-                });
+                @Override
+                public @NotNull ActionUpdateThread getActionUpdateThread() {
+                    return ActionUpdateThread.EDT;
+                }
+            });
 
         // 创建带工具栏的面板
         JPanel decoratedPanel = toolbarDecorator.createPanel();
@@ -1037,10 +1023,10 @@ public class RunEasyQueryInspectionAction extends AnAction {
          */
         public ProblemSeverity getSeverity() {
             if (highlightType == ProblemHighlightType.ERROR ||
-                    highlightType == ProblemHighlightType.GENERIC_ERROR) {
+                highlightType == ProblemHighlightType.GENERIC_ERROR) {
                 return ProblemSeverity.ERROR;
             } else if (highlightType == ProblemHighlightType.WARNING ||
-                    highlightType == ProblemHighlightType.GENERIC_ERROR_OR_WARNING) {
+                highlightType == ProblemHighlightType.GENERIC_ERROR_OR_WARNING) {
                 return ProblemSeverity.WARNING;
             } else {
                 return ProblemSeverity.INFO;
