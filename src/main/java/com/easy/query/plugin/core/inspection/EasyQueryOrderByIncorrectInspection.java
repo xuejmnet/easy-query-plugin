@@ -1,14 +1,11 @@
 package com.easy.query.plugin.core.inspection;
 
-import cn.hutool.core.collection.CollectionUtil;
 import com.easy.query.plugin.core.util.EasyQueryElementUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.codeInspection.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.psi.util.InheritanceUtil;
-import com.intellij.psi.JavaPsiFacade;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -151,17 +148,23 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
         String methodClassQualifiedName = Optional.ofNullable(resolvedMethod).map(PsiMember::getContainingClass).map(PsiClass::getQualifiedName).orElse(StrUtil.EMPTY);
 
         // 如果已经是来自 SQLSelectExpression 的 asc 或 desc 调用，则认为是合法的
-        if ( methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression")) {
+        if (methodClassQualifiedName.startsWith("com.easy.query.core.proxy.SQLSelectExpression")) {
             return; // 合法调用，无需报告
         }
+        if (resolvedMethod == null) {
+            return;
+        }
+        if (resolvedMethod.getReturnType() == null) {
+            // 没有返回类型， 可能是正常的？先不处理
+            return;
+        }
         // 如果不是以 .asc() 或 .desc() 结尾的方法调用，报告问题
-        holder.registerProblem(expression, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() / .orderBy() / .expression() 方法调用作为结尾", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
+        if (resolvedMethod.getReturnType().getCanonicalText().startsWith("com.easy.query.core.proxy.columns.types")) {
+            // 目前针对性的检查 实体字段调用
+            holder.registerProblem(expression, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() / .orderBy() / .expression() 方法调用作为结尾", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
+        }
 
     }
-
-
-
-
 
 
     /**
@@ -173,6 +176,7 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
 
         /**
          * 构造函数。
+         *
          * @param suffixName 后缀的名称 ("asc" 或 "desc")
          */
         protected BaseAddOrderFix(String suffixName) {
