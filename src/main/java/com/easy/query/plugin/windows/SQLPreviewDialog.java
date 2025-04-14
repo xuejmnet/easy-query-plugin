@@ -2,6 +2,7 @@ package com.easy.query.plugin.windows;
 
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.util.BasicFormatter;
+import com.easy.query.plugin.core.util.BasicFormatter2;
 import com.easy.query.plugin.core.util.DialogUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -18,8 +19,10 @@ public class SQLPreviewDialog extends JDialog {
     private JTextArea selectSQLText;
     private JTextArea previewSQLText;
     private JButton convertButton;
+    private JButton mergeButton;
     private static final char MARK = '?';
     private static final BasicFormatter FORMATTER = new BasicFormatter();
+    private static final BasicFormatter2 FORMATTER2 = new BasicFormatter2();
 
     private static final Set<String> NEED_BRACKETS;
 
@@ -47,7 +50,13 @@ public class SQLPreviewDialog extends JDialog {
 
         convertButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onConvert();
+                onConvert(true);
+            }
+        });
+
+        mergeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                mergeNewlinesSQL();
             }
         });
 
@@ -88,19 +97,44 @@ public class SQLPreviewDialog extends JDialog {
 //        System.exit(0);
 //    }
 
-    private void onConvert() {
+    private void mergeNewlinesSQL() {
+
+        String selectSQL = selectSQLText.getText();
+        if (StringUtils.isNotBlank(selectSQL)) {
+            String selectedText = selectSQLText.getSelectedText();
+            if (StringUtils.isNotBlank(selectedText)) {
+                int selectionStart = selectSQLText.getSelectionStart();
+                int selectionEnd = selectSQLText.getSelectionEnd();
+                String prefix = selectSQL.substring(0, selectionStart);
+                String next = selectSQL.substring(selectionEnd);
+                String newSelectedText = removeNewlines(selectedText);
+                selectSQL = prefix + newSelectedText + next;
+                selectSQLText.setText(selectSQL);
+            }
+        }
+    }
+
+    private void onConvert(boolean newConvert) {
         try {
-            onConvert0();
+            onConvert0(newConvert);
         } catch (Exception ex) {
             previewSQLText.setText("转换出现异常:" + ex.getMessage());
         }
     }
 
-    private void onConvert0() {
+    public static String removeNewlines(String input) {
+        if (input == null) {
+            return null; // 或返回空字符串 "" 根据需求调整
+        }
+        return input.replaceAll("[\\r\\n]", "");
+    }
+
+    private void onConvert0(boolean newConvert) {
         String selectSQL = selectSQLText.getText();
         if (StringUtils.isBlank(selectSQL)) {
             previewSQLText.setText("");
         } else {
+
             StringBuilder sqlBuilder = new StringBuilder();
             String[] selectSQLs = selectSQL.split("\n");
             List<String> sqlList = Arrays.stream(selectSQLs)
@@ -112,14 +146,14 @@ public class SQLPreviewDialog extends JDialog {
                 .map(o -> parseParams(o))
                 .collect(Collectors.toList());
 //            int min = Math.min(sqlList.size(), parameterList.size());
-            int j=0;
+            int j = 0;
             for (int i = 0; i < sqlList.size(); i++) {
                 String sql = sqlList.get(i);
                 Queue<Map.Entry<String, String>> params = i >= parameterList.size() ? new ArrayDeque<>(0) : parameterList.get(i);
 
                 sql = parseSql(sql, params).toString();
 
-                String formatSQL = FORMATTER.format(sql);
+                String formatSQL = newConvert ? FORMATTER2.format(sql) : FORMATTER.format(sql);
                 j++;
                 sqlBuilder.append("\n-- 第").append(j).append("条sql数据\n");
                 sqlBuilder.append(formatSQL);

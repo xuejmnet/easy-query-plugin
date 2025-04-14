@@ -1,5 +1,7 @@
 package com.easy.query.plugin.action;
 
+import cn.hutool.core.util.ClassUtil;
+import cn.hutool.core.util.ReflectUtil;
 import com.easy.query.plugin.config.EasyQueryConfigManager;
 import com.easy.query.plugin.core.inspection.EasyQueryFieldMissMatchInspection;
 import com.easy.query.plugin.core.inspection.EasyQueryOrderByIncorrectInspection;
@@ -11,6 +13,8 @@ import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.QuickFix;
 import com.intellij.codeInspection.ProblemsHolder;
+import com.intellij.database.model.DasTypedObject;
+import com.intellij.database.model.DataType;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -60,6 +64,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -375,18 +380,30 @@ public class RunEasyQueryInspectionAction extends AnAction {
     private void showResultsInToolWindow(Project project, List<ProblemDisplayItem> allItems, boolean activateWindow) {
         ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
         ToolWindow toolWindow = toolWindowManager.getToolWindow(TOOL_WINDOW_ID);
-
         // 如果工具窗口不存在，则注册
         if (toolWindow == null) {
             // 使用 RegisterToolWindowTask.closable 正确注册工具窗口
             // 提供默认图标，因为参数不能为 null
-            RegisterToolWindowTask task = RegisterToolWindowTask.closable(
+            Class<Object> objectClass = ClassUtil.loadClass("com.intellij.openapi.wm.RegisterToolWindowTask");
+            Method closable = ReflectUtil.getMethod(objectClass, "closable", String.class, Icon.class, ToolWindowAnchor.class);
+            if(closable!=null){
+                Object task = ReflectUtil.invoke(null, closable,
                     TOOL_WINDOW_ID,
                     AllIcons.General.Information, // 使用默认图标
                     ToolWindowAnchor.BOTTOM // 直接设置锚点
-            );
-            toolWindow = toolWindowManager.registerToolWindow(task);
+                    );
+//                RegisterToolWindowTask.closable(
+//                    TOOL_WINDOW_ID,
+//                    AllIcons.General.Information, // 使用默认图标
+//                    ToolWindowAnchor.BOTTOM // 直接设置锚点
+//                );
 
+
+                Method registerToolWindowMethod = ReflectUtil.getMethod(ToolWindowManager.class, "registerToolWindow",objectClass);
+                if (registerToolWindowMethod != null) {
+                    toolWindow =  ReflectUtil.invoke(toolWindowManager, registerToolWindowMethod,task);
+                }
+            }
             // 在继续之前检查注册是否成功
             if (toolWindow == null) {
                 LOG.error("注册工具窗口失败: " + TOOL_WINDOW_ID);
