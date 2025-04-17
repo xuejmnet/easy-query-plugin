@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.1.4"
+version = "0.1.6"
 
 repositories {
     maven {
@@ -65,7 +65,7 @@ tasks {
         //插件起始支持版本
         sinceBuild.set("231")
         //插件结束支持版本
-        untilBuild.set("243.*")
+        untilBuild.set("251.*")
     }
 
     signPlugin {

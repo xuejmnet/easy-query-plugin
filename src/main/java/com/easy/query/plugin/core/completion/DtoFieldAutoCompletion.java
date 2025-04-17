@@ -31,7 +31,7 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
 
 
         PsiElement position = parameters.getPosition();
-        if(SkipAutopopupInStrings.isInStringLiteral(position)){
+        if (SkipAutopopupInStrings.isInStringLiteral(position)) {
             return;
         }
         PsiClass topLevelDtoClass = PsiTreeUtil.getTopmostParentOfType(position, PsiClass.class);
@@ -66,28 +66,28 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
             if (!dtoFieldNameSet.contains(fieldName)) {
 
                 LookupElement lookupElementWithoutEq = PrioritizedLookupElement.withPriority(
-                        LookupElementBuilder.create(entityFieldRaw.getName())
-                                .withTypeText(entityFieldRaw.getType().getPresentableText())
-                                .withInsertHandler((context, item) -> {
+                    LookupElementBuilder.create(entityFieldRaw.getName())
+                        .withTypeText(entityFieldRaw.getType().getPresentableText())
+                        .withInsertHandler((context, item) -> {
 
-                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
-                                })
-                                .withIcon(Icons.EQ),
-                        400d);
+                            PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                            context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
+                        })
+                        .withIcon(Icons.EQ),
+                    400d);
                 result.addElement(lookupElementWithoutEq);
                 String psiFieldComment = PsiUtil.getPsiFieldOnlyComment(entityFieldRaw);
                 String shortComment = StrUtil.subSufByLength(psiFieldComment, 15);
                 // 再添加一个eq:开头的, 进行索引
                 LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                        LookupElementBuilder.create("EQ实体字段:" + entityFieldRaw.getName() + " " + shortComment)
-                                .withTypeText(entityFieldRaw.getType().getPresentableText())
-                                .withInsertHandler((context, item) -> {
-                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
-                                })
-                                .withIcon(Icons.EQ),
-                        400d);
+                    LookupElementBuilder.create("eq实体字段:" + entityFieldRaw.getName() + " " + shortComment)
+                        .withTypeText(entityFieldRaw.getType().getPresentableText())
+                        .withInsertHandler((context, item) -> {
+                            PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                            context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
+                        })
+                        .withIcon(Icons.EQ),
+                    400d);
                 result.addElement(lookupElementWithEq);
                 appendAllFields = true;
             }
@@ -95,33 +95,46 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
         if (appendAllFields) {
             // 再添加一个eq:开头的, 进行索引
             LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                    LookupElementBuilder.create("EQ实体字段:ALL_FIELDS")
-                            .withInsertHandler((context, item) -> {
-                                StringBuilder fieldStringBuilder = new StringBuilder();
+                LookupElementBuilder.create("eq实体字段:ALL_FIELDS")
+                    .withInsertHandler((context, item) -> {
+                        StringBuilder fieldStringBuilder = new StringBuilder();
 
-                                for (int i = 0; i < entityFields.length; i++) {
-                                    PsiField entityField = entityFields[i];
-                                    if (!entityFieldMap.containsKey(entityField.getName())) {
-                                        // 不是需要的字段
-                                        continue;
-                                    }
-                                    if (dtoFieldNameSet.contains(entityField.getName())) {
-                                        // 字段已经有了
-                                        continue;
-                                    }
-                                    if (i != 0) {
-                                        fieldStringBuilder.append(System.lineSeparator());
-                                    }
-                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityField, dtoSchema);
-                                    fieldStringBuilder.append(dtoField.getText());
-                                }
+                        for (int i = 0; i < entityFields.length; i++) {
+                            PsiField entityField = entityFields[i];
+                            if (!entityFieldMap.containsKey(entityField.getName())) {
+                                // 不是需要的字段
+                                continue;
+                            }
+                            if (dtoFieldNameSet.contains(entityField.getName())) {
+                                // 字段已经有了
+                                continue;
+                            }
+                            if (i != 0) {
+                                fieldStringBuilder.append(System.lineSeparator());
+                            }
+                            PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityField, dtoSchema);
+                            fieldStringBuilder.append(dtoField.getText());
+                        }
 
-                                // 需要将内容中的 \r 替换掉, 否则 win 下会报错 com.intellij.openapi.util.text.StringUtil.assertValidSeparators 将 \r 视作非法字符
-                                String newContent = fieldStringBuilder.toString().replaceAll("\r\n", "\n").replaceAll("\r", "\n");
-                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), newContent);
-                            })
-                            .withIcon(Icons.EQ),
-                    400d);
+                        // 需要将内容中的 \r 替换掉, 否则 win 下会报错 com.intellij.openapi.util.text.StringUtil.assertValidSeparators 将 \r 视作非法字符
+                        String newContent = fieldStringBuilder.toString().replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+                        context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), newContent);
+                    })
+                    .withIcon(Icons.EQ),
+                400d);
+            result.addElement(lookupElementWithEq);
+        }
+        if(!dtoFieldNameSet.contains("EXTRA_AUTO_INCLUDE_CONFIGURE")){
+            // 再添加一个eq:开头的, 进行索引
+            LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
+                LookupElementBuilder.create("eq_extra_auto_include_configure")
+                    .withInsertHandler((context, item) -> {
+                        String filedText = String.format("private static final ExtraAutoIncludeConfigure EXTRA_AUTO_INCLUDE_CONFIGURE= %s.TABLE.EXTRA_AUTO_INCLUDE_CONFIGURE();", linkPsiClass.getName() + "Proxy");
+
+                        context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), filedText);
+                    })
+                    .withIcon(Icons.EQ),
+                400d);
             result.addElement(lookupElementWithEq);
         }
 //        for (PsiField entityFieldRaw : psiFields) {

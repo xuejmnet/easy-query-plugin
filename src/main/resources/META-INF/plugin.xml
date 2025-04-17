@@ -30,6 +30,14 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.1.6</h3>
+    <ul>
+    <li>支持extra_configure</li>
+    </ul>
+    <h3>0.1.5</h3>
+    <ul>
+    <li>正常idea 2025.1</li>
+    </ul>
     <h3>0.1.4</h3>
     <ul>
     <li>优化orderBy的插件检测范围防止误报,优化部分交互相关信息</li>
