@@ -24,7 +24,7 @@ public class NavMappingPanel extends JPanel {
     private JButton addGroupButton;
     private JButton confirmButton;
     private JPanel attributesPanel;
-    private static final int INITIAL_GROUP_Y = 220;
+    private static final int INITIAL_GROUP_Y = 30;
     private static final int GROUP_VERTICAL_GAP = 70;
     private static final int MANY_TO_MANY_EXTRA_GAP = 30;
     private JComboBox<String> entitySelector;
@@ -323,6 +323,14 @@ public class NavMappingPanel extends JPanel {
         setPreferredSize(new Dimension(900, 600));
         setBackground(backgroundColor);
 
+        // 初始化 attributesPanel
+        attributesPanel = new JPanel();
+        attributesPanel.setLayout(null); // 与父容器保持一致
+        attributesPanel.setOpaque(false); // 设置为透明
+        // 设置位置和大小，Y=160 大概在实体选择按钮下方，高度留足空间
+        attributesPanel.setBounds(0, 160, 900, 440); 
+        add(attributesPanel); // 添加到主面板
+
         // 映射类型
         JLabel mappingTypeLabel = createStyledLabel("映射类型:", 50, 20, 100, 30);
         add(mappingTypeLabel);
@@ -491,11 +499,14 @@ public class NavMappingPanel extends JPanel {
         AttributeGroup group = new AttributeGroup(yPos);
         attributeGroups.add(group);
 
-        add(group.sourceAttrButton);
-        add(group.middleAttrButton);
-        add(group.middleTargetAttrButton);
-        add(group.targetAttrButton);
-        add(group.deleteButton);
+        attributesPanel.add(group.sourceAttrButton);
+        attributesPanel.add(group.middleAttrButton);
+        attributesPanel.add(group.middleTargetAttrButton);
+        attributesPanel.add(group.targetAttrButton);
+        attributesPanel.add(group.deleteButton);
+
+        // 添加这行来初始化新组的属性按钮
+        group.updateAttributes(getSelectedMiddleEntity(), getSelectedEntity());
 
         if (attributeGroups.size() > 1) {
             group.deleteButton.setVisible(true);
@@ -508,11 +519,11 @@ public class NavMappingPanel extends JPanel {
     }
 
     private void removeAttributeGroup(AttributeGroup group) {
-        remove(group.sourceAttrButton);
-        remove(group.middleAttrButton);
-        remove(group.middleTargetAttrButton);
-        remove(group.targetAttrButton);
-        remove(group.deleteButton);
+        attributesPanel.remove(group.sourceAttrButton);
+        attributesPanel.remove(group.middleAttrButton);
+        attributesPanel.remove(group.middleTargetAttrButton);
+        attributesPanel.remove(group.targetAttrButton);
+        attributesPanel.remove(group.deleteButton);
 
         attributeGroups.remove(group);
 
@@ -602,19 +613,19 @@ public class NavMappingPanel extends JPanel {
 
         if (isManyToMany && hasMiddleEntity) {
             for (AttributeGroup group : attributeGroups) {
-                int sourceY = group.yPosition + 15;
-                int middleY1 = group.yPosition + 15;
+                int sourceY = attributesPanel.getY() + group.yPosition + 15;
+                int middleY1 = attributesPanel.getY() + group.yPosition + 15;
                 g2d.draw(new Line2D.Double(200, sourceY, 350, middleY1));
                 drawArrow(g2d, 340, middleY1);
 
-                int middleY2 = group.yPosition + 50;
-                int targetY = group.yPosition + 50;
+                int middleY2 = attributesPanel.getY() + group.yPosition + 50;
+                int targetY = attributesPanel.getY() + group.yPosition + 50;
                 g2d.draw(new Line2D.Double(500, middleY2, 650, targetY));
                 drawArrow(g2d, 640, targetY);
             }
         } else {
             for (AttributeGroup group : attributeGroups) {
-                int y = group.yPosition + 15;
+                int y = attributesPanel.getY() + group.yPosition + 15;
                 g2d.draw(new Line2D.Double(200, y, 650, y));
                 drawArrow(g2d, 640, y);
             }
