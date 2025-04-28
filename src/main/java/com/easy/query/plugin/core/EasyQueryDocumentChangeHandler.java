@@ -86,7 +86,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     public static void createAptFile(List<VirtualFile> virtualFiles, Project project, boolean allCompileFrom) {
 //        Project project = ProjectUtils.getCurrentProject();
         // 检查索引是否已准备好
-        if (DumbService.getInstance(project).isDumb()) {
+        if (BooleanUtils.isTrue(DumbService.getInstance(project).isDumb())) {
             log.info("索引未准备好，将在索引完成后重新执行");
             // 复制列表，避免在lambda中引用非final变量
             final List<VirtualFile> finalVirtualFiles = new ArrayList<>(virtualFiles);
