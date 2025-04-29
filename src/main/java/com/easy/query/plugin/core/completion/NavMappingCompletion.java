@@ -131,6 +131,7 @@ public class NavMappingCompletion extends CompletionContributor {
 
                             for (PsiClass psiClass : entityClasses) {
                                 PsiField[] allFields = psiClass.getAllFields();
+                                //((PsiClass)allFields[13].getParent()).getName()
                                 entityAttributesMap.put(psiClass.getQualifiedName(), Arrays.stream(allFields)
                                     .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
                                     .filter(field -> !EasyQueryElementUtil.hasNavigateAnnotation(field))
@@ -179,13 +180,12 @@ public class NavMappingCompletion extends CompletionContributor {
         } else {
             sourceFieldPrefix = sourceEntitySimpleName;
         }
-        PsiJavaFile currentClassFile = (PsiJavaFile) sourceEntityClass.getContainingFile();
+//        PsiJavaFile currentClassFile = (PsiJavaFile) sourceEntityClass.getContainingFile();
 
 //        PsiImportList currentClassFileImportList = currentClassFile.getImportList();
 
         PsiClass targetEntityClass = PsiJavaFileUtil.getPsiClass(project, targetEntityFullName);
         String targetEntitySimpleName = targetEntityClass.getName();
-
 
 
         PsiAnnotation targetEntityClassAnnotation = targetEntityClass.getAnnotation("lombok.experimental.FieldNameConstants");
@@ -201,8 +201,9 @@ public class NavMappingCompletion extends CompletionContributor {
 
         String middleEntitySimpleName;
         String middleFieldPrefix;
+        PsiClass middleEntityClass;
         if (StrUtil.isNotBlank(middleEntityFullName)) {
-            PsiClass middleEntityClass = PsiJavaFileUtil.getPsiClass(project, middleEntityFullName);
+            middleEntityClass = PsiJavaFileUtil.getPsiClass(project, middleEntityFullName);
 
             // 当前类需要导入包
 //            currentClassFileImportList.add(PsiJavaFileUtil.createImportStatement(project, middleEntityClass));
@@ -217,7 +218,8 @@ public class NavMappingCompletion extends CompletionContributor {
             }
         } else {
             middleEntitySimpleName = null;
-            middleFieldPrefix=null;
+            middleFieldPrefix = null;
+            middleEntityClass = null;
         }
 
 
@@ -235,14 +237,20 @@ public class NavMappingCompletion extends CompletionContributor {
         // 添加 selfProperty
         if (relation.getSourceFields() != null && relation.getSourceFields().length > 0) {
             code.append(", selfProperty = {");
-            code.append(Arrays.stream(relation.getSourceFields()).map(s -> sourceFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            List<NavigateField> navigateFields = mappingFieldToConstField(relation.getSourceFields(), sourceEntityClass);
+            code.append(navigateFields.stream().map(s -> s.prefix + ".Fields." + s.field).collect(Collectors.joining(", ")));
             code.append("}");
         }
 
         // 添加 selfMappingProperty
         if (relation.getSelfMappingFields() != null && relation.getSelfMappingFields().length > 0) {
             code.append(", selfMappingProperty = {");
-            code.append(Arrays.stream(relation.getSelfMappingFields()).map(s -> middleFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            if (middleEntityClass == null) {
+                code.append(Arrays.stream(relation.getSelfMappingFields()).map(s -> middleEntityFullName + ".Fields." + s).collect(Collectors.joining(", ")));
+            } else {
+                List<NavigateField> navigateFields = mappingFieldToConstField(relation.getSelfMappingFields(), middleEntityClass);
+                code.append(navigateFields.stream().map(s -> s.prefix + ".Fields." + s.field).collect(Collectors.joining(", ")));
+            }
             code.append("}");
         }
 
@@ -254,19 +262,65 @@ public class NavMappingCompletion extends CompletionContributor {
         // 添加 targetProperty
         if (relation.getTargetFields() != null && relation.getTargetFields().length > 0) {
             code.append(", targetProperty = {");
-            code.append(Arrays.stream(relation.getTargetFields()).map(s -> targetFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            List<NavigateField> navigateFields = mappingFieldToConstField(relation.getTargetFields(), targetEntityClass);
+            code.append(navigateFields.stream().map(s -> s.prefix + ".Fields." + s.field).collect(Collectors.joining(", ")));
             code.append("}");
         }
 
         // 添加 targetMappingProperty
         if (relation.getTargetMappingFields() != null && relation.getTargetMappingFields().length > 0) {
             code.append(", targetMappingProperty = {");
-            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s -> middleFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            if (middleEntityClass == null) {
+                code.append(Arrays.stream(relation.getTargetMappingFields()).map(s -> middleEntityFullName + ".Fields." + s).collect(Collectors.joining(", ")));
+            } else {
+                List<NavigateField> navigateFields = mappingFieldToConstField(relation.getTargetMappingFields(), middleEntityClass);
+                code.append(navigateFields.stream().map(s -> s.prefix + ".Fields." + s.field).collect(Collectors.joining(", ")));
+            }
             code.append("}");
         }
+        if ("OneToMany".equals(relation.getRelationType()) || "ManyToMany".equals(relation.getRelationType())) {
 
+            code.append(",subQueryToGroupJoin = true");
+        }
         code.append(")");
 
         return code.toString();
+    }
+
+    /**
+     * 处理lombok的@FieldNameConstants
+     * @param mappingFields
+     * @param psiClass
+     * @return
+     */
+    private static List<NavigateField> mappingFieldToConstField(String[] mappingFields, PsiClass psiClass) {
+        String psiClassName = psiClass.getName();
+        Map<String, PsiField> fieldMap = Arrays.stream(psiClass.getAllFields()).collect(Collectors.toMap(s -> s.getName(), s -> s, (v1, v2) -> v2));
+
+        PsiAnnotation psiClassAnnotation = psiClass.getAnnotation("lombok.experimental.FieldNameConstants");
+        boolean lombokField = psiClassAnnotation != null;
+        String prefix = lombokField ? psiClassName : (psiClassName + "Proxy");
+
+        return Arrays.stream(mappingFields).map(f -> {
+            NavigateField navigateField = new NavigateField();
+            navigateField.prefix = prefix;
+            navigateField.field = f;
+            PsiField psiField = fieldMap.get(f);
+            if (lombokField && psiField != null && psiField.getParent() instanceof PsiClass) {
+                PsiClass parent = (PsiClass) psiField.getParent();
+                PsiAnnotation parentAnnotation = parent.getAnnotation("lombok.experimental.FieldNameConstants");
+                if(parentAnnotation!=null){
+                    navigateField.prefix = parent.getName();
+                }else{
+                    navigateField.prefix = (psiClassName + "Proxy");
+                }
+            }
+            return navigateField;
+        }).collect(Collectors.toList());
+    }
+
+    public static class NavigateField {
+        public String prefix;
+        public String field;
     }
 }
