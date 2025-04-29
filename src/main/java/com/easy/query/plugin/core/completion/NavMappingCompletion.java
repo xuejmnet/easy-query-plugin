@@ -81,85 +81,84 @@ public class NavMappingCompletion extends CompletionContributor {
 
         String currentClassQualifiedName = currentPsiClass.getQualifiedName();
         List<Pair<String, String>> currentClassFields = Arrays.stream(currentPsiClass.getAllFields())
-                .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
-                .filter(field-> !EasyQueryElementUtil.hasNavigateAnnotation(field))
-                // 还需要过滤掉当前字段， 毕竟 当前字段是被关联的， 所以不能作为关联属性
-                .filter(field-> !StrUtil.equals(currentField.getName(), field.getName()))
-                .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
-                .collect(Collectors.toList());
+            .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
+            .filter(field -> !EasyQueryElementUtil.hasNavigateAnnotation(field))
+            // 还需要过滤掉当前字段， 毕竟 当前字段是被关联的， 所以不能作为关联属性
+            .filter(field -> !StrUtil.equals(currentField.getName(), field.getName()))
+            .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
+            .collect(Collectors.toList());
 
 
         //
 
         String targetEntityClassName = currentFieldTypeQualifiedName;
         LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                LookupElementBuilder.create("Nav EasyQuery @Navigate生成")
-                        .withInsertHandler((context, item) -> {
-                            Project project = context.getProject();
-                            // 将 final 变量移到外面，以便 lambda 访问
-                            final String finalCurrentClassQualifiedName = currentClassQualifiedName;
-                            final List<Pair<String, String>> finalCurrentClassFields = currentClassFields;
-                            final String finalTargetEntityClassName = targetEntityClassName;
+            LookupElementBuilder.create("Nav EasyQuery @Navigate生成")
+                .withInsertHandler((context, item) -> {
+                    Project project = context.getProject();
+                    // 将 final 变量移到外面，以便 lambda 访问
+                    final String finalCurrentClassQualifiedName = currentClassQualifiedName;
+                    final List<Pair<String, String>> finalCurrentClassFields = currentClassFields;
+                    final String finalTargetEntityClassName = targetEntityClassName;
 
-                            Consumer<NavMappingRelation> callback = (mappingRelation) -> {
-                                ApplicationManager.getApplication().runWriteAction(() -> {
+                    Consumer<NavMappingRelation> callback = (mappingRelation) -> {
+                        ApplicationManager.getApplication().runWriteAction(() -> {
 
 
-                                    String navText = generateNavPropertyCode(project, mappingRelation);
-                                    context.getDocument().replaceString(context.getStartOffset() - 1, // 需要往后回退一位, 将@ 符号也一起替换掉
-                                            context.getTailOffset(), navText);
-                                });
-                            };
+                            String navText = generateNavPropertyCode(project, mappingRelation);
+                            context.getDocument().replaceString(context.getStartOffset() - 1, // 需要往后回退一位, 将@ 符号也一起替换掉
+                                context.getTailOffset(), navText);
+                        });
+                    };
 
-                            SwingUtilities.invokeLater(() -> {
-                                // 使用 ReadAction.compute() 在读取操作中获取 PSI 数据
-                                Map<String, Object> psiData = ReadAction.compute(() -> {
-                                    Map<String, Object> data = new HashMap<>();
-                                    Collection<PsiClass> entityClasses = PsiJavaFileUtil.getAnnotationPsiClass(project,
-                                            "com.easy.query.core.annotation.Table");
+                    SwingUtilities.invokeLater(() -> {
+                        // 使用 ReadAction.compute() 在读取操作中获取 PSI 数据
+                        Map<String, Object> psiData = ReadAction.compute(() -> {
+                            Map<String, Object> data = new HashMap<>();
+                            Collection<PsiClass> entityClasses = PsiJavaFileUtil.getAnnotationPsiClass(project,
+                                "com.easy.query.core.annotation.Table");
 
 //                                List<String> entityClassQualifiedNameList = entityClasses.stream().map(PsiClass::getQualifiedName).collect(Collectors.toList());
 
 
-                                    List<Pair<String,String>> entities = entityClasses.stream()
-                                            .map(clazz-> Pair.of(clazz.getQualifiedName(),PsiCommentUtil.getCommentDataStr(clazz.getDocComment())))
-                                            .collect(Collectors.toList());
-                                    data.put("entities", entities);
+                            List<Pair<String, String>> entities = entityClasses.stream()
+                                .map(clazz -> Pair.of(clazz.getQualifiedName(), PsiCommentUtil.getCommentDataStr(clazz.getDocComment())))
+                                .collect(Collectors.toList());
+                            data.put("entities", entities);
 
-                                    Map<String, List<Pair<String,String>>> entityAttributesMap = new HashMap<>();
-
-
-                                    for (PsiClass psiClass : entityClasses) {
-                                        PsiField[] allFields = psiClass.getAllFields();
-                                        entityAttributesMap.put(psiClass.getQualifiedName(), Arrays.stream(allFields)
-                                                .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
-                                                 .filter(field-> !EasyQueryElementUtil.hasNavigateAnnotation(field))
-                                                .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
-                                                .collect(Collectors.toList()));
-                                    }
-
-                                    // 当前可能是DTO
-                                    entityAttributesMap.put(finalCurrentClassQualifiedName, finalCurrentClassFields);
-                                    data.put("entityAttributesMap", entityAttributesMap);
-                                    return data;
-                                });
+                            Map<String, List<Pair<String, String>>> entityAttributesMap = new HashMap<>();
 
 
-                                // 从 ReadAction 返回的数据中获取
-                                @SuppressWarnings("unchecked")
-                                List<Pair<String, String>> entities = (List<Pair<String, String>>) psiData.get("entities");
-                                @SuppressWarnings("unchecked")
-                                Map<String, List<Pair<String, String>>> entityAttributesMap = (Map<String, List<Pair<String, String>>>) psiData.get("entityAttributesMap");
+                            for (PsiClass psiClass : entityClasses) {
+                                PsiField[] allFields = psiClass.getAllFields();
+                                entityAttributesMap.put(psiClass.getQualifiedName(), Arrays.stream(allFields)
+                                    .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
+                                    .filter(field -> !EasyQueryElementUtil.hasNavigateAnnotation(field))
+                                    .map(field -> Pair.of(field.getName(), PsiCommentUtil.getCommentDataStr(field.getDocComment())))
+                                    .collect(Collectors.toList()));
+                            }
+
+                            // 当前可能是DTO
+                            entityAttributesMap.put(finalCurrentClassQualifiedName, finalCurrentClassFields);
+                            data.put("entityAttributesMap", entityAttributesMap);
+                            return data;
+                        });
 
 
+                        // 从 ReadAction 返回的数据中获取
+                        @SuppressWarnings("unchecked")
+                        List<Pair<String, String>> entities = (List<Pair<String, String>>) psiData.get("entities");
+                        @SuppressWarnings("unchecked")
+                        Map<String, List<Pair<String, String>>> entityAttributesMap = (Map<String, List<Pair<String, String>>>) psiData.get("entityAttributesMap");
 
-                                NavMappingGUI gui = new NavMappingGUI(entities, finalCurrentClassQualifiedName,
-                                        finalTargetEntityClassName, entityAttributesMap, callback);
-                                gui.setVisible(true);
-                            });
-                        })
-                        .withIcon(Icons.EQ),
-                400d);
+
+                        NavMappingGUI gui = new NavMappingGUI(entities, finalCurrentClassQualifiedName,
+                            finalTargetEntityClassName, entityAttributesMap, callback);
+                        gui.setVisible(true);
+                    });
+                })
+                .withIcon(Icons.EQ),
+            400d);
         result.addElement(lookupElementWithEq);
 
     }
@@ -172,17 +171,36 @@ public class NavMappingCompletion extends CompletionContributor {
         // 找到对应实体类
         PsiClass sourceEntityClass = PsiJavaFileUtil.getPsiClass(project, sourceEntityFullName);
         String sourceEntitySimpleName = sourceEntityClass.getName();
+
+        PsiAnnotation sourceEntityClassAnnotation = sourceEntityClass.getAnnotation("lombok.experimental.FieldNameConstants");
+        String sourceFieldPrefix;
+        if (sourceEntityClassAnnotation == null) {
+            sourceFieldPrefix = (sourceEntitySimpleName + "Proxy");
+        } else {
+            sourceFieldPrefix = sourceEntitySimpleName;
+        }
         PsiJavaFile currentClassFile = (PsiJavaFile) sourceEntityClass.getContainingFile();
 
-        PsiImportList currentClassFileImportList = currentClassFile.getImportList();
+//        PsiImportList currentClassFileImportList = currentClassFile.getImportList();
 
         PsiClass targetEntityClass = PsiJavaFileUtil.getPsiClass(project, targetEntityFullName);
         String targetEntitySimpleName = targetEntityClass.getName();
+
+
+
+        PsiAnnotation targetEntityClassAnnotation = targetEntityClass.getAnnotation("lombok.experimental.FieldNameConstants");
+        String targetFieldPrefix;
+        if (targetEntityClassAnnotation == null) {
+            targetFieldPrefix = (targetEntitySimpleName + "Proxy");
+        } else {
+            targetFieldPrefix = targetEntitySimpleName;
+        }
 
         // 添加TargetEntity的引入
 //        currentClassFileImportList.add(PsiJavaFileUtil.createImportStatement(project, targetEntityClass));
 
         String middleEntitySimpleName;
+        String middleFieldPrefix;
         if (StrUtil.isNotBlank(middleEntityFullName)) {
             PsiClass middleEntityClass = PsiJavaFileUtil.getPsiClass(project, middleEntityFullName);
 
@@ -190,8 +208,16 @@ public class NavMappingCompletion extends CompletionContributor {
 //            currentClassFileImportList.add(PsiJavaFileUtil.createImportStatement(project, middleEntityClass));
 
             middleEntitySimpleName = middleEntityClass.getName();
+
+            PsiAnnotation middleEntityClassAnnotation = middleEntityClass.getAnnotation("lombok.experimental.FieldNameConstants");
+            if (middleEntityClassAnnotation == null) {
+                middleFieldPrefix = (middleEntitySimpleName + "Proxy");
+            } else {
+                middleFieldPrefix = middleEntitySimpleName;
+            }
         } else {
             middleEntitySimpleName = null;
+            middleFieldPrefix=null;
         }
 
 
@@ -209,14 +235,14 @@ public class NavMappingCompletion extends CompletionContributor {
         // 添加 selfProperty
         if (relation.getSourceFields() != null && relation.getSourceFields().length > 0) {
             code.append(", selfProperty = {");
-            code.append(Arrays.stream(relation.getSourceFields()).map(s -> sourceEntitySimpleName + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getSourceFields()).map(s -> sourceFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
             code.append("}");
         }
 
         // 添加 selfMappingProperty
         if (relation.getSelfMappingFields() != null && relation.getSelfMappingFields().length > 0) {
             code.append(", selfMappingProperty = {");
-            code.append(Arrays.stream(relation.getSelfMappingFields()).map(s -> middleEntitySimpleName + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getSelfMappingFields()).map(s -> middleFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
             code.append("}");
         }
 
@@ -228,14 +254,14 @@ public class NavMappingCompletion extends CompletionContributor {
         // 添加 targetProperty
         if (relation.getTargetFields() != null && relation.getTargetFields().length > 0) {
             code.append(", targetProperty = {");
-            code.append(Arrays.stream(relation.getTargetFields()).map(s -> targetEntitySimpleName + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getTargetFields()).map(s -> targetFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
             code.append("}");
         }
 
         // 添加 targetMappingProperty
         if (relation.getTargetMappingFields() != null && relation.getTargetMappingFields().length > 0) {
             code.append(", targetMappingProperty = {");
-            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s -> middleEntitySimpleName + ".Fields." + s + "").collect(Collectors.joining(", ")));
+            code.append(Arrays.stream(relation.getTargetMappingFields()).map(s -> middleFieldPrefix + ".Fields." + s + "").collect(Collectors.joining(", ")));
             code.append("}");
         }
 

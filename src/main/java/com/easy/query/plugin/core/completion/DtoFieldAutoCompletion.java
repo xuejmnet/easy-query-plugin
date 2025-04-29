@@ -8,6 +8,7 @@ import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
@@ -124,12 +125,17 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                 400d);
             result.addElement(lookupElementWithEq);
         }
-        if(!dtoFieldNameSet.contains("EXTRA_AUTO_INCLUDE_CONFIGURE")){
+        if (!dtoFieldNameSet.contains("EXTRA_AUTO_INCLUDE_CONFIGURE")) {
+            String easyAlias = getEasyAlias(linkPsiClass);
             // 再添加一个eq:开头的, 进行索引
             LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
                 LookupElementBuilder.create("eq_extra_auto_include_configure")
                     .withInsertHandler((context, item) -> {
-                        String filedText = String.format("private static final ExtraAutoIncludeConfigure EXTRA_AUTO_INCLUDE_CONFIGURE= %s.TABLE.EXTRA_AUTO_INCLUDE_CONFIGURE();", linkPsiClass.getName() + "Proxy");
+//                        String filedText = String.format("private static final ExtraAutoIncludeConfigure EXTRA_AUTO_INCLUDE_CONFIGURE= %s.TABLE.EXTRA_AUTO_INCLUDE_CONFIGURE();", linkPsiClass.getName() + "Proxy");
+                        String filedText = String.format("\n" +
+                            "        private static final ExtraAutoIncludeConfigure EXTRA_AUTO_INCLUDE_CONFIGURE = %s.TABLE.EXTRA_AUTO_INCLUDE_CONFIGURE()\n" +
+                            "                .where(%s -> {})\n" +
+                            "                .select(%s -> Select.of());", linkPsiClass.getName() + "Proxy",easyAlias,easyAlias);
 
                         context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), filedText);
                     })
@@ -155,6 +161,18 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
 //            }
 //        }
 
+    }
+
+    private String getEasyAlias(PsiClass psiClass) {
+
+        PsiAnnotation easyAlias = psiClass.getAnnotation("com.easy.query.core.annotation.EasyAlias");
+        if (easyAlias != null) {
+            String easyAliasName = PsiUtil.getPsiAnnotationValueIfEmpty(easyAlias, "value", "");
+            if (cn.hutool.core.util.StrUtil.isNotBlank(easyAliasName)) {
+                return easyAliasName;
+            }
+        }
+        return "o";
     }
 
 
