@@ -32,7 +32,6 @@ dependencies {
     implementation("cn.hutool:hutool-setting:5.8.35")
     implementation("com.google.guava:guava:31.0.1-jre")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.41")
-    implementation("io.github.classgraph:classgraph:4.8.179")
 
     implementation ("ch.qos.logback:logback-classic:1.4.12") // Logback 依赖
     implementation ("org.slf4j:slf4j-api:1.7.30") // SLF4J API 依赖
