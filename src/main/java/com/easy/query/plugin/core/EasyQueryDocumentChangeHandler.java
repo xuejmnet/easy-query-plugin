@@ -95,7 +95,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             });
             return;
         }
-        
+
         virtualFiles = virtualFiles.stream()
             .filter(oldFile -> {
                 if (Objects.isNull(oldFile)) {
@@ -238,7 +238,11 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             editor.addEditorMouseListener(new EditorMouseListener() {
                 @Override
                 public void mouseExited(@NotNull EditorMouseEvent event) {
-                    createAptFile(Collections.singletonList(VirtualFileUtils.getVirtualFile(editor.getDocument())), event.getEditor().getProject(), false);
+                    Project project = event.getEditor().getProject();
+                    if (Objects.isNull(project)) {
+                        return;
+                    }
+                    createAptFile(Collections.singletonList(VirtualFileUtils.getVirtualFile(editor.getDocument())), project, false);
                 }
             });
             document.putUserData(LISTENER, true);
@@ -282,7 +286,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         if (DumbService.getInstance(project).isDumb()) {
             return false; // 在索引未准备好时返回false，稍后会重试
         }
-        
+
         PsiManager psiManager = PsiManager.getInstance(project);
         PsiFile psiFile = psiManager.findFile(currentFile);
         // 支持java和kotlin

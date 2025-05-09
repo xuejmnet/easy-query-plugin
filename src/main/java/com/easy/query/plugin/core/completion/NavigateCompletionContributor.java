@@ -66,6 +66,9 @@ public class NavigateCompletionContributor extends CompletionContributor {
 
         PsiElement position = parameters.getPosition();
         Project project = parameters.getEditor().getProject();
+        if (Objects.isNull(project)) {
+            return;
+        }
 
         if (!SkipAutopopupInStrings.isInStringLiteral(position)) {
             return;
