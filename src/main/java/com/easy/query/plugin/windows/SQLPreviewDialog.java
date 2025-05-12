@@ -20,6 +20,7 @@ public class SQLPreviewDialog extends JDialog {
     private JTextArea previewSQLText;
     private JButton convertButton;
     private JButton mergeButton;
+    private JCheckBox boolean2int;
     private static final char MARK = '?';
     private static final BasicFormatter FORMATTER = new BasicFormatter();
     private static final BasicFormatter2 FORMATTER2 = new BasicFormatter2();
@@ -186,13 +187,29 @@ public class SQLPreviewDialog extends JDialog {
                     sb.insert(i, String.format("'%s'", entry.getKey().replace("T", " ")));
                 }
                 // 常见的不需要加引号的类型
-                else if (StrUtil.equalsAnyIgnoreCase(entry.getValue(), "BigDecimal", "Integer", "Long", "Double", "Float", "Short", "Boolean")) {
+                else if (StrUtil.equalsAnyIgnoreCase(entry.getValue(), "BigDecimal", "Integer", "Long", "Double", "Float", "Short", "Boolean", "int", "long", "double", "float", "short", "boolean")) {
+
                     sb.insert(i, entry.getKey());
                 } else {
                     sb.insert(i, String.format("'%s'", entry.getKey()));
                 }
             } else {
-                sb.insert(i, entry.getKey());
+                if (boolean2int.isSelected()) {
+                    if (StrUtil.equalsAnyIgnoreCase(entry.getValue(), "Boolean", "boolean")) {
+                        if( StrUtil.equalsIgnoreCase(entry.getKey(), "true")){
+                            sb.insert(i,"1");
+                        }else if( StrUtil.equalsIgnoreCase(entry.getKey(), "false")){
+                            sb.insert(i,"0");
+                        }else{
+                            sb.insert(i, entry.getKey());
+                        }
+                    }else{
+                        sb.insert(i, entry.getKey());
+                    }
+
+                } else {
+                    sb.insert(i, entry.getKey());
+                }
             }
 
 
