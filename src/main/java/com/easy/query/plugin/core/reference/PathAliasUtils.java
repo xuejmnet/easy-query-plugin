@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.reference;
 
 import cn.hutool.core.util.ArrayUtil;
+import com.easy.query.plugin.core.ResultWithError;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
@@ -9,6 +10,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiTreeUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PathAliasUtils {
@@ -21,18 +23,18 @@ public class PathAliasUtils {
      * @param segments       当前段落数组
      * @return 目标 PsiElement
      */
-    @Nullable
-    public static PsiElement findSegmentTargetElement(Project project, PsiElement currentElement, String[] segments) {
+    @NotNull
+    public static ResultWithError<PsiElement> findSegmentTargetElement(Project project, PsiElement currentElement, String[] segments) {
         // 获取当前元素最近的 PsiClass
         PsiClass javaClass = PsiTreeUtil.getParentOfType(currentElement, PsiClass.class);
         if (javaClass == null) {
-            return null;
+            return new ResultWithError<>(null, "No PsiClass found");
         }
 
         // 获取 javaClass 的 link docTag 中的链接类
         PsiClass topLinkClass = PsiJavaClassUtil.getLinkPsiClass(javaClass);
         if (topLinkClass == null) {
-            return null;
+            return new ResultWithError<>(null, "No link docTag found");
         }
 
 
@@ -41,12 +43,12 @@ public class PathAliasUtils {
         if (field == null) {
             if (segments.length == 1) {
                 // 尝试从当前类获取一下
-                return javaClass.findFieldByName(segments[0], true);
+                return new ResultWithError<>(javaClass.findFieldByName(segments[0], true),null);
             }
-            return null;
+            return new ResultWithError<>(null, "No field found");
         }
         if (segments.length == 1) {
-            return field;
+            return new ResultWithError<>(field,null);
         }
 
 
@@ -55,7 +57,7 @@ public class PathAliasUtils {
             PsiType fieldType = field.getType();
             // 看看这个类型是否包含泛型
             if (!(fieldType instanceof PsiClassReferenceType)) {
-                return null;
+                return new ResultWithError<>(null, "No fieldType found");
             }
             // 应该都是这个类型
             PsiJavaCodeReferenceElement fieldTypeRef = ((PsiClassReferenceType) fieldType).getReference();
@@ -89,11 +91,11 @@ public class PathAliasUtils {
             if (i == segments.length - 1) {
                 // 如果是最后一段， 且是String  Date LocalDate 等常见类型， 则返回
                 if (StrUtil.startWithAny(fieldTypeRefQualifiedName, "java.lang", "java.util")) {
-                    return field;
+                    return new ResultWithError<>(field,null);
                 }
                 // 如果是枚举类型， 则返回
                 if (fieldTypeRefQualifiedName.equals("java.lang.Enum")) {
-                    return field;
+                    return new ResultWithError<>(field,null);
                 }
             }
 
@@ -101,22 +103,22 @@ public class PathAliasUtils {
             psiClass = PsiJavaFileUtil.getPsiClass(project, fieldType.getCanonicalText());
             if (psiClass == null) {
                 // 没有对应的类，视为解析失败
-                return null;
+                return new ResultWithError<>(field,  "No class found");
             }
 
             PsiField currentLevelField = psiClass.findFieldByName(segments[i], true);
             if (currentLevelField == null) {
-                return null;
+                return new ResultWithError<>(null, "No currentLevelField found");
             }
 
             field = currentLevelField;
 
             if (i == segments.length - 1) {
-                return field;
+                return new ResultWithError<>(field,null);
             }
         }
 
 
-        return null;
+        return new ResultWithError<>(null,"end not found any element");
     }
 }

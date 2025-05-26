@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.reference;
 
+import com.easy.query.plugin.core.ResultWithError;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiLiteralExpression;
@@ -41,7 +42,8 @@ public class PathAliasNavigationHandler extends PsiReferenceBase<PsiLiteralExpre
 //        for (int i = 0; i < pathSegments.length; i++) {
 //            String[] subPathSegments = new String[i + 1];
 //            System.arraycopy(pathSegments, 0, subPathSegments, 0, i + 1);
-            targetElement = findSegmentTargetElement(project, targetElement, pathSegments);
+        ResultWithError<PsiElement> resultWithError = findSegmentTargetElement(project, targetElement, pathSegments);
+
 //            if (targetElement == null) {
 //                break;
 //            }
@@ -54,7 +56,7 @@ public class PathAliasNavigationHandler extends PsiReferenceBase<PsiLiteralExpre
 //                break;
 //            }
 //        }
-        return targetElement != null ? targetElement : getElement();
+        return resultWithError.result != null ? resultWithError.result : getElement();
     }
 
     /**

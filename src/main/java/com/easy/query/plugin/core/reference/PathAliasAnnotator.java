@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.reference;
 
+import com.easy.query.plugin.core.ResultWithError;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -25,9 +26,9 @@ public class PathAliasAnnotator implements Annotator {
             if (value != null && isNavigateFlatPathAlias(element)) {
                 // 将 pathAlias 以英文句号分割成多个段落
                 String[] pathSegments = value.split("\\.");
-                PsiElement targetElement = findSegmentTargetElement(element.getProject(), element, pathSegments);
-                if (targetElement == null) {
-                    holder.newAnnotation(HighlightSeverity.ERROR, "找不到对应的引用: " + String.join(".", pathSegments))
+                ResultWithError<PsiElement> resultWithError = findSegmentTargetElement(element.getProject(), element, pathSegments);
+                if (resultWithError.result == null) {
+                    holder.newAnnotation(HighlightSeverity.ERROR, "找不到对应的引用: " + String.join(".", pathSegments)+ " "+resultWithError.error)
                             .range(element.getTextRange())
                             .create();
                 }

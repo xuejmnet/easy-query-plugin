@@ -54,9 +54,9 @@ public class PsiJavaClassUtil {
 
         // 有文档注释, 尝试提取
         PsiElement linkDocEle = Arrays.stream(docComment.getDescriptionElements())
-                .filter(ele -> ele instanceof PsiInlineDocTag)
-                .findFirst()
-                .orElse(null);
+            .filter(ele -> ele instanceof PsiInlineDocTag)
+            .findFirst()
+            .orElse(null);
         if (Objects.isNull(linkDocEle)) {
             return ""; // 没有找到 @link, 无法校验
         }
@@ -78,7 +78,16 @@ public class PsiJavaClassUtil {
                     if (PsiJavaFileUtil.getPsiClass(currentClass.getProject(), portableClassName) != null) {
                         mainEntityClassQualifiedName = portableClassName;
                         break;
-                    } else {
+                    }
+                }
+            }
+            //可能在当前目录下
+            if (StrUtil.isBlank(mainEntityClassQualifiedName)) {
+                String qualifiedName = currentClass.getQualifiedName();
+                if (StrUtil.isNotBlank(qualifiedName)) {
+                    String portableClassName = StrUtil.subBefore(qualifiedName,  ".", true) +"."+ mainEntityClassFromLink;
+                    if (PsiJavaFileUtil.getPsiClass(currentClass.getProject(), portableClassName) != null) {
+                        mainEntityClassQualifiedName = portableClassName;
                     }
                 }
             }
@@ -116,28 +125,28 @@ public class PsiJavaClassUtil {
         }
 
         return Arrays.stream(importList.getAllImportStatements())
-                .map(statement -> {
-                    return Arrays.stream(statement.getChildren())
-                            // 过滤掉关键字 import
-                            .filter(child -> {
-                                if (child instanceof PsiKeyword) {
-                                    // 不要 keyword 这里面一般是 import
-                                    return false;
-                                } else if (child instanceof PsiJavaToken) {
-                                    // 过滤掉一些特殊字符
-                                    if (StrUtil.equalsAny(child.getText(), ";", " ")) {
-                                        return false;
-                                    }
-                                }
-                                // 剩下的都要
-                                return true;
-                            })
-                            .map(PsiElement::getText) // 提取元素文本
-                            .collect(Collectors.joining(""));
-                })
-                .map(StrUtil::trimToEmpty) // 拼接后去掉首尾空格
-                .filter(StrUtil::isNotBlank) // 过滤掉空行
-                .collect(Collectors.toList());
+            .map(statement -> {
+                return Arrays.stream(statement.getChildren())
+                    // 过滤掉关键字 import
+                    .filter(child -> {
+                        if (child instanceof PsiKeyword) {
+                            // 不要 keyword 这里面一般是 import
+                            return false;
+                        } else if (child instanceof PsiJavaToken) {
+                            // 过滤掉一些特殊字符
+                            if (StrUtil.equalsAny(child.getText(), ";", " ")) {
+                                return false;
+                            }
+                        }
+                        // 剩下的都要
+                        return true;
+                    })
+                    .map(PsiElement::getText) // 提取元素文本
+                    .collect(Collectors.joining(""));
+            })
+            .map(StrUtil::trimToEmpty) // 拼接后去掉首尾空格
+            .filter(StrUtil::isNotBlank) // 过滤掉空行
+            .collect(Collectors.toList());
     }
 
 
@@ -151,13 +160,14 @@ public class PsiJavaClassUtil {
 
     /**
      * 元素父级需要是 class 而不是method
+     *
      * @param element
      */
     public static boolean isElementRelatedToClass(PsiElement element) {
         if (element == null || element.getParent() == null) {
             return false;
         }
-        return PsiTreeUtil.getParentOfType(element,PsiMethod.class,PsiReferenceExpression.class) == null;
+        return PsiTreeUtil.getParentOfType(element, PsiMethod.class, PsiReferenceExpression.class) == null;
     }
 
 
@@ -176,10 +186,10 @@ public class PsiJavaClassUtil {
 
         // 有文档注释, 尝试提取
         PsiDocTag schemaDocEle = Arrays.stream(docComment.getTags())
-                .map(ele -> (PsiDocTag) ele)
-                .filter(ele -> "easy-query-dto".equals(ele.getName()))
-                .findFirst()
-                .orElse(null);
+            .map(ele -> (PsiDocTag) ele)
+            .filter(ele -> "easy-query-dto".equals(ele.getName()))
+            .findFirst()
+            .orElse(null);
         if (Objects.isNull(schemaDocEle)) {
             return ""; // 没有找到 @easy-query-dto, 无法校验
         }
@@ -188,9 +198,6 @@ public class PsiJavaClassUtil {
         String schema = ReUtil.getGroup1("schema: *(\\S+)", schemaDocEle.getText());
         return StrUtil.isBlank(schema) ? "normal" : schema;
     }
-
-
-
 
 
 }
