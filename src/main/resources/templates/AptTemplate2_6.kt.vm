@@ -17,12 +17,12 @@ import com.easy.query.core.proxy.core.EntitySQLContext;
  *
  * @author easy-query
  */
-class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}>() {
+class ${aptFileCompiler.getEntityClassProxyName()} : AbstractProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}>() {
 
     #macro(renderPropertyUI $valueObject)
         #foreach($property in $valueObject.getProperties())
             ${property.comment}
-            *{@link ${property.getOwner()}#${property.getPropertyNameGetMethodName()}}
+            *[${property.getOwner()}.${property.getPropertyName()}]
             */
             #if(${property.isValueObject()})
                 fun ${property.getProxyPropertyName()}(): ${property.getEntityName()}Proxy {
@@ -74,7 +74,7 @@ class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyEntity<$
     #macro(renderValueObjectUI $valueObjectParent)
         #foreach($valueObject in $valueObjectParent.getChildren())
 
-            class ${valueObject.getEntityName()}Proxy extends AbstractValueObjectProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${valueObject.getEntityName()}>(entitySQLContext,table, propertyName) {
+            class ${valueObject.getEntityName()}Proxy : AbstractValueObjectProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${valueObject.getEntityName()}>(entitySQLContext,table, propertyName) {
 
                 #renderPropertyUI($valueObject)
 
@@ -93,12 +93,12 @@ class ${aptFileCompiler.getEntityClassProxyName()} extends AbstractProxyEntity<$
     val FETCHER=${aptFileCompiler.getSelectorInfo().getName()}(this,null,SQLSelectAsExpression.empty)
 
 
-    class ${aptFileCompiler.getSelectorInfo().getName()}(proxy: ${aptFileCompiler.getEntityClassProxyName()}, prev: ${aptFileCompiler.getSelectorInfo().getName()}?, sqlSelectAsExpression: SQLSelectAsExpression) extends AbstractFetcher<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}, ${aptFileCompiler.getSelectorInfo().getName()}>(proxy, prev, sqlSelectAsExpression) {
+    class ${aptFileCompiler.getSelectorInfo().getName()}(proxy: ${aptFileCompiler.getEntityClassProxyName()}, prev: ${aptFileCompiler.getSelectorInfo().getName()}?, sqlSelectAsExpression: SQLSelectAsExpression) : AbstractFetcher<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}, ${aptFileCompiler.getSelectorInfo().getName()}>(proxy, prev, sqlSelectAsExpression) {
 
 
         #foreach($property in ${aptFileCompiler.getSelectorInfo().getProperties()})
             ${property.getComment()}
-            *{@link ${aptFileCompiler.getEntityClassName()}#${property.getPropertyNameGetMethodName()}}
+            *[${aptFileCompiler.getEntityClassName()}.${property.getProxyPropertyName()}]
             */
             fun ${property.getProxyPropertyName()}(): ${aptFileCompiler.getSelectorInfo().getName()} {
                 return add(getProxy().${property.getProxyPropertyName()}())
