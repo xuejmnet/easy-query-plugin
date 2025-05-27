@@ -98,8 +98,8 @@ public class APTVersion2_6 {
 
 
         FileTypeEnum fileType = PsiUtil.getFileType(psiFile);
-        String path = moduleDirPath + CustomConfig.getConfig(config,config.getGenPath(),fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
-                + psiFile.getPackageName().replace(".", "/") + "/proxy";
+        String path = moduleDirPath + CustomConfig.getConfig2_6(config, config.getGenPath(), fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
+            + psiFile.getPackageName().replace(".", "/") + "/proxy";
 
         PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);
         // 等待索引准备好
@@ -127,7 +127,7 @@ public class APTVersion2_6 {
             aptFileCompiler.addImports(entityFullName);
             for (PsiField field : fields) {
                 boolean isStatic = PsiUtil.fieldIsStatic(field);
-                if(isStatic){
+                if (isStatic) {
                     continue;
                 }
                 PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
@@ -154,7 +154,7 @@ public class APTVersion2_6 {
                 String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
                 String generateAnyType = PsiUtil.getPsiAnnotationValue(proxyProperty, "generateAnyType", null);
                 Boolean anyType = StrUtil.isBlank(generateAnyType) ? null : Objects.equals("true", generateAnyType);
-                PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType,anyType);
+                PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType, anyType);
 
                 boolean includeProperty = navigate != null;
                 boolean includeManyProperty = false;
@@ -201,15 +201,15 @@ public class APTVersion2_6 {
             VelocityContext context = new VelocityContext();
             context.put("aptValueObjectInfo", aptValueObjectInfo);
             context.put("aptFileCompiler", aptFileCompiler);
-            String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
+            String suffix = fileType == FileTypeEnum.Kotlin ? ".kt" : ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
             PsiFile psiProxyFile = VelocityUtils.render(project, context, Template.getTemplateContent("AptTemplate2_6" + suffix), proxyEntityName + suffix);
             CodeStyleManager.getInstance(project).reformat(psiProxyFile);
             psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
         });
     }
 
-    private static PropertyColumn getPropertyColumn(String fieldGenericType,Boolean anyType) {
-        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn2Impl("SQLAnyTypeColumn", fieldGenericType,anyType));
+    private static PropertyColumn getPropertyColumn(String fieldGenericType, Boolean anyType) {
+        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn2Impl("SQLAnyTypeColumn", fieldGenericType, anyType));
     }
 
     private static String getNavigatePropertyProxyFullName(Project project, String fullClassName, boolean propIsProxy) {
@@ -259,7 +259,7 @@ public class APTVersion2_6 {
         aptFileCompiler.addImports(fieldValueObjectClass.getQualifiedName());
         for (PsiField field : allFields) {
             boolean isStatic = PsiUtil.fieldIsStatic(field);
-            if(isStatic){
+            if (isStatic) {
                 continue;
             }
             PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
@@ -288,7 +288,7 @@ public class APTVersion2_6 {
             String generateAnyType = PsiUtil.getPsiAnnotationValue(proxyProperty, "generateAnyType", null);
             Boolean anyType = StrUtil.isBlank(generateAnyType) ? null : Objects.equals("true", generateAnyType);
 
-            PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType,anyType);
+            PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType, anyType);
             aptFileCompiler.addImports(propertyColumn.getImport());
 
             boolean includeProperty = navigate != null;

@@ -251,6 +251,42 @@ public class CustomConfig {
         return "target/generated-sources/annotations/";
 
     }
+    public static String getConfig2_6(CustomConfig config,String value, FileTypeEnum fileType, boolean isMaven, boolean fileProxy) {
+        if (StrUtil.isNotBlank(value)) {
+            return value;
+        }
+        if (isMaven) {
+            if (fileType == FileTypeEnum.Java) {
+                if (fileProxy) {
+                    return "src/main/java/";
+                }
+                return "target/generated-sources/annotations/";
+            }
+            if (fileType == FileTypeEnum.Kotlin) {
+                if (fileProxy) {
+                    return "src/main/kotlin/";
+                }
+                return "target/generated-sources/kapt/compile/";
+            }
+        }
+        if (!isMaven) {
+            if (fileType == FileTypeEnum.Java) {
+                if (fileProxy) {
+                    return "src/main/java/";
+                }
+                return "build/generated/sources/annotationProcessor/java/main/";
+            }
+            if(BooleanUtil.isTrue(config.getKapt())){
+                return "target/generated-sources/kapt/compile/";
+            }
+            return "build/generated/ksp/main/kotlin/";
+        }
+        if (fileProxy) {
+            return "src/main/java/";
+        }
+        return "target/generated-sources/annotations/";
+
+    }
 
     @Override
     public String toString() {
