@@ -26,17 +26,17 @@ class ${aptFileCompiler.getEntityClassProxyName()} : AbstractProxyEntity<${aptFi
             */
             #if(${property.isValueObject()})
                 fun ${property.getProxyPropertyName()}(): ${property.getEntityName()}Proxy {
-                    return getValueObject(new ${property.getEntityName()}Proxy(getEntitySQLContext(),getTable(),getValueProperty("${property.getPropertyName()}")))
+                    return getValueObject(${property.getEntityName()}Proxy(getEntitySQLContext(),getTable(),getValueProperty("${property.getPropertyName()}")))
                 }
             #else
                 #if(${property.isIncludeAndHasNavigateProxyName()})
                     #if(${property.isIncludeManyProperty()})
                     fun ${property.getProxyPropertyName()}(): SQLManyQueryable<${aptFileCompiler.getEntityClassProxyName()},${property.getNavigateProxyName()},${property.getPropertyType()}> {
-                        return getNavigateMany("${property.getPropertyName()}",new ${property.getNavigateProxyName()}())
+                        return getNavigateMany("${property.getPropertyName()}",${property.getNavigateProxyName()}())
                     }
                     #else
                         fun ${property.getProxyPropertyName()}(): ${property.getNavigateProxyName()} {
-                            return getNavigate("${property.getPropertyName()}",new ${property.getNavigateProxyName()}())
+                            return getNavigate("${property.getPropertyName()}",${property.getNavigateProxyName()}())
                         }
                     #end
                 #else
@@ -101,7 +101,7 @@ class ${aptFileCompiler.getEntityClassProxyName()} : AbstractProxyEntity<${aptFi
             *[${aptFileCompiler.getEntityClassName()}.${property.getProxyPropertyName()}]
             */
             fun ${property.getProxyPropertyName()}(): ${aptFileCompiler.getSelectorInfo().getName()} {
-                return add(getProxy().${property.getProxyPropertyName()}())
+                return add(proxy.${property.getProxyPropertyName()}())
             }
 
         #end
