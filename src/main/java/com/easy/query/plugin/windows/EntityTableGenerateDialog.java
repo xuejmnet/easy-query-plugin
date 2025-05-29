@@ -67,8 +67,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class EntityTableGenerateDialog extends JDialog {
-    public static final String SINCE_CONFIG = "---请选择配置---";
-    public static final String SINCE_CONFIG_ADD = "添加配置";
+    public static final String SINCE_CONFIG = "---请选择配置---" ;
+    public static final String SINCE_CONFIG_ADD = "添加配置" ;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -125,7 +125,7 @@ public class EntityTableGenerateDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
         // 获取屏幕的大小
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        setSize(Math.min(1000,(int) screenSize.getWidth() -50), Math.min(900,(int)(screenSize.getHeight()*0.9)));
+        setSize(Math.min(1000, (int) screenSize.getWidth() - 50), Math.min(900, (int) (screenSize.getHeight() * 0.9)));
         setTitle("Entity Generate");
         DialogUtil.centerShow(this);
         confDelBtn.setIcon(PlatformIcons.DELETE_ICON);
@@ -167,7 +167,7 @@ public class EntityTableGenerateDialog extends JDialog {
             }
             EasyQueryQueryPluginConfigData.export(exportPath);
         });
-        importBtn.addActionListener(e->{
+        importBtn.addActionListener(e -> {
 
             VirtualFile virtualFile = FileChooserUtil.chooseFileVirtual(project);
             if (ObjectUtil.isNull(virtualFile)) {
@@ -211,7 +211,7 @@ public class EntityTableGenerateDialog extends JDialog {
         project = actionEvent.getProject();
 
         tableInfoMap = TableUtils.getAllTables(actionEvent)
-                .stream().collect(Collectors.toMap(TableMetadata::getName, o -> o));
+            .stream().collect(Collectors.toMap(TableMetadata::getName, o -> o));
 
         DefaultListModel<String> model = new DefaultListModel<>();
         // tableNameSet按照字母降序
@@ -260,7 +260,7 @@ public class EntityTableGenerateDialog extends JDialog {
             }
         });
 
-        search_btn.addActionListener(e->{
+        search_btn.addActionListener(e -> {
             String tableName = tableSearch.getText();
             if (StringUtils.isNotBlank(tableName)) {
                 if (!tableList.isSelectionEmpty()) {
@@ -274,7 +274,7 @@ public class EntityTableGenerateDialog extends JDialog {
         modelTemplateBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project,modelTemplate, newTemplate -> {
+                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project, modelTemplate, newTemplate -> {
                     modelTemplate = newTemplate;
                 });
                 modelTemplateEditorDialog.setVisible(true);
@@ -283,7 +283,7 @@ public class EntityTableGenerateDialog extends JDialog {
         columnMappingBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ColumnMappingDialog columnMappingDialog = new ColumnMappingDialog(project,typeMapping, typeMap -> {
+                ColumnMappingDialog columnMappingDialog = new ColumnMappingDialog(project, typeMapping, typeMap -> {
                     typeMapping = typeMap;
                 });
                 columnMappingDialog.setVisible(true);
@@ -325,7 +325,7 @@ public class EntityTableGenerateDialog extends JDialog {
         Map<String, String> moduleMap = modulePackageMap.get(moduleName);
         if (moduleMap == null || moduleMap.isEmpty()) {
             NotificationUtils.notifyError("模块不存在!", "", project);
-            return "";
+            return "" ;
             // throw new RuntimeException(StrUtil.format("模块不存在:{}", moduleName));
         }
         return moduleMap.getOrDefault(packageName, "");
@@ -354,7 +354,7 @@ public class EntityTableGenerateDialog extends JDialog {
         config.setTypeMapping(typeMapping);
         config.setIgnoreColumns(ignoreColumnsText.getText());
         String superClass = superClassText.getText();
-        config.setModelSuperClass(StringUtils.isBlank(superClass)?null:superClass);
+        config.setModelSuperClass(StringUtils.isBlank(superClass) ? null : superClass);
         return config;
     }
 
@@ -413,7 +413,7 @@ public class EntityTableGenerateDialog extends JDialog {
         sinceComBox.removeAllItems();
         sinceComBox.addItem(SINCE_CONFIG);
         for (String item : list) {
-            if(!EasyQueryQueryPluginConfigData.isHiddenConfigKey(item)){
+            if (!EasyQueryQueryPluginConfigData.isHiddenConfigKey(item)) {
                 sinceComBox.insertItemAt(item, 1);
             }
         }
@@ -441,9 +441,9 @@ public class EntityTableGenerateDialog extends JDialog {
                     initSinceComBox(null);
                     return;
                 }
-                if(EasyQueryQueryPluginConfigData.isHiddenConfigKey(configName)){
+                if (EasyQueryQueryPluginConfigData.isHiddenConfigKey(configName)) {
                     initSinceComBox(null);
-                    Messages.showWarningDialog("配置名称:["+configName+"]是系统默认的", "提示");
+                    Messages.showWarningDialog("配置名称:[" + configName + "]是系统默认的", "提示");
                     return;
                 }
                 EasyQueryQueryPluginConfigData.saveConfigSince(configName, getConfigData());
@@ -477,9 +477,9 @@ public class EntityTableGenerateDialog extends JDialog {
 ////        if (idx == 0) {
 //        EasyQueryConfig configData = getConfigData();
 //        modelPackagePath.setText(getPackagePath(String.valueOf(modelCombox.getSelectedItem()), ObjectUtil.defaultIfNull(configData.getModelPackage(), "domain")));
-////        }
-//    }
 
+    /// /        }
+//    }
     public void initConfigData(EasyQueryConfig config) {
         if (ObjectUtil.isNull(config)) {
             config = Template.getEasyQueryConfig(project, sinceComBox.getSelectedItem() + "");
@@ -515,7 +515,7 @@ public class EntityTableGenerateDialog extends JDialog {
         swagger3CheckBox.setSelected(config.isSwagger3());
         modelTemplate = config.getModelTemplate();
         typeMapping = config.getTypeMapping();
-        superClassText.setText( config.getModelSuperClass());
+        superClassText.setText(config.getModelSuperClass());
         ignoreColumnsText.setText(config.getIgnoreColumns());
     }
 
@@ -529,6 +529,7 @@ public class EntityTableGenerateDialog extends JDialog {
 
         dispose();
     }
+
     private void onOverride() {
         // add your code here
         boolean close = onGenerate(true);
@@ -560,7 +561,7 @@ public class EntityTableGenerateDialog extends JDialog {
         for (String tableName : selectedTabeList) {
             selectedTableInfo.add(tableInfoMap.get(tableName));
         }
-        startGenCode(selectedTableInfo,override);
+        startGenCode(selectedTableInfo, override);
         return true;
     }
 
@@ -574,7 +575,7 @@ public class EntityTableGenerateDialog extends JDialog {
 //            }
 //            ReflectUtil.setFieldValue(configData, box.getName(),"");
 //        }
-        RenderEasyQueryTemplate.assembleData(selectedTableInfo, configData, project, getModule(String.valueOf(modelCombox.getSelectedItem())),override);
+        RenderEasyQueryTemplate.assembleData(selectedTableInfo, configData, project, getModule(String.valueOf(modelCombox.getSelectedItem())), override);
         NotificationUtils.notifySuccess("代码生成成功", project);
         onCancel();
     }
@@ -646,6 +647,7 @@ public class EntityTableGenerateDialog extends JDialog {
         cellRenderer.setHighlightKey(highlightKey);
         return highlightKey.keySet();
     }
+
     private Set<String> searchLike(String tableName, TableListCellRenderer cellRenderer) {
         Map<String, String> highlightKey = highlightKeyLike(tableName);
         cellRenderer.setSearchTableName(tableName);
@@ -662,8 +664,8 @@ public class EntityTableGenerateDialog extends JDialog {
     public Set<String> search(String keyword) {
         if (StrUtil.isEmpty(keyword)) {
             return INVERTED_TABLE_INDEX.values().stream()
-                    .flatMap(el -> el.stream())
-                    .collect(Collectors.toSet());
+                .flatMap(el -> el.stream())
+                .collect(Collectors.toSet());
         }
         Set<String> result = new HashSet<>();
         for (int i = 0; i < keyword.length(); i++) {
@@ -671,24 +673,49 @@ public class EntityTableGenerateDialog extends JDialog {
             result.addAll(INVERTED_TABLE_INDEX.getOrDefault(key + "", Collections.emptySet()));
         }
         result = result.stream()
-                .filter(el -> {
-
-                    StringBuilder matchWords = new StringBuilder();
-                    for (int i = 0; i < keyword.length(); i++) {
-                        String key = keyword.charAt(i) + "";
-                        if (StringUtils.containsIgnoreCase(el, key)) {
-                            el = el.replaceFirst(key, "");
-                            matchWords.append(key);
-                        } else {
-                            return false;
-                        }
-                    }
-                    String matchWordsString = matchWords.toString();
-                    return StringUtils.containsIgnoreCase(keyword, matchWordsString);
-                })
-                .collect(Collectors.toSet());
+            .filter(el -> {
+                return match(el, keyword);
+            })
+            .collect(Collectors.toSet());
         return result;
     }
+
+    private boolean match(String el, String keyword) {
+        try {
+
+            int contentIndex = 0, keywordIndex = 0;
+            int contentLen = el.length(), keywordLen = keyword.length();
+
+            // 处理边界情况
+            if (keywordLen == 0) return true; // keyword为空
+            if (contentLen < keywordLen) return false; // content比keyword短
+
+            while (contentIndex < contentLen && keywordIndex < keywordLen) {
+                // 如果剩余content长度不足，提前终止
+                if (contentLen - contentIndex < keywordLen - keywordIndex) {
+                    return false;
+                }
+                // 当前字符匹配成功，移动keyword指针
+                if (el.charAt(contentIndex) == keyword.charAt(keywordIndex)) {
+                    keywordIndex++;
+                }
+                contentIndex++;
+            }
+            return keywordIndex == keywordLen;
+        } catch (Exception ex) {
+
+            for (int i = 0; i < keyword.length(); i++) {
+                String key = keyword.charAt(i) + "" ;
+                if (StringUtils.containsIgnoreCase(el, key)) {
+                    el = el.replaceFirst(key, "");
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
     public Set<String> searchLike(String keyword) {
         if (StrUtil.isEmpty(keyword)) {
             return INVERTED_TABLE_INDEX.values().stream()
@@ -702,7 +729,7 @@ public class EntityTableGenerateDialog extends JDialog {
         }
         result = result.stream()
             .filter(el -> {
-                if(StrUtil.isNotBlank(el)){
+                if (StrUtil.isNotBlank(el)) {
                     return el.contains(keyword);
                 }
                 return false;
@@ -721,22 +748,23 @@ public class EntityTableGenerateDialog extends JDialog {
 
         Map<String, String> highlightMap = new HashMap<>();
         result.forEach(el -> {
-                    String finalKeyword = keyword;
-                    StringBuilder htmlText = new StringBuilder("<html>");
-                    for (int i = 0; i < el.length(); i++) {
-                        String key = el.charAt(i) + "";
-                        if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                            htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
-                            finalKeyword = finalKeyword.replaceFirst(key, "");
-                            continue;
-                        }
-                        htmlText.append(key);
-                    }
-                    htmlText.append("</html>");
-                    highlightMap.put(el, htmlText.toString());
-                });
+            String finalKeyword = keyword;
+            StringBuilder htmlText = new StringBuilder("<html>");
+            for (int i = 0; i < el.length(); i++) {
+                String key = el.charAt(i) + "" ;
+                if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
+                    htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
+                    finalKeyword = finalKeyword.replaceFirst(key, "");
+                    continue;
+                }
+                htmlText.append(key);
+            }
+            htmlText.append("</html>");
+            highlightMap.put(el, htmlText.toString());
+        });
         return highlightMap;
     }
+
     public Map<String, String> highlightKeyLike(String keyword) {
 
         Set<String> result = searchLike(keyword);
@@ -747,20 +775,20 @@ public class EntityTableGenerateDialog extends JDialog {
 
         Map<String, String> highlightMap = new HashMap<>();
         result.forEach(el -> {
-                    String finalKeyword = keyword;
-                    StringBuilder htmlText = new StringBuilder("<html>");
-                    for (int i = 0; i < el.length(); i++) {
-                        String key = el.charAt(i) + "";
-                        if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                            htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
-                            finalKeyword = finalKeyword.replaceFirst(key, "");
-                            continue;
-                        }
-                        htmlText.append(key);
-                    }
-                    htmlText.append("</html>");
-                    highlightMap.put(el, htmlText.toString());
-                });
+            String finalKeyword = keyword;
+            StringBuilder htmlText = new StringBuilder("<html>");
+            for (int i = 0; i < el.length(); i++) {
+                String key = el.charAt(i) + "" ;
+                if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
+                    htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
+                    finalKeyword = finalKeyword.replaceFirst(key, "");
+                    continue;
+                }
+                htmlText.append(key);
+            }
+            htmlText.append("</html>");
+            highlightMap.put(el, htmlText.toString());
+        });
         return highlightMap;
     }
 
@@ -791,22 +819,22 @@ public class EntityTableGenerateDialog extends JDialog {
             modulesCombox.setRenderer(new ModuleComBoxRender());
 
             moduleMap = Arrays.stream(modules)
-                    .filter(module -> {
-                        if (isMavenProject) {
-                            @NotNull VirtualFile[] sourceRoots = ModuleRootManager.getInstance(module).getSourceRoots();
-                            return sourceRoots.length > 0;
-                        }
-                        // 非maven项目只显示main模块,只有main模块才有java目录
-                        return module.getName().contains(".main");
-                    })
-                    .collect(Collectors.toMap(el -> {
-                        String name = el.getName();
-                        if (name.contains(".")) {
-                            String[] strArr = name.split("\\.");
-                            return strArr[strArr.length - 2];
-                        }
-                        return name;
-                    }, module -> module));
+                .filter(module -> {
+                    if (isMavenProject) {
+                        @NotNull VirtualFile[] sourceRoots = ModuleRootManager.getInstance(module).getSourceRoots();
+                        return sourceRoots.length > 0;
+                    }
+                    // 非maven项目只显示main模块,只有main模块才有java目录
+                    return module.getName().contains(".main");
+                })
+                .collect(Collectors.toMap(el -> {
+                    String name = el.getName();
+                    if (name.contains(".")) {
+                        String[] strArr = name.split("\\.");
+                        return strArr[strArr.length - 2];
+                    }
+                    return name;
+                }, module -> module));
             String[] array = moduleMap.keySet().toArray(new String[moduleMap.size()]);
             DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(array);
 //            FilterComboBoxModel model = new FilterComboBoxModel(new ArrayList<>(moduleMap.keySet()), moduleMap.isEmpty() ? -1 : 0);
