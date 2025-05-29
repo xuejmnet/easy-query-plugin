@@ -103,6 +103,7 @@ public class EntityTableGenerateDialog extends JDialog {
     private JTextField ignoreColumnsText;
     private JTextField superClassText;
     private JButton overrideBtn;
+    private JButton search_btn;
 
     Map<String, Module> moduleMap;
     Map<String, Map<String, String>> modulePackageMap;
@@ -256,6 +257,18 @@ public class EntityTableGenerateDialog extends JDialog {
                     model.removeAllElements();
                     model.addAll(search);
                 }
+            }
+        });
+
+        search_btn.addActionListener(e->{
+            String tableName = tableSearch.getText();
+            if (StringUtils.isNotBlank(tableName)) {
+                if (!tableList.isSelectionEmpty()) {
+                    tableList.clearSelection();
+                }
+                Set<String> search = searchLike(tableName.trim(), cellRenderer);
+                model.removeAllElements();
+                model.addAll(search);
             }
         });
         modelTemplateBtn.addActionListener(new ActionListener() {
@@ -633,6 +646,12 @@ public class EntityTableGenerateDialog extends JDialog {
         cellRenderer.setHighlightKey(highlightKey);
         return highlightKey.keySet();
     }
+    private Set<String> searchLike(String tableName, TableListCellRenderer cellRenderer) {
+        Map<String, String> highlightKey = highlightKeyLike(tableName);
+        cellRenderer.setSearchTableName(tableName);
+        cellRenderer.setHighlightKey(highlightKey);
+        return highlightKey.keySet();
+    }
 
     /**
      * 搜索
@@ -653,17 +672,42 @@ public class EntityTableGenerateDialog extends JDialog {
         }
         result = result.stream()
                 .filter(el -> {
+
+                    StringBuilder matchWords = new StringBuilder();
                     for (int i = 0; i < keyword.length(); i++) {
                         String key = keyword.charAt(i) + "";
                         if (StringUtils.containsIgnoreCase(el, key)) {
                             el = el.replaceFirst(key, "");
+                            matchWords.append(key);
                         } else {
                             return false;
                         }
                     }
-                    return true;
+                    String matchWordsString = matchWords.toString();
+                    return StringUtils.containsIgnoreCase(matchWordsString, keyword);
                 })
                 .collect(Collectors.toSet());
+        return result;
+    }
+    public Set<String> searchLike(String keyword) {
+        if (StrUtil.isEmpty(keyword)) {
+            return INVERTED_TABLE_INDEX.values().stream()
+                .flatMap(el -> el.stream())
+                .collect(Collectors.toSet());
+        }
+        Set<String> result = new HashSet<>();
+        for (int i = 0; i < keyword.length(); i++) {
+            char key = keyword.charAt(i);
+            result.addAll(INVERTED_TABLE_INDEX.getOrDefault(key + "", Collections.emptySet()));
+        }
+        result = result.stream()
+            .filter(el -> {
+                if(StrUtil.isNotBlank(el)){
+                    return el.contains(keyword);
+                }
+                return false;
+            })
+            .collect(Collectors.toSet());
         return result;
     }
 
@@ -675,24 +719,47 @@ public class EntityTableGenerateDialog extends JDialog {
         }
         // 字符串排序
 
-        Map<String, Integer> idxMap = new HashMap<>();
         Map<String, String> highlightMap = new HashMap<>();
-        result.stream()
-                .forEach(el -> {
+        result.forEach(el -> {
                     String finalKeyword = keyword;
-                    String htmlText = "<html>";
+                    StringBuilder htmlText = new StringBuilder("<html>");
                     for (int i = 0; i < el.length(); i++) {
                         String key = el.charAt(i) + "";
                         if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                            htmlText += "<span style='color:#c60'>" + key + "</span>";
+                            htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
                             finalKeyword = finalKeyword.replaceFirst(key, "");
                             continue;
                         }
-                        htmlText += key;
+                        htmlText.append(key);
                     }
-                    htmlText += "</html>";
-                    idxMap.clear();
-                    highlightMap.put(el, htmlText);
+                    htmlText.append("</html>");
+                    highlightMap.put(el, htmlText.toString());
+                });
+        return highlightMap;
+    }
+    public Map<String, String> highlightKeyLike(String keyword) {
+
+        Set<String> result = searchLike(keyword);
+        if (StrUtil.isEmpty(keyword)) {
+            return result.stream().collect(Collectors.toMap(el -> el, el -> el));
+        }
+        // 字符串排序
+
+        Map<String, String> highlightMap = new HashMap<>();
+        result.forEach(el -> {
+                    String finalKeyword = keyword;
+                    StringBuilder htmlText = new StringBuilder("<html>");
+                    for (int i = 0; i < el.length(); i++) {
+                        String key = el.charAt(i) + "";
+                        if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
+                            htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
+                            finalKeyword = finalKeyword.replaceFirst(key, "");
+                            continue;
+                        }
+                        htmlText.append(key);
+                    }
+                    htmlText.append("</html>");
+                    highlightMap.put(el, htmlText.toString());
                 });
         return highlightMap;
     }
