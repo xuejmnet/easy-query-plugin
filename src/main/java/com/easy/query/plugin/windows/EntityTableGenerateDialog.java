@@ -684,7 +684,7 @@ public class EntityTableGenerateDialog extends JDialog {
                         }
                     }
                     String matchWordsString = matchWords.toString();
-                    return StringUtils.containsIgnoreCase(matchWordsString, keyword);
+                    return StringUtils.containsIgnoreCase(keyword, matchWordsString);
                 })
                 .collect(Collectors.toSet());
         return result;
