@@ -10,6 +10,7 @@ import com.easy.query.plugin.core.contributor.java.EasyIncludesContributor;
 import com.easy.query.plugin.core.contributor.java.EasyOrderContributor;
 import com.easy.query.plugin.core.contributor.java.EasySelectContributor;
 import com.easy.query.plugin.core.contributor.java.EasySelectDraftContributor;
+import com.easy.query.plugin.core.contributor.java.EasySelectTupleContributor;
 import com.easy.query.plugin.core.contributor.java.EasySetIgnoreColumnsContributor;
 import com.easy.query.plugin.core.contributor.java.EasyWhereColumnsContributor;
 import com.easy.query.plugin.core.util.TrieTree;
@@ -30,7 +31,7 @@ public class BaseEasyQueryApiCompletionContributor {
 
     protected static final Set<EasyContributor> API_METHODS = new HashSet<>(Arrays.asList(
             new EasySelectContributor("select", "select", false),
-            new EasySelectEntityVOContributor("select", "selectv", false),
+            new EasySelectEntityVOContributor("select", "selectVOClass", false),
             new EasyContributor("where", "where", false),
             new EasyContributor("where", "where_code_block", true),
             new EasyIncludeContributor("include", "include", false),
@@ -40,6 +41,7 @@ public class BaseEasyQueryApiCompletionContributor {
             new EasyGroupContributor("groupBy", "groupBy", false),
             new EasyGroupTableContributor("groupBy", "groupByTable", false),
             new EasySelectDraftContributor("select", "selectDraft", false),
+            new EasySelectTupleContributor("select", "selectTuple", false),
             new EasySelectContributor("having", "having", false),
             new EasySelectContributor("having", "having_code_block", true),
             new EasySelectContributor("selectColumn", "selectColumn", false),
