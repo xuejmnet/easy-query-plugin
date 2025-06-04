@@ -1,8 +1,12 @@
 package com.easy.query.plugin.core.startup;
 
+import cn.hutool.setting.Setting;
 import com.easy.query.plugin.action.RunEasyQueryInspectionAction;
 import com.easy.query.plugin.config.EasyQueryConfigManager;
+import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
+import com.easy.query.plugin.core.util.BooleanUtil;
+import com.easy.query.plugin.core.util.EasyQueryConfigUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.google.common.collect.Lists;
 import com.intellij.ide.SaveAndSyncHandler;
@@ -204,6 +208,12 @@ public class ProjectStartupHelper {
     }
 
     private static void runEasyQueryInspection(Project project) {
+
+        // 项目设置, 是否保留DTO上的@Column注解 value 值
+        Boolean startupRunInspection = EasyQueryConfigUtil.getProjectSettingBool(project, EasyQueryProjectSettingKey.STARTUP_RUN_INSPECTION, true);
+        if(!BooleanUtil.isTrue(startupRunInspection)){
+            return;
+        }
         try {
             // 确保在非EDT线程执行
             if (ApplicationManager.getApplication().isDispatchThread()) {
