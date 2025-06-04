@@ -42,10 +42,10 @@ public class PathAliasReferenceContributor extends PsiReferenceContributor {
                 }
 
                 /**
-                 * 检查元素是否是 NavigateFlat 注解的 pathAlias 属性
+                 * 检查元素是否是 NavigateFlat || NavigateJoin 注解的 pathAlias 属性
                  *
                  * @param element 待检查的元素
-                 * @return 如果是 NavigateFlat 注解的 pathAlias 属性则返回 true，否则返回 false
+                 * @return 如果是 NavigateFlat || NavigateJoin 注解的 pathAlias 属性则返回 true，否则返回 false
                  */
                 private boolean isNavigateFlatPathAlias(PsiElement element) {
                     PsiAnnotation annotation = PsiTreeUtil.getParentOfType(element, PsiAnnotation.class);
@@ -53,8 +53,10 @@ public class PathAliasReferenceContributor extends PsiReferenceContributor {
                         return false;
                     }
                     String qualifiedName = annotation.getQualifiedName();
-                    if(element.getParent() instanceof PsiNameValuePair){
-                        return "com.easy.query.core.annotation.NavigateFlat".equals(qualifiedName) &&
+                    if (element.getParent() instanceof PsiNameValuePair) {
+                        return ("com.easy.query.core.annotation.NavigateFlat".equals(qualifiedName)
+                            ||
+                            "com.easy.query.core.annotation.NavigateJoin".equals(qualifiedName)) &&
                             "pathAlias".equals(((PsiNameValuePair) element.getParent()).getName());
                     }
                     return false;
