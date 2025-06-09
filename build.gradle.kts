@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.1.33"
+version = "0.1.33ce"
 
 repositories {
     maven {
@@ -24,7 +24,7 @@ intellij {
     type.set("IU") // Target
     // IDE Platform
 
-    plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin", "com.intellij.database"))
+    plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin"))
 }
 dependencies {
 //    implementation("com.intellij:forms_rt:7.0.3")

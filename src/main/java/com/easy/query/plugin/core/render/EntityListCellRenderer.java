@@ -1,6 +1,5 @@
 package com.easy.query.plugin.core.render;
 
-import com.easy.query.plugin.core.entity.TableMetadata;
 import com.intellij.psi.PsiClass;
 
 import javax.swing.*;

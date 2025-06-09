@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.util;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -22,9 +23,7 @@ import static java.lang.Character.isJavaIdentifierStart;
  */
 public class BasicFormatter2 {
 
-    private static final Set<String> NON_FUNCTION_NAMES = Set.of(
-        "select", "from", "on", "set", "and", "or", "where", "having", "by", "using"
-    );
+    private static final Set<String> NON_FUNCTION_NAMES = new HashSet<>(Arrays.asList("select", "from", "on", "set", "and", "or", "where", "having", "by", "using"));
 
     private static final String INDENT_STRING = "    ";
     private static final String INITIAL = System.lineSeparator() + INDENT_STRING;
@@ -501,8 +500,35 @@ public class BasicFormatter2 {
 
         private void newline() {
             result.append(System.lineSeparator())
-                .append(INDENT_STRING.repeat(indent));
+                .append(repeat(INDENT_STRING, indent));
             beginLine = true;
+        }
+
+        public static String repeat(String str, int count) {
+            if (count < 0) {
+                throw new IllegalArgumentException("count is negative: " + count);
+            }
+            if (str == null) {
+                throw new NullPointerException("str is null");
+            }
+            if (count == 0 || str.isEmpty()) {
+                return "";
+            }
+            if (count == 1) {
+                return str;
+            }
+
+            int len = str.length();
+            long totalLength = (long) len * count;
+            if (totalLength > Integer.MAX_VALUE) {
+                throw new OutOfMemoryError("Required length exceeds limit: " + totalLength);
+            }
+
+            StringBuilder sb = new StringBuilder((int) totalLength);
+            for (int i = 0; i < count; i++) {
+                sb.append(str);
+            }
+            return sb.toString();
         }
 
         private void appendUntilToken(String stopToken) {
