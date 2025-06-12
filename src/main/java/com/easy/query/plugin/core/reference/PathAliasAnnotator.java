@@ -58,12 +58,15 @@ public class PathAliasAnnotator implements Annotator {
             return false;
         }
         String qualifiedName = annotation.getQualifiedName();
-        return (
-            "com.easy.query.core.annotation.NavigateFlat".equals(qualifiedName)
+        boolean isNav = "com.easy.query.core.annotation.NavigateFlat".equals(qualifiedName)
             ||
-                "com.easy.query.core.annotation.NavigateJoin".equals(qualifiedName)
-            ) &&
-                "pathAlias".equals(((PsiNameValuePair) element.getParent()).getName());
+            "com.easy.query.core.annotation.NavigateJoin".equals(qualifiedName);
+        if(isNav){
+            if(element.getParent() instanceof PsiNameValuePair){
+                return "pathAlias".equals(((PsiNameValuePair) element.getParent()).getName());
+            }
+        }
+        return false;
     }
 
 }
