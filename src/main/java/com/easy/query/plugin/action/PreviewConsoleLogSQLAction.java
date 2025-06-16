@@ -30,13 +30,13 @@ public class PreviewConsoleLogSQLAction extends AnAction {
 
     //预览
     public void preview(String selectedText, SimpleFunction function) {
-        if (StringUtils.isBlank(selectedText)) {
-            return;
-        }
+//        if (StringUtils.isBlank(selectedText)) {
+//            return;
+//        }
 //        &&StringUtils.containsIgnoreCase(selectedText,"Preparing")
 //                &&StringUtils.containsIgnoreCase(selectedText,"Parameters")
         try {
-            SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(selectedText);
+            SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(StringUtils.isBlank(selectedText)?"":selectedText);
             SwingUtilities.invokeLater(() -> {
                 sqlPreviewDialog.setVisible(true);
             });
