@@ -19,7 +19,7 @@ import com.easy.query.core.proxy.core.EntitySQLContext;
  */
 class ${aptFileCompiler.getEntityClassProxyName()} : AbstractProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${aptFileCompiler.getEntityClassName()}>() {
 
-    #macro(renderPropertyUI $valueObject)
+    #macro(renderKotlinPropertyUI $valueObject)
         #foreach($property in $valueObject.getProperties())
             ${property.comment}
             *[${property.getOwner()}.${property.getPropertyName()}]
@@ -66,24 +66,24 @@ class ${aptFileCompiler.getEntityClassProxyName()} : AbstractProxyEntity<${aptFi
     }
 
 
-    #renderPropertyUI($aptValueObjectInfo)
+    #renderKotlinPropertyUI($aptValueObjectInfo)
 
     @Override
     override fun getEntityClass() = Companion.entityClass
 
-    #macro(renderValueObjectUI $valueObjectParent)
+    #macro(renderKotlinValueObjectUI $valueObjectParent)
         #foreach($valueObject in $valueObjectParent.getChildren())
 
             class ${valueObject.getEntityName()}Proxy : AbstractValueObjectProxyEntity<${aptFileCompiler.getEntityClassProxyName()}, ${valueObject.getEntityName()}>(entitySQLContext,table, propertyName) {
 
-                #renderPropertyUI($valueObject)
+                #renderKotlinPropertyUI($valueObject)
 
-                #renderValueObjectUI($valueObject)
+                #renderKotlinValueObjectUI($valueObject)
             }
         #end
     #end
 
-    #renderValueObjectUI($aptValueObjectInfo)
+    #renderKotlinValueObjectUI($aptValueObjectInfo)
 
 
     /**
