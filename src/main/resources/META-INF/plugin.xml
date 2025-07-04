@@ -392,6 +392,13 @@
                 text="TableEntityGenerate">
             <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>
         </action>
+        <action id="com.easy.query.plugin.action.SingleTableGenerateAction"
+                icon="/icons/eq.svg"
+                class="com.easy.query.plugin.action.SingleTableGenerateAction"
+                text="Generate Entity From This Table"
+                description="Generate entity from selected table">
+            <add-to-group group-id="DatabaseViewPopupMenu" anchor="after" relative-to-action="com.easy.query.plugin.action.TableGenerateAction"/>
+        </action>
         <action id="com.easy.query.plugin.action.RunEasyQueryInspectionAction"
                 class="com.easy.query.plugin.action.RunEasyQueryInspectionAction"
                 icon="/icons/eq.svg"
