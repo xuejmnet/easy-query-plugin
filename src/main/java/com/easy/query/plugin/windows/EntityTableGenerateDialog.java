@@ -296,6 +296,52 @@ public class EntityTableGenerateDialog extends JDialog {
 //        });
     }
 
+    /**
+     * Constructor with pre-selected table name
+     * 构造函数，预选择表名
+     * 
+     * @param actionEvent 操作事件
+     * @param preSelectedTableName 预选择的表名
+     */
+    public EntityTableGenerateDialog(AnActionEvent actionEvent, String preSelectedTableName) {
+        this(actionEvent); // Call the main constructor
+        // Pre-populate the search field with the selected table name
+        if (preSelectedTableName != null && !preSelectedTableName.trim().isEmpty()) {
+            SwingUtilities.invokeLater(() -> {
+                tableSearch.setText(preSelectedTableName.trim());
+                // Trigger search to filter the table list
+                performSearch(preSelectedTableName.trim());
+            });
+        }
+    }
+
+    /**
+     * Perform search and update table list
+     * 执行搜索并更新表列表
+     * 
+     * @param searchText 搜索文本
+     */
+    private void performSearch(String searchText) {
+        if (StringUtils.isNotBlank(searchText)) {
+            if (!tableList.isSelectionEmpty()) {
+                tableList.clearSelection();
+            }
+            TableListCellRenderer cellRenderer = (TableListCellRenderer) tableList.getCellRenderer();
+            Set<String> searchResult = search(searchText, cellRenderer);
+            DefaultListModel<String> model = (DefaultListModel<String>) tableList.getModel();
+            model.removeAllElements();
+            model.addAll(searchResult);
+            
+            // Auto-select the table if there's an exact match
+            for (String tableName : searchResult) {
+                if (tableName.equalsIgnoreCase(searchText)) {
+                    tableList.setSelectedValue(tableName, true);
+                    break;
+                }
+            }
+        }
+    }
+
     private void initBtn() {
         modelBtn.addActionListener(e -> {
             Object selectedItem = modelCombox.getSelectedItem();
