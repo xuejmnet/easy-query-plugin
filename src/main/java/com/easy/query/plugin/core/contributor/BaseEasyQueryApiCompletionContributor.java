@@ -3,6 +3,7 @@ package com.easy.query.plugin.core.contributor;
 import com.easy.query.plugin.core.contributor.java.EasyAnonymousContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.contributor.java.EasyEntitySetColumnsContributor;
+import com.easy.query.plugin.core.contributor.java.EasyFilterConfigureContributor;
 import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
 import com.easy.query.plugin.core.contributor.java.EasyGroupTableContributor;
 import com.easy.query.plugin.core.contributor.java.EasyIncludeContributor;
@@ -35,6 +36,7 @@ public class BaseEasyQueryApiCompletionContributor {
 //            new EasySelectEntityVOContributor("select", "selectVOClass", false),
             new EasyContributor("where", "where", false),
             new EasyContributor("where", "where_code_block", true),
+            new EasyFilterConfigureContributor("filterConfigure", "filterConfigureNotNull", false),
             new EasyIncludeContributor("include", "include", false),
             new EasyIncludesContributor("includes", "includes", false),
             new EasyOrderContributor("orderBy", "orderBy", false),
