@@ -22,16 +22,18 @@ import java.util.*;
  */
 public class StructDTOUtil {
 
-    public static void parseClassList(Project project, String entityName, PsiClass entityClass, Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String> imports, Set<String> ignoreColumns) {
+    public static void parseClassList(int maxDeep, Project project, String entityName, PsiClass entityClass, Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps, List<ClassNode> classNodeList, Set<String> imports, Set<String> ignoreColumns) {
 
         ClassNode classNode = new ClassNode(entityName, null, 0, false, true, entityClass.getName(), null, null, entityClass.getQualifiedName(), BeanPropTypeEnum.GET);
         classNode.setPsiClass(entityClass);
         classNodeList.add(classNode);
 
-        addClassProps(project, entityClass, null, classNode, entityWithClass, entityProps, null, imports, ignoreColumns, 0);
+        addClassProps(maxDeep, project, entityClass, null, classNode, entityWithClass, entityProps, null, imports, ignoreColumns, 0);
     }
 
-    private static void addClassProps(Project project, PsiClass psiClass, String ownerPropertyName, ClassNode classNode, Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps, ClassNodeCirculateChecker classNodeCirculateChecker, Set<String> imports, Set<String> ignoreColumns, int deep) {
+    private static void addClassProps(int maxDeep, Project project, PsiClass psiClass, String ownerPropertyName,
+                                      ClassNode classNode, Map<String, PsiClass> entityWithClass, Map<String, Map<String, ClassNode>> entityProps,
+                                      ClassNodeCirculateChecker classNodeCirculateChecker, Set<String> imports, Set<String> ignoreColumns, int deep) {
         //是否是数据库对象
         PsiAnnotation entityTable = psiClass.getAnnotation("com.easy.query.core.annotation.Table");
         //获取对应的忽略属性
@@ -72,8 +74,6 @@ public class StructDTOUtil {
             String psiFieldComment = PsiUtil.getPsiFieldOnlyComment(psiField);
 
 
-
-
             boolean isPrimary = false;
             String conversion = null;
             String columnValue = null;
@@ -96,7 +96,7 @@ public class StructDTOUtil {
 
                 // complexPropType 复杂类型
                 complexPropType = PsiUtil.getPsiAnnotationValue(psiAnnoColumn, "complexPropType", "");
-                if (StrUtil.isNotBlank(complexPropType) && StrUtil.endWith(complexPropType,"DefaultComplexPropType.class") ){
+                if (StrUtil.isNotBlank(complexPropType) && StrUtil.endWith(complexPropType, "DefaultComplexPropType.class")) {
                     complexPropType = null;
                 }
 
@@ -130,7 +130,7 @@ public class StructDTOUtil {
             } else {
                 imports.add("com.easy.query.core.annotation.Navigate");
                 imports.add("com.easy.query.core.enums.RelationTypeEnum");
-                ClassNodeCirculateChecker circulateChecker = classNodeCirculateChecker == null ? new ClassNodeCirculateChecker(qualifiedName) : classNodeCirculateChecker;
+                ClassNodeCirculateChecker circulateChecker = classNodeCirculateChecker == null ? new ClassNodeCirculateChecker(qualifiedName,maxDeep) : classNodeCirculateChecker;
 
                 String relationType = PsiUtil.getPsiAnnotationValue(navigatePsiAnno, "value", "");
                 String selfProperty = PsiUtil.getPsiAnnotationValue(navigatePsiAnno, "selfProperty", "");
@@ -170,7 +170,7 @@ public class StructDTOUtil {
 //                    String sub = StrUtil.subAfter(propertyType, ".", true);
                     classNode.addChild(navClass);
                     classNodes.putIfAbsent(fieldName, navClass);
-                    addClassProps(project, propClass, fieldName, navClass, entityWithClass, entityProps, circulateChecker, imports, ignoreColumns, deep + 1);
+                    addClassProps(maxDeep,project, propClass, fieldName, navClass, entityWithClass, entityProps, circulateChecker, imports, ignoreColumns, deep + 1);
                 } else {
                     PsiClass propertyClass = findClass(project, propertyType);
                     if (propertyClass != null) {
@@ -194,7 +194,7 @@ public class StructDTOUtil {
                         navClass.setRelationType(relationType);
                         classNode.addChild(navClass);
                         classNodes.putIfAbsent(fieldName, navClass);
-                        addClassProps(project, propertyClass, fieldName, navClass, entityWithClass, entityProps, circulateChecker, imports, ignoreColumns, deep + 1);
+                        addClassProps(maxDeep,project, propertyClass, fieldName, navClass, entityWithClass, entityProps, circulateChecker, imports, ignoreColumns, deep + 1);
                     }
                 }
 

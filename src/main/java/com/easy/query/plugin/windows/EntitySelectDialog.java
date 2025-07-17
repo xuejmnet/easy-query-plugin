@@ -1,5 +1,6 @@
 package com.easy.query.plugin.windows;
 
+import cn.hutool.core.util.NumberUtil;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.ClassNode;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
@@ -10,6 +11,7 @@ import com.easy.query.plugin.core.util.DialogUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.StructDTOUtil;
+import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
@@ -41,7 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EntitySelectDialog extends JDialog {
-    private  StructDTOEntityContext structDTOEntityContext;
+    private StructDTOEntityContext structDTOEntityContext;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -57,7 +59,7 @@ public class EntitySelectDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
 // 获取屏幕的大小
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        setSize(Math.min(800,(int) screenSize.getWidth() -50), (int) Math.min(900,(int)(screenSize.getHeight()*0.9)));
+        setSize(Math.min(800, (int) screenSize.getWidth() - 50), (int) Math.min(900, (int) (screenSize.getHeight() * 0.9)));
         setTitle("Struct DTO Entity Select");
         DialogUtil.centerShow(this);
         Project project = structDTOEntityContext.getProject();
@@ -83,7 +85,7 @@ public class EntitySelectDialog extends JDialog {
                 String projectName = project.getName();
                 String setting = config.getConfig().get(projectName);
 
-                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project,setting, newTemplate -> {
+                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project, setting, newTemplate -> {
                     config.getConfig().put(projectName, newTemplate);
                     EasyQueryQueryPluginConfigData.saveAllEnvEnvStructDTOIgnore(config);
                     NotificationUtils.notifySuccess("保存成功", project);
@@ -167,25 +169,25 @@ public class EntitySelectDialog extends JDialog {
         Map<String, Integer> idxMap = new HashMap<>();
         Map<String, String> highlightMap = new HashMap<>();
         result.stream()
-                .forEach(el -> {
-                    String packageName = cn.hutool.core.util.StrUtil.subBefore(el, ".", true);
-                    String entityName = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
-                    String finalKeyword = keyword;
-                    String htmlText = "<html>";
-                    htmlText += packageName;
-                    for (int i = 0; i < entityName.length(); i++) {
-                        String key = entityName.charAt(i) + "";
-                        if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                            htmlText += "<span style='color:#c60'>" + key + "</span>";
-                            finalKeyword = finalKeyword.replaceFirst(key, "");
-                            continue;
-                        }
-                        htmlText += key;
+            .forEach(el -> {
+                String packageName = cn.hutool.core.util.StrUtil.subBefore(el, ".", true);
+                String entityName = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
+                String finalKeyword = keyword;
+                String htmlText = "<html>" ;
+                htmlText += packageName;
+                for (int i = 0; i < entityName.length(); i++) {
+                    String key = entityName.charAt(i) + "" ;
+                    if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
+                        htmlText += "<span style='color:#c60'>" + key + "</span>" ;
+                        finalKeyword = finalKeyword.replaceFirst(key, "");
+                        continue;
                     }
-                    htmlText += "</html>";
-                    idxMap.clear();
-                    highlightMap.put(el, htmlText);
-                });
+                    htmlText += key;
+                }
+                htmlText += "</html>" ;
+                idxMap.clear();
+                highlightMap.put(el, htmlText);
+            });
         return highlightMap;
     }
 
@@ -198,8 +200,8 @@ public class EntitySelectDialog extends JDialog {
     public Set<String> search(String keyword) {
         if (StrUtil.isEmpty(keyword)) {
             return INVERTED_ENTITY_INDEX.values().stream()
-                    .flatMap(el -> el.stream())
-                    .collect(Collectors.toSet());
+                .flatMap(el -> el.stream())
+                .collect(Collectors.toSet());
         }
         Set<String> result = new HashSet<>();
         for (int i = 0; i < keyword.length(); i++) {
@@ -208,19 +210,19 @@ public class EntitySelectDialog extends JDialog {
         }
         result = result.stream()
 //                .map(o-> cn.hutool.core.util.StrUtil.subAfter(o,".",true))
-                .filter(el -> {
-                    String elEntity = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
-                    for (int i = 0; i < keyword.length(); i++) {
-                        String key = keyword.charAt(i) + "";
-                        if (StringUtils.containsIgnoreCase(elEntity, key)) {
-                            elEntity = elEntity.replaceFirst(key, "");
-                        } else {
-                            return false;
-                        }
+            .filter(el -> {
+                String elEntity = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
+                for (int i = 0; i < keyword.length(); i++) {
+                    String key = keyword.charAt(i) + "" ;
+                    if (StringUtils.containsIgnoreCase(elEntity, key)) {
+                        elEntity = elEntity.replaceFirst(key, "");
+                    } else {
+                        return false;
                     }
-                    return true;
-                })
-                .collect(Collectors.toSet());
+                }
+                return true;
+            })
+            .collect(Collectors.toSet());
         return result;
     }
 
@@ -270,11 +272,28 @@ public class EntitySelectDialog extends JDialog {
         }
 //        Set<String> ignoreColumns = getIgnoreColumns(project);
 
+        Messages.InputDialog dialog = new Messages.InputDialog("请输入树形深度,无限级输入-1", "树形深度", Messages.getQuestionIcon(), "5", new InputAnyValidatorImpl());
+        dialog.show();
+        if (!dialog.isOK()) {
+            return false;
+        }
+        String settingVal = dialog.getInputString();
+        if (StrUtil.isBlank(settingVal)) {
+            Messages.showWarningDialog("无法读取树形深度", "提示");
+            return false;
+        }
+        boolean integer = NumberUtil.isInteger(settingVal);
+        if (!integer) {
+            Messages.showWarningDialog("树形深度:[" + settingVal + "]只能是数字", "提示");
+            return false;
+        }
+        int deepMax = Integer.parseInt(settingVal);
+
 
         Map<String, Map<String, ClassNode>> entityProps = new HashMap<>();
         List<ClassNode> classNodes = new ArrayList<>();
         LinkedHashSet<String> imports = new LinkedHashSet<>();
-        StructDTOUtil.parseClassList(project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, new HashSet<>());
+        StructDTOUtil.parseClassList(deepMax, project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, new HashSet<>());
         StructDTOContext structDTOContext = new StructDTOContext(project, structDTOEntityContext.getPath(), structDTOEntityContext.getPackageName(), structDTOEntityContext.getModule(), entityProps);
         structDTOContext.getImports().addAll(imports);
 

@@ -20,16 +20,28 @@ public class ClassNodeCirculateChecker {
     private Integer rootClassPathRepeatCount = 0;
 
     private final String rootClass;
-    private final Map<ClassNodePropPath,ClassNodePropPath> classNodePropPaths = new HashMap<>();
-    public ClassNodeCirculateChecker(String rootClass){
+    private final int maxDeep;
+    private final Map<ClassNodePropPath, ClassNodePropPath> classNodePropPaths = new HashMap<>();
+
+    public ClassNodeCirculateChecker(String rootClass, int maxDeep) {
 
         this.rootClass = rootClass;
+        this.maxDeep = maxDeep;
     }
 
     public boolean pathRepeat(ClassNodePropPath classNodePropPath) {
-        if(Objects.equals(rootClass,classNodePropPath.getTo())){
+        boolean repeat0 = pathRepeat0(classNodePropPath);
+        if(!repeat0){
+            if (maxDeep >= 0 && classNodePropPath.getDeep() >= maxDeep) {
+                return true;
+            }
+        }
+        return repeat0;
+    }
+    public boolean pathRepeat0(ClassNodePropPath classNodePropPath) {
+        if (Objects.equals(rootClass, classNodePropPath.getTo())) {
 
-            if (rootClassPathRepeatCount >=REPEAT_LIMIT ) {
+            if (rootClassPathRepeatCount >= REPEAT_LIMIT) {
                 // 超过次数限定判断为重复
                 return true;
             }
@@ -38,14 +50,14 @@ public class ClassNodeCirculateChecker {
             return false;
         }
         ClassNodePropPath oldPath = classNodePropPaths.get(classNodePropPath);
-        if(oldPath==null){
-            classNodePropPaths.put(classNodePropPath,classNodePropPath);
+        if (oldPath == null) {
+            classNodePropPaths.put(classNodePropPath, classNodePropPath);
             return false;
         }
-        if(oldPath.getDeep()<classNodePropPath.getDeep()){
+        if (oldPath.getDeep() < classNodePropPath.getDeep()) {
             return true;
         }
         oldPath.setDeep(classNodePropPath.getDeep());
-        return  false;
+        return false;
     }
 }
