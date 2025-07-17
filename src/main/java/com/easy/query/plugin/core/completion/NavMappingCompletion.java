@@ -278,10 +278,10 @@ public class NavMappingCompletion extends CompletionContributor {
             }
             code.append("}");
         }
-        if ("OneToMany".equals(relation.getRelationType()) || "ManyToMany".equals(relation.getRelationType())) {
-
-            code.append(",subQueryToGroupJoin = true");
-        }
+//        if ("OneToMany".equals(relation.getRelationType()) || "ManyToMany".equals(relation.getRelationType())) {
+//
+//            code.append(",subQueryToGroupJoin = true");
+//        }
         code.append(")");
 
         return code.toString();
