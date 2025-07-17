@@ -2,6 +2,8 @@ package com.easy.query.plugin.core.contributor.java;
 
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.entity.QueryType;
+import com.intellij.codeInsight.completion.InsertionContext;
+import com.intellij.openapi.editor.Document;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -20,7 +22,29 @@ public class EasyFilterConfigureContributor extends EasyContributor {
 
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
-        return "filterConfigure(NotNullOrEmptyValueFilter.DEFAULT_PROPAGATION_SUPPORTS)";
+        return "";
+    }
+
+    @Override
+    public void insertString(InsertionContext context, Collection<QueryType> queries, boolean failBracket){
+        Document document = context.getDocument();
+        int insertPosition = context.getSelectionEndOffset();
+        int wordBackOffset = tipWord.length() *-1;
+        try {
+
+            String lambdaExpression ="filterConfigure(NotNullOrEmptyValueFilter.DEFAULT_PROPAGATION_SUPPORTS)";
+            int realBackOffset = realBackOffset(wordBackOffset);
+            document.insertString(insertPosition+wordBackOffset, lambdaExpression);
+            insertPosition += lambdaExpression.length();
+            deleteString(document,insertPosition,wordBackOffset);
+            insertPosition = insertPosition + realBackOffset;
+            context.getEditor().getCaretModel().getCurrentCaret().moveToOffset(insertPosition);
+        }catch (Exception ex){
+            if(failBracket){
+                document.insertString(insertPosition, "()");
+                context.getEditor().getCaretModel().getCurrentCaret().moveToOffset(insertPosition - wordBackOffset);
+            }
+        }
     }
 
     @Override
