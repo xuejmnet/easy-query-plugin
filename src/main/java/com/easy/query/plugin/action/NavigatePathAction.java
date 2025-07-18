@@ -32,6 +32,7 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.javadoc.PsiDocComment;
 import org.jetbrains.kotlin.psi.KtFile;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,9 +87,16 @@ public class NavigatePathAction extends AnAction {
                             if (psiModifierList != null) {
                                 psiFile.addBefore(annotationFromText, psiModifierList);
                             } else {
-                                psiFile.addBefore(annotationFromText, elementAt.getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling());
+                                Optional<PsiElement> psiElement = Optional.of(elementAt).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling());
+                                if(psiElement.isPresent()){
+                                    PsiElement psiElement1 = psiElement.get();
+                                    psiFile.addBefore(annotationFromText, psiElement1);
+
+                                }
                             }
-                            psiFile.addBefore(psiField, elementAt.getParent());
+                            if (elementAt.getParent() != null) {
+                                psiFile.addBefore(psiField, elementAt.getParent());
+                            }
                         });
                     }
                 }
@@ -101,7 +109,7 @@ public class NavigatePathAction extends AnAction {
         }
     }
 
-//    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)|\\{@link\\s+([\\w\\.]+)\\}";
+    //    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)|\\{@link\\s+([\\w\\.]+)\\}";
     private static final String SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)";
 
     private String getReferenceClassName(String className, String docText) {
