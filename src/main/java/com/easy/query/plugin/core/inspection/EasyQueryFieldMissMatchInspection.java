@@ -157,8 +157,9 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 continue;
 
                             } else {
+                                PsiClass psiClass = PsiJavaFileUtil.getPsiClass(project, dtoTypeRefName);
                                 // 复杂类型的, 需要进一步比对
-                                PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(PsiJavaFileUtil.getPsiClass(project, dtoTypeRefName));
+                                PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(psiClass);
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
                                     holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link"+entityTypeRefName+"}", ProblemHighlightType.ERROR);

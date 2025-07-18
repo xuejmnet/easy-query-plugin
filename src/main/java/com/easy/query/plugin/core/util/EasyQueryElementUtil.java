@@ -199,6 +199,13 @@ public class EasyQueryElementUtil {
         dtoRemoveKeys.add("sqlConversion"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
 
         List<String> ignoreKeys = Lists.newArrayList();
+        ignoreKeys.add("nullable"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        ignoreKeys.add("comment"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        ignoreKeys.add("dbDefault"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        ignoreKeys.add("dbType"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        ignoreKeys.add("renameFrom"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        ignoreKeys.add("exist"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        ignoreKeys.add("autoSelect"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
 
         return AnnoAttrCompareResult.newCompare(entityAnnoColumnAttrMap, dtoAnnoColumnAttrMap)
                 .withEntityOnlyKeysPermit(entityOnlyKeysPermit)
