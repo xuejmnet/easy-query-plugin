@@ -4,9 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.map.MapUtil;
 import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.config.AppSettings;
-import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.entity.AnnoAttrCompareResult;
-import com.google.common.collect.Maps;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -14,7 +12,6 @@ import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -59,7 +56,7 @@ public class PsiJavaFieldUtil {
             List<JvmAnnotationAttribute> attrList = psiAnnoNavigate.getAttributes().stream()
                     .filter(attr -> cn.hutool.core.util.StrUtil.equalsAny(attr.getAttributeName(), "value"))
                     .collect(Collectors.toList());
-            String attrText = attrList.stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+            String attrText = attrList.stream().map(attr -> ((PsiNameValuePair) attr).getText())
                     .collect(Collectors.joining(", "));
             // 再拼成 @Navigate 注解文本
             String replacement = "@Navigate(" + attrText + ")";
@@ -87,7 +84,7 @@ public class PsiJavaFieldUtil {
 //                if (attrList.size() == 1 && cn.hutool.core.util.StrUtil.equalsAny(attrList.get(0).getAttributeName(), "value")) {
 //                    psiAnnoColumn.delete();
 //                }else{
-                String attrText = fixedAttrMap.values().stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+                String attrText = fixedAttrMap.values().stream().map(attr -> attr.getText())
                         .collect(Collectors.joining(", "));
                 // 再拼成 @Navigate 注解文本
                 String replacement = "@Column(" + attrText + ")";
