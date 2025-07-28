@@ -19,10 +19,13 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class DtoFieldAutoCompletion extends CompletionContributor {
 
+    private final Pattern pattern = Pattern.compile("private\\s+(?:List<)?(\\w+)(?:>)?\\s+\\w+;");
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
 
@@ -90,6 +93,45 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                         .withIcon(Icons.EQ),
                     400d);
                 result.addElement(lookupElementWithEq);
+                PsiAnnotation navigateAnnotation = entityFieldRaw.getAnnotation("com.easy.query.core.annotation.Navigate");
+                if (navigateAnnotation != null) {
+
+                    // 再添加一个eq:开头的, 进行索引
+                    LookupElement lookupElementWithEqInternalClass = PrioritizedLookupElement.withPriority(
+                        LookupElementBuilder.create("eq实体字段InternalClass:" + entityFieldRaw.getName() + " " + shortComment)
+                            .withTypeText(entityFieldRaw.getType().getPresentableText())
+                            .withInsertHandler((context, item) -> {
+                                PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                String text = dtoField.getText();
+                                String field = "private "+StrUtil.subAfter(text, "private ", true);
+                                String className ="XXXXXXX";
+                                Matcher matcher = pattern.matcher(field);
+                                if (matcher.find()) {
+                                    className = matcher.group(1);
+                                }
+
+                                StringBuilder fieldWithInternalClass = new StringBuilder();
+                                fieldWithInternalClass.append(text);
+                                String newLine = System.lineSeparator();
+
+                                fieldWithInternalClass.append("/**");
+                                fieldWithInternalClass.append(newLine);
+                                fieldWithInternalClass.append("* {@link }");
+                                fieldWithInternalClass.append(newLine);
+                                fieldWithInternalClass.append("**/");
+                                fieldWithInternalClass.append(newLine);
+                                fieldWithInternalClass.append("public static class Internal").append(className).append(" {");
+                                fieldWithInternalClass.append(newLine);
+                                fieldWithInternalClass.append("}");
+
+
+                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), fieldWithInternalClass.toString());
+                            })
+                            .withIcon(Icons.EQ),
+                        400d);
+                    result.addElement(lookupElementWithEqInternalClass);
+                }
+
                 appendAllFields = true;
             }
         }
@@ -135,7 +177,7 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                         String filedText = String.format("\n" +
                             "        private static final ExtraAutoIncludeConfigure EXTRA_AUTO_INCLUDE_CONFIGURE = %s.TABLE.EXTRA_AUTO_INCLUDE_CONFIGURE()\n" +
                             "                .where(%s -> {})\n" +
-                            "                .select(%s -> Select.of());", linkPsiClass.getName() + "Proxy",easyAlias,easyAlias);
+                            "                .select(%s -> Select.of());", linkPsiClass.getName() + "Proxy", easyAlias, easyAlias);
 
                         context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), filedText);
                     })
