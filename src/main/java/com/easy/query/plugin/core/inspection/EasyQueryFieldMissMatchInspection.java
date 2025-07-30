@@ -267,6 +267,9 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                 PsiAnnotation annotation = elementFactory.createAnnotationFromText("@SuppressWarnings(\"" + warningName + "\")", problemDescriptor.getPsiElement());
                 PsiField psiField = problemDescriptor.getPsiElement() instanceof PsiField ? (PsiField) problemDescriptor.getPsiElement() : PsiTreeUtil.getParentOfType(problemDescriptor.getPsiElement(), PsiField.class);
+                if(psiField==null){
+                    return;
+                }
                 problemDescriptor.getPsiElement().addAfter(annotation, psiField.getDocComment());
             }
         };
@@ -284,6 +287,9 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
             public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                 PsiField psiField = problemDescriptor.getPsiElement() instanceof PsiField ? (PsiField) problemDescriptor.getPsiElement() : PsiTreeUtil.getParentOfType(problemDescriptor.getPsiElement(), PsiField.class);
+                if(psiField==null){
+                    return;
+                }
                 List<String> lines = StrUtil.split(psiField.getText(), "\n");
                 // 生成注释
                 lines.stream().map(line -> "// " + line).map(comment -> elementFactory.createCommentFromText(comment, null)).collect(Collectors.toList())
