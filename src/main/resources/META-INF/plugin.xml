@@ -378,6 +378,12 @@
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
+        <action id="com.easy.query.plugin.action.NavigateMappedByAction"
+                class="com.easy.query.plugin.action.NavigateMappedByAction" text="MappedBy"
+                icon="/icons/eq.svg">
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
+        </action>
         <action id="com.easy.query.plugin.action.PreviewConsoleLogSQLAction" class="com.easy.query.plugin.action.PreviewConsoleLogSQLAction"
                 text="SQLFormatPreview" icon="/icons/eq.svg">
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
