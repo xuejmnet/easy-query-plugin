@@ -1,8 +1,11 @@
 package com.easy.query.plugin.action;
 
+import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.MyStringUtil;
+import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.easy.query.plugin.core.util.StrUtil;
+import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -105,12 +108,22 @@ public class NavigateMappedByAction extends AnAction {
                         String selfMappingProperty = PsiUtil.getPsiAnnotationValue(navigate, "selfMappingProperty", "");
                         String targetMappingProperty = PsiUtil.getPsiAnnotationValue(navigate, "targetMappingProperty", "");
 
-                        String navigateAnnotation = getNavigateAnnotation(navigateValue, selfProperty, targetProperty, mappingClass, selfMappingProperty, targetMappingProperty,className);
-                        String navigateField = getNavigateField(navigateValue, StrUtil.subAfter(psiFieldPropertyType,".",true));
+                        String navigateAnnotation = getNavigateAnnotation(navigateValue, selfProperty, targetProperty, mappingClass, selfMappingProperty, targetMappingProperty, className);
+
+
+                        Messages.InputDialog dialog = new Messages.InputDialog("请输入字段名空则使用默认字段名", "提示名称", Messages.getQuestionIcon(), "", new InputAnyValidatorImpl());
+                        dialog.show();
+
+                        String myFieldName = "";
+                        if (dialog.isOK()) {
+                            myFieldName = dialog.getInputString();
+                        }
+
+                        String navigateField = getNavigateField(navigateValue, className, myFieldName);
                         PsiField psiField = elementFactory.createFieldFromText(navigateField, targetClass);
                         PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(navigateAnnotation, targetClass);
                         PsiModifierList modifierList = psiField.getModifierList();
-                        if(modifierList==null){
+                        if (modifierList == null) {
                             Messages.showErrorDialog(project, "无法获取字段PsiModifierList值", "错误提示");
                             return;
                         }
@@ -134,29 +147,38 @@ public class NavigateMappedByAction extends AnAction {
         }
     }
 
-    private PsiField getLastField(PsiClass psiClass) {
-        PsiField[] fields = psiClass.getFields();
-        if (fields.length > 0) {
-            return fields[fields.length - 1];
-        }
-        return null;
-    }
-    private String getNavigateField(String value, String className) {
+    private String getNavigateField(String value, String className, String myFieldName) {
 
         StringBuilder sb = new StringBuilder("private ");
         if (Objects.equals("RelationTypeEnum.OneToOne", value)) {
-            sb.append(className).append(" item;");
+            if (StrUtil.isNotBlank(myFieldName)) {
+                sb.append(className).append(" ").append(myFieldName).append(";");
+            } else {
+                sb.append(className).append(" item;");
+            }
         } else if (Objects.equals("RelationTypeEnum.OneToMany", value)) {
-            sb.append(className).append(" item;");
+            if (StrUtil.isNotBlank(myFieldName)) {
+                sb.append(className).append(" ").append(myFieldName).append(";");
+            } else {
+                sb.append(className).append(" item;");
+            }
         } else if (Objects.equals("RelationTypeEnum.ManyToOne", value)) {
-            sb.append(String.format("List<%s> items;", className));
+            if (StrUtil.isNotBlank(myFieldName)) {
+                sb.append(String.format("List<%s> %s;", className, myFieldName));
+            } else {
+                sb.append(String.format("List<%s> items;", className));
+            }
         } else if (Objects.equals("RelationTypeEnum.ManyToMany", value)) {
-            sb.append(String.format("List<%s> items;", className));
+            if (StrUtil.isNotBlank(myFieldName)) {
+                sb.append(String.format("List<%s> %s;", className, myFieldName));
+            } else {
+                sb.append(String.format("List<%s> items;", className));
+            }
         }
         return sb.toString();
     }
 
-    private String getNavigateAnnotation(String value, String selfProperty, String targetProperty, String mappingClass, String selfMappingProperty, String targetMappingProperty,String className) {
+    private String getNavigateAnnotation(String value, String selfProperty, String targetProperty, String mappingClass, String selfMappingProperty, String targetMappingProperty, String className) {
 
         StringBuilder sb = new StringBuilder("@Navigate(value = RelationTypeEnum.");
         if (Objects.equals("RelationTypeEnum.OneToOne", value)) {
@@ -168,65 +190,31 @@ public class NavigateMappedByAction extends AnAction {
         } else if (Objects.equals("RelationTypeEnum.ManyToMany", value)) {
             sb.append("ManyToMany");
         }
-        if (StrUtil.isNotBlank(targetProperty)&&!Objects.equals("{}",targetProperty)) {
+        if (StrUtil.isNotBlank(targetProperty) && !Objects.equals("{}", targetProperty)) {
             sb.append(",selfProperty=").append(targetProperty);
         }
         if (Objects.equals("RelationTypeEnum.ManyToMany", value)) {
-            if (StrUtil.isNotBlank(targetMappingProperty)&&!Objects.equals("{}",targetMappingProperty)) {
+            if (StrUtil.isNotBlank(targetMappingProperty) && !Objects.equals("{}", targetMappingProperty)) {
                 sb.append(",selfMappingProperty=").append(targetMappingProperty);
             }
-            if (StrUtil.isNotBlank(mappingClass)&&!Objects.equals("Object.class",mappingClass)) {
+            if (StrUtil.isNotBlank(mappingClass) && !Objects.equals("Object.class", mappingClass)) {
                 sb.append(",mappingClass=").append(mappingClass);
             }
-            if (StrUtil.isNotBlank(selfMappingProperty)&&!Objects.equals("{}",selfMappingProperty)) {
+            if (StrUtil.isNotBlank(selfMappingProperty) && !Objects.equals("{}", selfMappingProperty)) {
                 sb.append(",targetMappingProperty=").append(selfMappingProperty);
             }
         }
-        if (StrUtil.isNotBlank(selfProperty)&&!Objects.equals("{}",selfProperty)) {
+        if (StrUtil.isNotBlank(selfProperty) && !Objects.equals("{}", selfProperty)) {
             sb.append(",targetProperty=").append(selfProperty);
         }
         sb.append(")");
         String field = sb.toString();
-        field=field.replace(".Fields.",".#Fields#.");
-        field=field.replace("Fields.",className+".Fields.");
-        field=field.replace(".#Fields#.",".Fields.");
+        field = field.replace(".Fields.", ".#Fields#.");
+        field = field.replace("Fields.", className + ".Fields.");
+        field = field.replace(".#Fields#.", ".Fields.");
         return field;
     }
 
-    //    private static final String LINK_SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)|\\{@link\\s+([\\w\\.]+)\\}";
-    private static final String SEE_CLASS_REGEX = "@see\\s+([\\w\\.]+)";
-
-    private String getReferenceClassName(String className, String docText) {
-        String result = getReferenceClassName0(className, docText).trim();
-        if (result.contains(".")) {
-            return StrUtil.subAfter(result, ".", true);
-        } else {
-            return result;
-        }
-    }
-
-    private String getReferenceClassName0(String className, String docText) {
-//        docText = docText.replaceAll("\n", "");
-        if (StrUtil.isNotBlank(docText)) {
-            String newDocText = docText.replaceAll("@link", "@see");
-            Pattern pattern = Pattern.compile(SEE_CLASS_REGEX);
-
-            // 创建匹配器
-            Matcher matcher = pattern.matcher(newDocText);
-            if (matcher.find()) {
-                String result = matcher.group(1);
-                if (StrUtil.isNotBlank(result)) {
-                    return result;
-                } else {
-                    String resultLink = matcher.group(2);
-                    if (StrUtil.isNotBlank(resultLink)) {
-                        return resultLink;
-                    }
-                }
-            }
-        }
-        return className;
-    }
 
     private static final PsiElementPattern.Capture<PsiElement> ELEMENT_FIELD = PlatformPatterns.psiElement().withParent(PsiField.class);
 }
