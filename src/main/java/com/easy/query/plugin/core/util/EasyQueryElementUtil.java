@@ -295,6 +295,14 @@ public class EasyQueryElementUtil {
             Map<String, PsiNameValuePair> entityAnnoAttrMap = PsiJavaAnnotationUtil.attrToMap(entityNavigateAnno);
             Map<String, PsiNameValuePair> dtoAnnoAttrMap = PsiJavaAnnotationUtil.attrToMap(dtoNavigateAnno);
 
+            PsiNameValuePair supportNonEntity = dtoAnnoAttrMap.get("supportNonEntity");
+            if(supportNonEntity!=null){
+                String literalValue = supportNonEntity.getLiteralValue();
+                if("true".equals(literalValue)){
+                    return InspectionResult.noProblem();
+                }
+            }
+
             // 合并两个Map的key并排除value
             Set<String> dtoRemoveKeys = Sets.newHashSet();
             dtoRemoveKeys.addAll(entityAnnoAttrMap.keySet());
