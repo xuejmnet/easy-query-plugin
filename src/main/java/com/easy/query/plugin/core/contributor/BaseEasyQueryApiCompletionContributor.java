@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.contributor;
 
+import com.easy.query.plugin.core.contributor.java.EasyAndOrContributor;
 import com.easy.query.plugin.core.contributor.java.EasyAnonymousContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.contributor.java.EasyEntitySetColumnsContributor;
@@ -30,6 +31,10 @@ import java.util.stream.Collectors;
  */
 public class BaseEasyQueryApiCompletionContributor {
 
+
+    protected static final Set<EasyContributor> PARAM_API_METHODS = new HashSet<>(Arrays.asList(
+        new EasyAndOrContributor("and", "and quick insert", true),
+        new EasyAndOrContributor("or", "or quick insert", true)));
 
     protected static final Set<EasyContributor> API_METHODS = new HashSet<>(Arrays.asList(
             new EasySelectContributor("select", "select", false),

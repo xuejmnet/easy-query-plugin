@@ -3,11 +3,13 @@ package com.easy.query.plugin.core.contributor;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
+import com.easy.query.plugin.core.contributor.java.EasyAndOrContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
 import com.easy.query.plugin.core.entity.QueryType;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
+import com.easy.query.plugin.core.util.GenericTypeParserUtil;
 import com.easy.query.plugin.core.util.MyCollectionUtil;
 import com.easy.query.plugin.core.util.MyStringUtil;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
@@ -28,6 +30,7 @@ import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiExpression;
@@ -36,13 +39,20 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiImportStatement;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiReferenceParameterList;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.impl.source.PsiParameterImpl;
+import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.InheritanceUtil;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -122,12 +132,20 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
         }
 
         if (".".equals(inputTextPrefix)) {
-            String matchApiMethodReturnTypeName = matchApi(parameters.getPosition(), inputText);
+            String matchApiMethodReturnTypeName = matchApi(parameters.getPosition(), inputText, project);
             if (matchApiMethodReturnTypeName != null) {
                 addApiCodeTip(result, project, psiFile, offset, matchApiMethodReturnTypeName);
             } else if (StrUtil.equalsAny(inputText, "like")) {
 //                result.restartCompletionOnPrefixChange("like");
                 addCompareCodeTip(result, project, psiFile, offset, COMPARE_LIKE_METHODS);
+            } else if (StrUtil.equalsAny(inputText, "")) {
+//                result.restartCompletionOnPrefixChange("like");
+                addCompareCodeTip(result, project, psiFile, offset, COMPARE_LIKE_METHODS);
+            }else{
+                String paramApi = matchParamApi(parameters.getPosition(), inputText, project);
+                if (paramApi != null) {
+                    addParamApiCodeTip(result, project, psiFile, offset, paramApi);
+                }
             }
             //匹配匿名对象
         } else {
@@ -153,16 +171,8 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
         return AFTER_EASY_QUERY_METHOD;
     }
 
-    private String matchApi(PsiElement psiElement, String inputText) {
+    private String matchApi(PsiElement psiElement, String inputText, Project project) {
 
-//        try {
-//            boolean accepts = ;
-//            if(!accepts){
-//                return false;
-//            }
-//        } catch (Exception ex) {
-//            System.out.println(ex);
-//        }
         boolean match = API_MATCH_TREE.fstMatch(inputText);
         if (!match) {
             return null;
@@ -180,6 +190,49 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
             || EASY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o -> queryableMethodName.startsWith(o))) {
             return queryableMethodName;
         }
+        return null;
+    }
+    private String matchParamApi(PsiElement psiElement, String inputText, Project project) {
+
+        boolean match = API_MATCH_TREE.fstMatch(inputText);
+        if (!match) {
+            return null;
+        }
+        boolean accepts = getAfterMethodPattern().accepts(psiElement);
+        if (!accepts) {
+            return null;
+        }
+
+        PsiElement prevSibling = psiElement.getPrevSibling();
+        if (prevSibling != null) {
+            PsiElement prevSibling1 = prevSibling.getPrevSibling();
+            if (prevSibling1 != null) {
+                if (prevSibling1.getPrevSibling() instanceof PsiReferenceExpression) {
+                    PsiElement resolve = ((PsiReferenceExpression) prevSibling1.getPrevSibling()).resolve();
+                    if (resolve instanceof PsiParameter) {
+                        PsiType type = ((PsiParameter) resolve).getType();
+                        if(type instanceof PsiClassType){
+                            PsiClass myClass = ((PsiClassType) type).resolve();
+                            if(myClass!=null){
+
+                                PsiClass abstractProxy = JavaPsiFacade.getInstance(project)
+                                    .findClass("com.easy.query.core.proxy.AbstractProxyEntity", GlobalSearchScope.allScope(project));
+                                if (InheritanceUtil.isInheritorOrSelf(myClass, abstractProxy, true)) {
+                                    if ("or".startsWith(inputText)) {
+                                        return "or";
+                                    }
+                                    if ("and".startsWith(inputText)) {
+                                        return "and";
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+
         return null;
     }
 
@@ -358,7 +411,7 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyContributor easyContributor : compareMethods) {
                 LookupElementBuilder elementBuilder = LookupElementBuilder.create(easyContributor.getTipWord())
-                    .withTypeText("EasyQueryPlugin"+easyContributor.getDesc(), true)
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
                     .withInsertHandler((context, item) -> {
 
                         try {
@@ -395,7 +448,7 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyContributor easyContributor : ANONYMOUS_METHODS) {
                 LookupElementBuilder elementBuilder = LookupElementBuilder.create(easyContributor.getTipWord())
-                    .withTypeText("EasyQueryPlugin"+easyContributor.getDesc(), true)
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
                     .withInsertHandler((context, item) -> {
 
                         try {
@@ -578,13 +631,18 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
                     continue;
                 }
                 LookupElementBuilder apiPlugin = LookupElementBuilder.create(easyContributor.getTipWord())
-                    .withTypeText("EasyQueryPlugin"+easyContributor.getDesc(), true)
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
                     .withInsertHandler((context, item) -> {
 
                         try {
 
                             PsiElement elementAt = psiFile.findElementAt(offset);
                             if (elementAt == null) {
+                                return;
+                            }
+                            if (easyContributor instanceof EasyAndOrContributor) {
+
+                                easyContributor.insertString(context, Collections.emptyList(), true);
                                 return;
                             }
 
@@ -620,6 +678,39 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
             System.out.println(ex.getMessage());
         }
     }
+    private void addParamApiCodeTip(@NotNull CompletionResultSet result, Project project, PsiFile psiFile, int offset, String beforeMethodReturnTypeName) {
+        try {
+
+            // 获取忽略大小写的结果集
+            CompletionResultSet completionResultSet = result.caseInsensitive();
+            for (EasyContributor easyContributor : PARAM_API_METHODS) {
+                if (!easyContributor.accept(beforeMethodReturnTypeName)) {
+                    continue;
+                }
+                LookupElementBuilder apiPlugin = LookupElementBuilder.create(easyContributor.getTipWord())
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
+                    .withInsertHandler((context, item) -> {
+
+                        try {
+
+                            PsiElement elementAt = psiFile.findElementAt(offset);
+                            if (elementAt == null) {
+                                return;
+                            }
+                            easyContributor.insertString(context, Collections.emptyList(), true);
+                        } catch (Exception e) {
+                            System.out.println(e.getMessage());
+                        }
+                    })
+                    .withIcon(Icons.EQ);
+
+                completionResultSet.addElement(PrioritizedLookupElement.withPriority(apiPlugin, 100 - 1));
+
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
 
     private void addApiCodeTip(@NotNull CompletionResultSet result, Project project, PsiFile psiFile, int offset) {
         try {
@@ -628,7 +719,7 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
             CompletionResultSet completionResultSet = result.caseInsensitive();
             for (EasyContributor easyContributor : API_METHODS) {
                 LookupElementBuilder apiPlugin = LookupElementBuilder.create(easyContributor.getTipWord())
-                    .withTypeText("EasyQueryPlugin"+easyContributor.getDesc(), true)
+                    .withTypeText("EasyQueryPlugin" + easyContributor.getDesc(), true)
                     .withInsertHandler((context, item) -> {
 
                         try {
@@ -714,9 +805,19 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
                 String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
                 String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
                 if (typeString.startsWith("com.easy.query.core.proxy.grouping.proxy.Grouping")) {
-                    return Collections.singletonList(new QueryType("group", true));
+                    ArrayList<QueryType> objects = new ArrayList<>();
+                    objects.add(new QueryType("group", true));
+                    return objects;
                 }
-                List<List<String>> types = MyCollectionUtil.partition(StrUtil.split(typeString, ","), 2);
+//                if (typeString.startsWith("com.easy.query.core.proxy.core.draft.proxy.Draft")) {
+//                    ArrayList<QueryType> objects = new ArrayList<>();
+//                    objects.add(new QueryType("draft", false));
+//                    return objects;
+//                }
+
+                GenericTypeParserUtil.ParsedType parsedType = GenericTypeParserUtil.parseGenericType(queryable);
+
+                List<List<String>> types = MyCollectionUtil.partition(parsedType.typeArguments, 2);
 
                 Map<Integer, List<String>> matchNames = getMatchNames(project);
 
@@ -793,8 +894,13 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
                 return names.get(index);
             }
         }
+        String removeClassGeneric = StrUtil.subBefore(fullClassName, "<", false);
 
-        String className = StrUtil.subAfter(fullClassName, ".", true);
+        String className = StrUtil.subAfter(removeClassGeneric, ".", true);
+        if(removeClassGeneric.startsWith("com.easy.query.core.proxy.core.draft.Draft")||removeClassGeneric.startsWith("com.easy.query.core.proxy.core.tuple.Tuple")
+            ||removeClassGeneric.startsWith("com.easy.query.core.proxy.part.Part")){
+            return className.toLowerCase();
+        }
         return MyStringUtil.lambdaShortName(className, index, total);
     }
 

@@ -30,6 +30,10 @@
     </ul>
     ]]></description>
     <change-notes><![CDATA[
+    <h3>0.1.50</h3>
+    <ul>
+    <li>修复draft tuple part下leftJoin和where这种显式提示参数错误的bug,支持and or的智能提示</li>
+    </ul>
     <h3>0.1.25</h3>
     <ul>
     <li>优化kotlin下的ksp插件代码生成</li>
