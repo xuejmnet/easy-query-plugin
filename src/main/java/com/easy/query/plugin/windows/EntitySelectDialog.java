@@ -144,6 +144,10 @@ public class EntitySelectDialog extends JDialog {
                     Set<String> search = search(entityName.trim(), cellRenderer);
                     model.removeAllElements();
                     model.addAll(search);
+                }else{
+                    cellRenderer.setHighlightKey(new HashMap<>());
+                    model.removeAllElements();
+                    model.addAll(entityNameList);
                 }
             }
         });
@@ -174,7 +178,7 @@ public class EntitySelectDialog extends JDialog {
                 String entityName = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
                 String finalKeyword = keyword;
                 String htmlText = "<html>" ;
-                htmlText += packageName;
+                htmlText += packageName+".";
                 for (int i = 0; i < entityName.length(); i++) {
                     String key = entityName.charAt(i) + "" ;
                     if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
