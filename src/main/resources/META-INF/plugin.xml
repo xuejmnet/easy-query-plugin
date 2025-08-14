@@ -244,9 +244,11 @@
                 displayName="EasyQuery Project Settings"
                 nonDefaultProject="true"/>
         <!-- 注册 PathAliasReferenceContributor 为引用贡献者 -->
-        <psi.referenceContributor language="JAVA" implementation="com.easy.query.plugin.core.reference.PathAliasReferenceContributor"/>
+        <psi.referenceContributor language="JAVA" implementation="com.easy.query.plugin.core.reference.pathalias.PathAliasReferenceContributor"/>
+        <psi.referenceContributor language="JAVA" implementation="com.easy.query.plugin.core.reference.wherecondition.EasyWhereConditionReferenceContributor"/>
         <!-- 注册 PathAliasAnnotator 为注释器 -->
-        <annotator language="JAVA" implementationClass="com.easy.query.plugin.core.reference.PathAliasAnnotator"/>
+        <annotator language="JAVA" implementationClass="com.easy.query.plugin.core.reference.pathalias.PathAliasAnnotator"/>
+        <annotator language="JAVA" implementationClass="com.easy.query.plugin.core.reference.wherecondition.EasyWhereConditionAnnotator"/>
 
 
         <editorFactoryListener implementation="com.easy.query.plugin.core.EasyQueryDocumentChangeHandler"
@@ -271,6 +273,8 @@
                                 implementationClass="com.easy.query.plugin.core.completion.JavadocCompletion"/>
         <completion.contributor language="JAVA"
                                 implementationClass="com.easy.query.plugin.core.completion.NavigateCompletionContributor"/>
+        <completion.contributor language="JAVA"
+                                implementationClass="com.easy.query.plugin.core.completion.WhereConditionCompletionContributor"/>
         <completion.contributor language="JAVA"
                                 implementationClass="com.easy.query.plugin.core.completion.ProxyFieldCompletion"/>
         <codeInsight.lineMarkerProvider language="JAVA"

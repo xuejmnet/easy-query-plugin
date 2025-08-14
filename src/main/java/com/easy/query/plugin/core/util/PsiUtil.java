@@ -20,15 +20,39 @@ import java.util.regex.Pattern;
  */
 public class PsiUtil {
 
-    private static final Set<String> EASY_QUERY_ANNOTATIONS=new HashSet<>(Arrays.asList(
+    private static final Set<String> EASY_QUERY_NAVIGATE_ANNOTATIONS =new HashSet<>(Arrays.asList(
         "com.easy.query.core.annotation.NavigateFlat",
         "com.easy.query.core.annotation.NavigateJoin"
+    ));
+    private static final Set<String> EASY_QUERY_ALL_ANNOTATIONS=new HashSet<>(Arrays.asList(
+        "com.easy.query.core.annotation.NavigateFlat",
+        "com.easy.query.core.annotation.NavigateJoin",
+        "com.easy.query.core.annotation.EasyWhereCondition"
+    ));
+    private static final Set<String> EASY_QUERY_WHERE_CONDITION_ANNOTATIONS=new HashSet<>(Arrays.asList(
+        "com.easy.query.core.annotation.EasyWhereCondition"
     ));
     public static boolean isEasyQueryNavigateFlatJoinAnnotation(PsiElement psiElement){
         PsiAnnotation parentOfType = PsiTreeUtil.getParentOfType(psiElement, PsiAnnotation.class);
         if(parentOfType!=null){
             String qualifiedName = parentOfType.getQualifiedName();
-            return EASY_QUERY_ANNOTATIONS.contains(qualifiedName);
+            return EASY_QUERY_NAVIGATE_ANNOTATIONS.contains(qualifiedName);
+        }
+        return false;
+    }
+    public static boolean isEasyQueryWhereConditionAnnotation(PsiElement psiElement){
+        PsiAnnotation parentOfType = PsiTreeUtil.getParentOfType(psiElement, PsiAnnotation.class);
+        if(parentOfType!=null){
+            String qualifiedName = parentOfType.getQualifiedName();
+            return EASY_QUERY_WHERE_CONDITION_ANNOTATIONS.contains(qualifiedName);
+        }
+        return false;
+    }
+    public static boolean isEasyQueryNavigateFlatJoinWhereConditionAnnotation(PsiElement psiElement){
+        PsiAnnotation parentOfType = PsiTreeUtil.getParentOfType(psiElement, PsiAnnotation.class);
+        if(parentOfType!=null){
+            String qualifiedName = parentOfType.getQualifiedName();
+            return EASY_QUERY_ALL_ANNOTATIONS.contains(qualifiedName);
         }
         return false;
     }

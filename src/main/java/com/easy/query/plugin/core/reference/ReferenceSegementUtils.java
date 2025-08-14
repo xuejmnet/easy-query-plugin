@@ -11,9 +11,8 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public class PathAliasUtils {
+public class ReferenceSegementUtils {
 
     /**
      * 查找单个段落的目标元素的逻辑。

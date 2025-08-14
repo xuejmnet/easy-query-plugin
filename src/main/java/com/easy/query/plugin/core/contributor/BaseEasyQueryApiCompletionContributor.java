@@ -2,12 +2,14 @@ package com.easy.query.plugin.core.contributor;
 
 import com.easy.query.plugin.core.contributor.java.EasyAndOrContributor;
 import com.easy.query.plugin.core.contributor.java.EasyAnonymousContributor;
+import com.easy.query.plugin.core.contributor.java.EasyConfigureGroupJoinContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
 import com.easy.query.plugin.core.contributor.java.EasyEntitySetColumnsContributor;
 import com.easy.query.plugin.core.contributor.java.EasyFilterConfigureContributor;
 import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
 import com.easy.query.plugin.core.contributor.java.EasyGroupTableContributor;
 import com.easy.query.plugin.core.contributor.java.EasyIncludeContributor;
+import com.easy.query.plugin.core.contributor.java.EasyIncludeOfContributor;
 import com.easy.query.plugin.core.contributor.java.EasyIncludesContributor;
 import com.easy.query.plugin.core.contributor.java.EasyOrderContributor;
 import com.easy.query.plugin.core.contributor.java.EasySelectClassContributor;
@@ -42,6 +44,7 @@ public class BaseEasyQueryApiCompletionContributor {
             new EasyContributor("where", "where", false),
             new EasyContributor("where", "where_code_block", true),
             new EasyFilterConfigureContributor("filterConfigure", "filterConfigureNotNull", false),
+            new EasyConfigureGroupJoinContributor("configure", "configureGroupJoin", false),
             new EasyIncludeContributor("include", "include", false),
             new EasyIncludesContributor("includes", "includes", false),
             new EasyOrderContributor("orderBy", "orderBy", false),
@@ -51,6 +54,7 @@ public class BaseEasyQueryApiCompletionContributor {
             new EasySelectDraftContributor("select", "selectDraft", false),
             new EasySelectTupleContributor("select", "selectTuple", false),
             new EasySelectClassContributor("select", "selectClass", false),
+            new EasyIncludeOfContributor("includeBy", "includeByOf", false),
             new EasySelectContributor("having", "having", false),
             new EasySelectContributor("having", "having_code_block", true),
             new EasySelectContributor("selectColumn", "selectColumn", false),

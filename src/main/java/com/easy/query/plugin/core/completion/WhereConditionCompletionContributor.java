@@ -26,15 +26,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.intellij.internal.statistic.eventLog.events.EventFields.Language;
-
 /**
  * create time 2025/2/24 21:20
  * 文件说明
  *
  * @author xuejiaming
  */
-public class NavigateCompletionContributor extends CompletionContributor {
+public class WhereConditionCompletionContributor extends CompletionContributor {
 
 
     @Override
@@ -55,7 +53,7 @@ public class NavigateCompletionContributor extends CompletionContributor {
             return;
         }
 
-        boolean easyQueryAnnotation = PsiUtil.isEasyQueryNavigateFlatJoinAnnotation(position);
+        boolean easyQueryAnnotation = PsiUtil.isEasyQueryWhereConditionAnnotation(position);
         if (!easyQueryAnnotation) {
             return;
         }

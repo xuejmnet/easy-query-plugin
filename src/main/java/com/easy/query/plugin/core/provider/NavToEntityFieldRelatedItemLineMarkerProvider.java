@@ -78,6 +78,41 @@ public class NavToEntityFieldRelatedItemLineMarkerProvider extends RelatedItemLi
                 }
             }
         }
+        PsiAnnotation annoEasyWhereCondition = field.getAnnotation("com.easy.query.core.annotation.EasyWhereCondition");
+        if (Objects.nonNull(annoEasyWhereCondition)) {
+            // 有这个注解, 看看 pathAlias 是否有值
+            JvmAnnotationAttribute propName = annoEasyWhereCondition.findAttribute("propName");
+            if (propName != null && propName instanceof PsiNameValuePairImpl && ((PsiNameValuePairImpl) propName).getLiteralValue()!=null) {
+                String pathAliasStr = ((PsiNameValuePairImpl) propName).getLiteralValue();
+                // 有这个字段, 从当前类中找到静态字段
+                PsiField defineMappingPath = containingClass.findFieldByName(pathAliasStr, true);
+
+                // 添加链接
+                if (defineMappingPath != null) {
+                    RelatedItemLineMarkerInfo<PsiElement> navInfo = NavigationGutterIconBuilder.create(Icons.EQ)
+                            .setTargets(defineMappingPath)
+                            .setTooltipText("Navigate to Mapping Define")
+                            .createLineMarkerInfo(field.getIdentifyingElement());
+                    result.add(navInfo);
+                }
+            }
+            JvmAnnotationAttribute propNames = annoEasyWhereCondition.findAttribute("propNames");
+            if (propName != null && propName instanceof PsiNameValuePairImpl && ((PsiNameValuePairImpl) propName).getLiteralValue()!=null) {
+                String pathAliasStr = ((PsiNameValuePairImpl) propName).getLiteralValue();
+                // 有这个字段, 从当前类中找到静态字段
+                PsiField defineMappingPath = containingClass.findFieldByName(pathAliasStr, true);
+
+                // 添加链接
+                if (defineMappingPath != null) {
+                    RelatedItemLineMarkerInfo<PsiElement> navInfo = NavigationGutterIconBuilder.create(Icons.EQ)
+                            .setTargets(defineMappingPath)
+                            .setTooltipText("Navigate to Mapping Define")
+                            .createLineMarkerInfo(field.getIdentifyingElement());
+                    result.add(navInfo);
+                }
+            }
+        }
+
         PsiAnnotation annoNavigateJoin = field.getAnnotation("com.easy.query.core.annotation.NavigateJoin");
         if (Objects.nonNull(annoNavigateJoin)) {
             // 有这个注解, 看看 pathAlias 是否有值

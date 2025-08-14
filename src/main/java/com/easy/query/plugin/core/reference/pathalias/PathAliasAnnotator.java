@@ -1,4 +1,4 @@
-package com.easy.query.plugin.core.reference;
+package com.easy.query.plugin.core.reference.pathalias;
 
 import com.easy.query.plugin.core.ResultWithError;
 import com.intellij.lang.annotation.AnnotationHolder;
@@ -11,7 +11,7 @@ import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
-import static com.easy.query.plugin.core.reference.PathAliasUtils.findSegmentTargetElement;
+import static com.easy.query.plugin.core.reference.ReferenceSegementUtils.findSegmentTargetElement;
 
 /**
  * 自定义注释器，用于在找不到引用时添加错误注释。
@@ -32,16 +32,6 @@ public class PathAliasAnnotator implements Annotator {
                             .range(element.getTextRange())
                             .create();
                 }
-//                for (int i = 0; i < pathSegments.length; i++) {
-//                    String[] subPathSegments = new String[i + 1];
-//                    System.arraycopy(pathSegments, 0, subPathSegments, 0, i + 1);
-//                    PsiElement targetElement = findSegmentTargetElement(element.getProject(), element, subPathSegments);
-//                    if (targetElement == null) {
-//                        holder.newAnnotation(HighlightSeverity.ERROR, "找不到对应的引用: " + String.join(".", subPathSegments))
-//                              .range(element.getTextRange())
-//                              .create();
-//                    }
-//                }
             }
         }
     }
@@ -66,6 +56,16 @@ public class PathAliasAnnotator implements Annotator {
                 return "pathAlias".equals(((PsiNameValuePair) element.getParent()).getName());
             }
         }
+//
+//
+//         isNav = "com.easy.query.core.annotation.EasyWhereCondition".equals(qualifiedName);
+//        if(isNav){
+//            if(element.getParent() instanceof PsiNameValuePair){
+//                return "propName".equals(((PsiNameValuePair) element.getParent()).getName())
+//                    ||
+//                    "propNames".equals(((PsiNameValuePair) element.getParent()).getName());
+//            }
+//        }
         return false;
     }
 

@@ -1,4 +1,4 @@
-package com.easy.query.plugin.core.reference;
+package com.easy.query.plugin.core.reference.pathalias;
 
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.*;

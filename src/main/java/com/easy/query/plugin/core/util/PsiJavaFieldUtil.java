@@ -137,6 +137,11 @@ public class PsiJavaFieldUtil {
         if (columnIgnore != null) {
             return true;
         }
+        // 如果字段上有 com.easy.query.core.annotation.ColumnIgnore 注解, 保留
+        PsiAnnotation easyWhereCondition = dtoField.getAnnotation("com.easy.query.core.annotation.EasyWhereCondition");
+        if (easyWhereCondition != null) {
+            return true;
+        }
         return false;
     }
     /**

@@ -1,4 +1,4 @@
-package com.easy.query.plugin.core.reference;
+package com.easy.query.plugin.core.reference.wherecondition;
 
 import com.easy.query.plugin.core.ResultWithError;
 import com.intellij.openapi.project.Project;
@@ -8,12 +8,12 @@ import com.intellij.psi.PsiReferenceBase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.easy.query.plugin.core.reference.PathAliasUtils.findSegmentTargetElement;
+import static com.easy.query.plugin.core.reference.ReferenceSegementUtils.findSegmentTargetElement;
 
 /**
  * 自定义导航处理器，用于处理 pathAlias 属性值的跳转。
  */
-public class PathAliasNavigationHandler extends PsiReferenceBase<PsiLiteralExpression> {
+public class EasyWhereConditionHandler extends PsiReferenceBase<PsiLiteralExpression> {
 
     private final String[] pathSegments;
 
@@ -23,7 +23,7 @@ public class PathAliasNavigationHandler extends PsiReferenceBase<PsiLiteralExpre
      * @param element      包含 pathAlias 字符串的 PsiLiteralExpression
      * @param pathSegments pathAlias 的分割值数组
      */
-    public PathAliasNavigationHandler(@NotNull PsiLiteralExpression element, String[] pathSegments) {
+    public EasyWhereConditionHandler(@NotNull PsiLiteralExpression element, String[] pathSegments) {
         super(element);
         this.pathSegments = pathSegments;
     }
