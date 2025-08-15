@@ -233,7 +233,6 @@
     <depends>com.intellij.modules.java</depends>
 <!--    <depends>com.intellij.modules.sql</depends>-->
     <depends>org.jetbrains.kotlin</depends>
-    <depends>com.intellij.database</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->

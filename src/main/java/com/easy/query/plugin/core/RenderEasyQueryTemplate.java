@@ -52,51 +52,6 @@ public class RenderEasyQueryTemplate {
         return Arrays.stream(StringUtils.split(ignoreColumns, ",")).collect(Collectors.toSet());
     }
 
-    private static TableInfo transTo(TableMetadata tableMetadata, EasyQueryConfig config) {
-        Map<String, List<MatchTypeMapping>> typeMapping = config.getTypeMapping() == null ? TableUtils.getDefaultTypeMappingMap() : config.getTypeMapping();
-        TableInfo tableInfo = new TableInfo();
-        tableInfo.setName(tableMetadata.getName());
-        tableInfo.setComment(tableMetadata.getComment());
-        if (StringUtils.isNotBlank(config.getModelSuperClass())) {
-            ImportAndClass importAndClass = getImportAndClass(config.getModelSuperClass());
-            if (importAndClass.importPackage != null) {
-                tableInfo.addImportClassItem(importAndClass.importPackage);
-            }
-            tableInfo.setSuperClass(importAndClass.className);
-        }
-        ArrayList<ColumnInfo> columnInfos = new ArrayList<>();
-        List<ColumnMetadata> columns = tableMetadata.getColumns();
-        Set<String> ignoreColumns = getIgnoreColumns(config.getIgnoreColumns());
-        for (ColumnMetadata column : columns) {
-            if (ignoreColumns.contains(column.getName())) {
-                continue;
-            }
-            ColumnInfo columnInfo = new ColumnInfo();
-            columnInfo.setName(column.getName());
-            columnInfo.setLowName(column.getName().toLowerCase());
-            columnInfo.setFirstLowName(StrUtil.toLowerCaseFirstOne(column.getName()));
-            columnInfo.setFieldName(StrUtil.toCamelCase(column.getName().toLowerCase()));
-            columnInfo.setJdbcTypeStr(StrUtil.replaceBlank(column.getJdbcTypeStr()));
-            String fieldType = getFieldType(column.getJdbcType(), tableInfo, column.getJdbcTypeName(), column.getSize(), StrUtil.replaceBlank(column.getJdbcTypeStr()).toLowerCase(), typeMapping);
-            if (Objects.equals("Object", fieldType)) {
-                //防止用户不知道是啥类型无法添加mapping映射的正则匹配
-                columnInfo.setFieldType(column.getJdbcTypeStr().toLowerCase());
-            } else {
-                columnInfo.setFieldType(fieldType);
-            }
-            columnInfo.setNotNull(column.isNotNull());
-            columnInfo.setComment(column.getComment());
-            columnInfo.setMethodName(StrUtil.upperFirst(columnInfo.getFieldName()));
-            columnInfo.setType(column.getJdbcTypeName());
-            columnInfo.setPrimaryKey(column.isPrimary());
-            columnInfo.setAutoIncrement(column.isAutoIncrement());
-            columnInfo.setSize(column.getSize());
-            columnInfos.add(columnInfo);
-        }
-        tableInfo.setColumnList(columnInfos);
-
-        return tableInfo;
-    }
 
     private static ImportAndClass getImportAndClass(String fullName) {
         if (fullName == null) {
@@ -110,51 +65,6 @@ public class RenderEasyQueryTemplate {
             return new ImportAndClass(null, className);
         }
         return new ImportAndClass(null, fullName);
-    }
-
-    private static String getFieldType(int jdbc, TableInfo tableInfo, String jdbcTypeName, int size, String jdbcTypeStr, Map<String, List<MatchTypeMapping>> typeMapping) {
-        if (typeMapping.containsKey("ORDINARY")) {
-            for (MatchTypeMapping mapping : typeMapping.get("ORDINARY")) {
-                if (jdbcTypeStr.equals(mapping.getColumType())) {
-                    ImportAndClass importAndClass = getImportAndClass(mapping.getJavaField());
-                    if (importAndClass.importPackage != null) {
-                        tableInfo.addImportClassItem(importAndClass.importPackage);
-                    }
-                    return importAndClass.className;
-                }
-            }
-        }
-        if (typeMapping.containsKey("REGEX")) {
-            for (MatchTypeMapping mapping : typeMapping.get("REGEX")) {
-                String group0 = ReUtil.getGroup0(mapping.getColumType(), jdbcTypeStr);
-                if (StrUtil.isNotEmpty(group0)) {
-                    ImportAndClass importAndClass = getImportAndClass(mapping.getJavaField());
-                    if (importAndClass.importPackage != null) {
-                        tableInfo.addImportClassItem(importAndClass.importPackage);
-                    }
-                    return importAndClass.className;
-                }
-            }
-        }
-
-        String className = convert(jdbc, size).getName();
-//        if (Object.class.getName().equals(className)) {
-//            String fieldType = MybatisFlexPluginConfigData.getFieldType(jdbcTypeName);
-//            if (StrUtil.isNotBlank(fieldType)) {
-//                className = fieldType;
-//            }
-//        }
-
-        boolean flag = className.contains(";");
-        if (flag) {
-            className = className.replace(";", "").replace("[L", "");
-        }
-        tableInfo.addImportClassItem(className);
-        String fieldType = className.substring(className.lastIndexOf(".") + 1);
-        if (flag) {
-            fieldType += "[]";
-        }
-        return fieldType;
     }
 
     public static Class<?> convert(int sqlType, int size) {
@@ -395,78 +305,6 @@ public class RenderEasyQueryTemplate {
                 }
             });
         });
-    }
-
-    public static void assembleData(List<TableMetadata> selectedTableInfo, EasyQueryConfig config, @NotNull Project project, Module module, boolean override) {
-
-        VelocityEngine velocityEngine = new VelocityEngine();
-        // 修复因velocity.log拒绝访问，导致Velocity初始化失败
-//        高版本已经把这个方法废弃了，所以这里注释掉；优先支持高版本
-//        try {
-//            velocityEngine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM, new NullLogChute());
-//        } catch (Exception e) {
-//        }
-
-        VelocityContext context = new VelocityContext();
-        HashMap<PsiDirectory, List<PsiElement>> templateMap = new HashMap<>();
-//        Map<String, String> templates = new ConcurrentHashMap<>(config.getTemplates());
-        String suffix = config.getSuffix();
-//        Map<String, String> packages = new ConcurrentHashMap<>(config.getPackages());
-//        removeEmptyPackage(packages, templates);
-//        String modelModule = config.getModelModule();
-//        Map<String, String> modules = config.getModules();
-        PsiFileFactory factory = PsiFileFactory.getInstance(project);
-        for (TableMetadata tableMetadata : selectedTableInfo) {
-            TableInfo tableInfo = transTo(tableMetadata, config);
-            String className = GenUtils.tableToJava(tableInfo.getName(), new String[]{config.getTablePrefix()});
-            context.put("className", className);
-            context.put("author", ObjectUtil.defaultIfEmpty(config.getAuthor(), "easy-query-plugin automatic generation"));
-            context.put("since", ObjectUtil.defaultIfEmpty(config.getSince(), "1.0"));
-            context.put("modelName", className + ObjectUtil.defaultIfNull(config.getModelSuffix(), "Entity"));
-            context.put("config", config);
-            context.put("importClassList", tableInfo.getImportClassList());
-            context.put("table", tableInfo);
-            renderTemplate(config.getModelTemplate(), context, className, velocityEngine, templateMap, config.getModelPackage(), suffix, factory, project, module);
-//            // 自定义模版渲染
-//            List<TabInfo> infoList = config.getTabList();
-//            if (CollectionUtils.isNotEmpty(infoList)) {
-//                for (TabInfo info : infoList) {
-//                    String genPath = info.getGenPath();
-//                    StringWriter sw = new StringWriter();
-//                    velocityEngine.evaluate(context, sw, "mybatis-flex", info.getContent());
-//                    File file = new File(genPath + File.separator + className + "." + info.getSuffix());
-//                    if (!file.getParentFile().exists()) {
-//                        Messages.showWarningDialog("自定义模板路径不存在：" + genPath, "警告");
-//                        return;
-//                    }
-//                    try {
-//                        FileOutputStream fileOutputStream = new FileOutputStream(file);
-//                        IoUtil.write(fileOutputStream, true, sw.toString().getBytes(StandardCharsets.UTF_8));
-//                    } catch (IOException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                }
-//            }
-        }
-        ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
-        booleanValueHolder.setValue(true);
-        if (override) {
-            override(project, templateMap, booleanValueHolder);
-        } else {
-            flush(project, templateMap, false, booleanValueHolder);
-        }
-        //
-        // // 生成代码之后，重新构建
-        // CompilerManagerUtil.make(Modules.getModule(config.getModelModule()));
-    }
-
-    private static void removeEmptyPackage(Map<String, String> packages, Map<String, String> templates) {
-        for (Map.Entry<String, String> entry : packages.entrySet()) {
-            if (StrUtil.isEmpty(entry.getValue())) {
-                packages.remove(entry.getKey());
-                templates.remove(entry.getKey());
-            }
-        }
     }
 
     /**

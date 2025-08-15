@@ -5,11 +5,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.constant.EasyQueryConstant;
-import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
-import com.easy.query.plugin.core.util.ObjectUtil;
-import com.easy.query.plugin.core.util.StrUtil;
-import com.easy.query.plugin.core.util.TableUtils;
 import com.intellij.ide.fileTemplates.impl.UrlUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -47,7 +43,6 @@ public class Template {
             config.setModelTemplate(getTemplateContent(EasyQueryConstant.MODEL_TEMPLATE));
             config.setModelSuffix(EasyQueryConstant.ENTITY);
 //            config.setModelPackage(EasyQueryConstant.DOMAIN.toLowerCase());
-            config.setTypeMapping(TableUtils.getDefaultTypeMappingMap());
         }
 
         return config;
