@@ -11,4 +11,8 @@ public interface EasyQueryProjectSettingKey {
      * 程序启动时是否扫描检查
      */
     String STARTUP_RUN_INSPECTION = "startup.runInspection";
+    /**
+     * 数据库格式化类型
+     */
+    String SQL_FORMAT_TYPE = "sql.format";
 }

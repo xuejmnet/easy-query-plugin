@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -20,23 +21,24 @@ public class PreviewConsoleLogSQLAction extends AnAction {
         // TODO: insert action logic here
         // 如果是从项目视图中右键点击的进来的则创建新的类
         Editor editor = e.getData(CommonDataKeys.EDITOR);
+        Project project = e.getProject();
         if (editor != null) {
             String selectedText = editor.getSelectionModel().getSelectedText();
-            preview(selectedText, () -> {
+            preview(project,selectedText, () -> {
             });
         }
     }
 
 
     //预览
-    public void preview(String selectedText, SimpleFunction function) {
+    public void preview(Project project,String selectedText, SimpleFunction function) {
 //        if (StringUtils.isBlank(selectedText)) {
 //            return;
 //        }
 //        &&StringUtils.containsIgnoreCase(selectedText,"Preparing")
 //                &&StringUtils.containsIgnoreCase(selectedText,"Parameters")
         try {
-            SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(StringUtils.isBlank(selectedText)?"":selectedText);
+            SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(project,StringUtils.isBlank(selectedText)?"":selectedText);
             SwingUtilities.invokeLater(() -> {
                 sqlPreviewDialog.setVisible(true);
             });

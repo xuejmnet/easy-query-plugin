@@ -1,9 +1,15 @@
 package com.easy.query.plugin.windows;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.druid.DbType;
+import com.alibaba.druid.sql.SQLUtils;
+import com.alibaba.druid.util.JdbcConstants;
+import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.util.BasicFormatter;
 import com.easy.query.plugin.core.util.BasicFormatter2;
 import com.easy.query.plugin.core.util.DialogUtil;
+import com.easy.query.plugin.core.util.EasyQueryConfigUtil;
+import com.intellij.openapi.project.Project;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -14,6 +20,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SQLPreviewDialog extends JDialog {
+    private Project project;
+    private String formatType;
     private JPanel contentPane;
     private JButton buttonCancel;
     private JTextArea selectSQLText;
@@ -21,6 +29,7 @@ public class SQLPreviewDialog extends JDialog {
     private JButton convertButton;
     private JButton mergeButton;
     private JCheckBox boolean2int;
+    private JLabel formatTypeText;
     private static final char MARK = '?';
     private static final BasicFormatter FORMATTER = new BasicFormatter();
     private static final BasicFormatter2 FORMATTER2 = new BasicFormatter2();
@@ -41,13 +50,14 @@ public class SQLPreviewDialog extends JDialog {
         NEED_BRACKETS = Collections.unmodifiableSet(types);
     }
 
-    public SQLPreviewDialog(String selectSQL) {
+    public SQLPreviewDialog(Project project, String selectSQL) {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(convertButton);
         setTitle("SQL Preview");
         setSize(500, 800);
         DialogUtil.centerShow(this);
+        this.project = project;
 
         convertButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -68,6 +78,10 @@ public class SQLPreviewDialog extends JDialog {
         });
 
         selectSQLText.setText(selectSQL);
+
+        this.formatType = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_FORMAT_TYPE, "other");
+        String formatTypeText = StrUtil.isBlank(formatType) || "generic".equals(formatType) ? "hibernate格式" : "druid:" + formatType;
+        this.formatTypeText.setText("当前使用的格式化类型:"+formatTypeText);
 
 
         // call onCancel() when cross is clicked
@@ -154,7 +168,12 @@ public class SQLPreviewDialog extends JDialog {
 
                 sql = parseSql(sql, params).toString();
 
-                String formatSQL = newConvert ? FORMATTER2.format(sql) : FORMATTER.format(sql);
+//                String formatSQL = newConvert ? FORMATTER2.format(sql) : FORMATTER.format(sql);
+
+
+                String formatSQL = StrUtil.isBlank(formatType) || "generic".equals(formatType)
+                    ? FORMATTER2.format(sql)
+                    : formatSQLByDruid(sql, formatType);
                 j++;
                 sqlBuilder.append("\n-- 第").append(j).append("条sql数据\n");
                 sqlBuilder.append(formatSQL);
@@ -163,6 +182,21 @@ public class SQLPreviewDialog extends JDialog {
             previewSQLText.setText(sqlBuilder.toString());
             convertButton.setText("转换↓ 一共转换成" + j + "条sql");
         }
+    }
+
+    private String formatSQLByDruid(String sql, String formatType) {
+
+        SQLUtils.FormatOption opt = new SQLUtils.FormatOption(true, true); // (ucase, pretty)
+        return SQLUtils.format(sql, getDbTypeByFormatType(formatType), opt);
+
+    }
+
+    private DbType getDbTypeByFormatType(String formatType) {
+        DbType dbType = DbType.of(formatType);
+        if (dbType != null) {
+            return dbType;
+        }
+        return DbType.other;
     }
 
     private StringBuilder parseSql(String sql, Queue<Map.Entry<String, String>> params) {
@@ -196,14 +230,14 @@ public class SQLPreviewDialog extends JDialog {
             } else {
                 if (boolean2int.isSelected()) {
                     if (StrUtil.equalsAnyIgnoreCase(entry.getValue(), "Boolean", "boolean")) {
-                        if( StrUtil.equalsIgnoreCase(entry.getKey(), "true")){
-                            sb.insert(i,"1");
-                        }else if( StrUtil.equalsIgnoreCase(entry.getKey(), "false")){
-                            sb.insert(i,"0");
-                        }else{
+                        if (StrUtil.equalsIgnoreCase(entry.getKey(), "true")) {
+                            sb.insert(i, "1");
+                        } else if (StrUtil.equalsIgnoreCase(entry.getKey(), "false")) {
+                            sb.insert(i, "0");
+                        } else {
                             sb.insert(i, entry.getKey());
                         }
-                    }else{
+                    } else {
                         sb.insert(i, entry.getKey());
                     }
 
