@@ -149,7 +149,7 @@ public class StructDTOUtil {
                 PsiClass propClass = entityWithClass.get(propertyType);
                 if (propClass != null) {
 
-                    if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, fieldName, deep))) {
+                    if (circulateChecker.pathRepeat(new ClassNodePropPath(ownerPropertyName,qualifiedName, propertyType, fieldName, deep))) {
                         continue;
                     }
                     ClassNode navClass = new ClassNode(fieldName, entityName, sort++, isPrimary, true, propClass.getName(), ownerPropertyName, qualifiedName, propClass.getQualifiedName(), beanPropType);
@@ -174,7 +174,7 @@ public class StructDTOUtil {
                 } else {
                     PsiClass propertyClass = findClass(project, propertyType);
                     if (propertyClass != null) {
-                        if (circulateChecker.pathRepeat(new ClassNodePropPath(qualifiedName, propertyType, fieldName, deep))) {
+                        if (circulateChecker.pathRepeat(new ClassNodePropPath(ownerPropertyName,qualifiedName, propertyType, fieldName, deep))) {
                             continue;
                         }
                         ClassNode navClass = new ClassNode(fieldName, entityName, sort++, isPrimary, true, propertyClass.getName(), ownerPropertyName, qualifiedName, propertyClass.getQualifiedName(), beanPropType);
