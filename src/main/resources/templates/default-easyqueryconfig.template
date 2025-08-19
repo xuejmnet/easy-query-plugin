@@ -11,3 +11,6 @@ dto.keepAnnoColumn=true
 
 ## 启动时是否检查扫描问题
 startup.runInspection=true
+
+# 具体参考 com.alibaba.druid.util.FnvHash.DbType  如果是generic那么还是原先的格式化 如果不是generic且未匹配到则使用DbType.other
+sql.format=generic

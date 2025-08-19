@@ -503,7 +503,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                                 String formattedText = formattedElement.getText();
                                 System.out.println(formattedText);
                                 // System.out.println(formattedSQL);
-                                SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(formattedText);
+                                SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(project,formattedText);
                                 SwingUtilities.invokeLater(() -> {
                                     sqlPreviewDialog.setVisible(true);
                                 });
