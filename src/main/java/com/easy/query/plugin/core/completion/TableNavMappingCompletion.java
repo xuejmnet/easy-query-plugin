@@ -5,6 +5,7 @@ import com.easy.query.plugin.action.navgen.NavMappingGUI;
 import com.easy.query.plugin.action.navgen.NavMappingRelation;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.util.EasyQueryElementUtil;
+import com.easy.query.plugin.core.util.IdeaUtil;
 import com.easy.query.plugin.core.util.PsiCommentUtil;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
 import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
@@ -217,7 +218,7 @@ public class TableNavMappingCompletion extends CompletionContributor {
         StringBuilder code = new StringBuilder();
 
         // 需要获取当前的 project
-        String newLine = System.lineSeparator();
+        String newLine = IdeaUtil.lineSeparator();
 
         code.append("/**");
         code.append(newLine);

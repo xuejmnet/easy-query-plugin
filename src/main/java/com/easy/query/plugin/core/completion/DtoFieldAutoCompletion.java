@@ -1,6 +1,7 @@
 package com.easy.query.plugin.core.completion;
 
 import com.easy.query.plugin.core.icons.Icons;
+import com.easy.query.plugin.core.util.IdeaUtil;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
 import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
@@ -112,7 +113,7 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
 
                                 StringBuilder fieldWithInternalClass = new StringBuilder();
                                 fieldWithInternalClass.append(text);
-                                String newLine = System.lineSeparator();
+                                String newLine = IdeaUtil.lineSeparator();
 
                                 fieldWithInternalClass.append("/**");
                                 fieldWithInternalClass.append(newLine);
