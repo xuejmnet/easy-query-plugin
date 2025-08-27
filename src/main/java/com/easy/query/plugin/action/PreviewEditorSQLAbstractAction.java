@@ -483,7 +483,6 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                                 String text = event.getText();
                                 if (!StrUtil.startWithAnyIgnoreCase(text, "select", "insert", "update", "delete",
                                         "truncate")) {
-                                    System.out.println(text);
                                     return;
                                 }
 
@@ -501,7 +500,6 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                                 // 更新到 sqlFile
                                 // String formattedSQL = extractFormattedSQL(formattedElement);
                                 String formattedText = formattedElement.getText();
-                                System.out.println(formattedText);
                                 // System.out.println(formattedSQL);
                                 SQLPreviewDialog sqlPreviewDialog = new SQLPreviewDialog(project,formattedText);
                                 SwingUtilities.invokeLater(() -> {

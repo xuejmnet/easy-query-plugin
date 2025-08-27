@@ -50,7 +50,6 @@ public class Main extends JFrame {
         this.getContentPane().add(cbt);
         cbt.addCheckChangeEventListener(new JCheckBoxTree.CheckChangeEventListener() {
             public void checkStateChanged(JCheckBoxTree.CheckChangeEvent event) {
-                System.out.println("event");
                 TreePath[] paths = cbt.getCheckedPaths();
                 for (TreePath tp : paths) {
                     for (Object pathPart : tp.getPath()) {

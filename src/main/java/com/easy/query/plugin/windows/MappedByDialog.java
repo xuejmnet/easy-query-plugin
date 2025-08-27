@@ -74,6 +74,9 @@ public class MappedByDialog extends JDialog {
 
 
         DefaultListModel<String> model = new DefaultListModel<>();
+        if(targetNavigate.isEmpty()){
+            targetNavigate.put("无MappedBy",new MappedByItem("无MappedBy","未找到对应的MappedBy的属性"));
+        }
         // tableNameSet按照字母降序
         List<String> entityNameList = new ArrayList<>(targetNavigate.keySet());
         Collections.sort(entityNameList);

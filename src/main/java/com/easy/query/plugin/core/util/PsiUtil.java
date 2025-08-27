@@ -174,6 +174,12 @@ public class PsiUtil {
         }
         return fieldType.getCanonicalText();
     }
+    public static String replaceFieldType(String fieldDeclaration, String newType) {
+        // 匹配两种情况：List<类名> 或 单一类名
+        return fieldDeclaration
+            .replaceAll("(List<)\\w+(>)", "$1" + newType + "$2")
+            .replaceAll("\\b(\\w+)\\b(?=\\s+\\w+;?$)", newType);
+    }
 
     public static String getPsiClassFieldPropertyType(PsiClassType fieldType, boolean isInclude) {
         if (fieldType.resolve() instanceof PsiTypeParameter) {

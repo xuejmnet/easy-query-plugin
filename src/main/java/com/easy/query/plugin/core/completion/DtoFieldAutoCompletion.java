@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.completion;
 
+import cn.hutool.core.util.ReUtil;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.util.IdeaUtil;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
@@ -9,13 +10,21 @@ import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +36,7 @@ import java.util.stream.Collectors;
 public class DtoFieldAutoCompletion extends CompletionContributor {
 
     private final Pattern pattern = Pattern.compile("private\\s+(?:List<)?(\\w+)(?:>)?\\s+\\w+;");
+
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
 
@@ -34,7 +44,7 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
             return;
         }
 
-
+        Project project = parameters.getOriginalFile().getProject();
         PsiElement position = parameters.getPosition();
         if (SkipAutopopupInStrings.isInStringLiteral(position)) {
             return;
@@ -104,29 +114,37 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                             .withInsertHandler((context, item) -> {
                                 PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
                                 String text = dtoField.getText();
-                                String field = "private "+StrUtil.subAfter(text, "private ", true);
-                                String className ="XXXXXXX";
-                                Matcher matcher = pattern.matcher(field);
-                                if (matcher.find()) {
-                                    className = matcher.group(1);
-                                }
+//                                String field = "private "+StrUtil.subAfter(text, "private ", true);
+                                String className = "Internal" + StrUtil.upperFirst(entityFieldRaw.getName());
+                                // 移除dtoName 后面的 List / Set / Map / Array
+                                className = ReUtil.replaceAll(className, "(List|Set|Map|Array)$", "");
+
+                                text = PsiUtil.replaceFieldType(text, className);
 
                                 StringBuilder fieldWithInternalClass = new StringBuilder();
-                                fieldWithInternalClass.append(text);
                                 String newLine = IdeaUtil.lineSeparator();
-
+                                String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(entityFieldRaw, true);
+                                fieldWithInternalClass.append(newLine);
+                                fieldWithInternalClass.append(newLine);
                                 fieldWithInternalClass.append("/**");
                                 fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append("* {@link }");
+                                fieldWithInternalClass.append("* {@link ").append(psiFieldPropertyType).append("}");
                                 fieldWithInternalClass.append(newLine);
                                 fieldWithInternalClass.append("**/");
                                 fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append("public static class Internal").append(className).append(" {");
+                                fieldWithInternalClass.append("public static class ").append(className).append(" {");
                                 fieldWithInternalClass.append(newLine);
                                 fieldWithInternalClass.append("}");
-
-
-                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), fieldWithInternalClass.toString());
+                                fieldWithInternalClass.append(newLine);
+                                fieldWithInternalClass.append("}");
+                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), text);
+                                String text1 = context.getDocument().getText();
+                                int i = text1.lastIndexOf("}");
+                                String newDocWithoutRightBrace = text1.substring(0, i);
+                                String newDoc = newDocWithoutRightBrace + fieldWithInternalClass.toString();
+                                context.getDocument().setText(newDoc);
+                                // 格式化代码
+                                PsiClass psiClass = getPsiClass(currentPsiClass);
                             })
                             .withIcon(Icons.EQ),
                         400d);
@@ -186,24 +204,17 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                 400d);
             result.addElement(lookupElementWithEq);
         }
-//        for (PsiField entityFieldRaw : psiFields) {
-//            boolean fieldIsStatic = PsiUtil.fieldIsStatic(entityFieldRaw);
-//            if(fieldIsStatic){
-//                continue;
-//            }
-//            boolean isExist = false;
-////            for (PsiField dtoField : dtoFields) {
-////                if (Objects.equals(entityFieldRaw.getName(), dtoField.getName())) {
-////                    isExist = true;
-////                    break;
-////                }
-////            }
-//            if (!isExist) {
-//
-//
-//            }
-//        }
 
+    }
+
+    private PsiClass getPsiClass(PsiClass psiClass) {
+        if (psiClass.getParent() instanceof PsiFile) {
+            return psiClass;
+        }
+        if (psiClass.getParent() instanceof PsiClass) {
+            return getPsiClass((PsiClass) psiClass.getParent());
+        }
+        return psiClass;
     }
 
     private String getEasyAlias(PsiClass psiClass) {
