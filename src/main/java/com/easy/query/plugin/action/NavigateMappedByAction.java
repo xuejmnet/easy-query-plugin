@@ -7,6 +7,7 @@ import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
+import com.easy.query.plugin.windows.MappedByDialog;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -33,6 +34,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.kotlin.psi.KtFile;
 
+import javax.swing.*;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,11 +108,12 @@ public class NavigateMappedByAction extends AnAction {
                     }
 //                    PsiFile targetFile = targetClass.getContainingFile();
 
-                    Map<String, MappedByItem> targetNavigate = getTargetNavigate(targetClass);
+                    Map<String, MappedByItem> targetNavigate = getTargetNavigate(targetClass, ownerClass);
+
 
                     String navigateValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
                     if (StrUtil.isBlank(navigateValue)) {
-                        Messages.showErrorDialog(project, "无法获取字段Navigate.value值", "错误提示");
+                        Messages.showErrorDialog(project, "无法获取字段Navigate.value值,请显示填写一对一或者一对多相关类型", "错误提示");
                         return;
                     }
                     String selfProperty = PsiUtil.getPsiAnnotationValue(navigate, "selfProperty", "");
@@ -122,29 +125,31 @@ public class NavigateMappedByAction extends AnAction {
                     String navigateAnnotation = getNavigateAnnotation(navigateValue, selfProperty, targetProperty, mappingClass, selfMappingProperty, targetMappingProperty, className);
 
 
-                    Messages.InputDialog dialog = new Messages.InputDialog("请输入字段名空则使用默认字段名", "提示名称", Messages.getQuestionIcon(), "", new InputAnyValidatorImpl());
-                    dialog.show();
+                    MappedByDialog mappedByDialog = new MappedByDialog(targetNavigate, myFieldName -> {
 
-                    String myFieldName = "";
-                    if (dialog.isOK()) {
-                        myFieldName = dialog.getInputString();
-                    }
+                        String navigateField = getNavigateField(navigateValue, className, myFieldName);
+                        PsiField psiField = elementFactory.createFieldFromText(navigateField, targetClass);
+                        PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(navigateAnnotation, targetClass);
+                        PsiModifierList modifierList = psiField.getModifierList();
+                        if (modifierList == null) {
+                            Messages.showErrorDialog(project, "无法获取字段PsiModifierList值", "错误提示");
+                            return;
+                        }
+                        // 3. 把注解添加到字段
+                        psiField.getModifierList().addBefore(annotationFromText, psiField.getModifierList().getFirstChild());
 
-                    String navigateField = getNavigateField(navigateValue, className, myFieldName);
-                    PsiField psiField = elementFactory.createFieldFromText(navigateField, targetClass);
-                    PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(navigateAnnotation, targetClass);
-                    PsiModifierList modifierList = psiField.getModifierList();
-                    if (modifierList == null) {
-                        Messages.showErrorDialog(project, "无法获取字段PsiModifierList值", "错误提示");
-                        return;
-                    }
-                    // 3. 把注解添加到字段
-                    psiField.getModifierList().addBefore(annotationFromText, psiField.getModifierList().getFirstChild());
+                        WriteCommandAction.runWriteCommandAction(project, () -> {
+                            // 4. 添加字段到类中
+                            targetClass.add(psiField);
+                        });
+                    }, project);
 
-                    WriteCommandAction.runWriteCommandAction(project, () -> {
-                        // 4. 添加字段到类中
-                        targetClass.add(psiField);
+
+                    SwingUtilities.invokeLater(() -> {
+                        mappedByDialog.setVisible(true);
                     });
+
+
                 }
 
             }
@@ -155,7 +160,7 @@ public class NavigateMappedByAction extends AnAction {
         }
     }
 
-    private Map<String, MappedByItem> getTargetNavigate(PsiClass targetClass,PsiClass ownerClass) {
+    private Map<String, MappedByItem> getTargetNavigate(PsiClass targetClass, PsiClass ownerClass) {
         String qualifiedName = ownerClass.getQualifiedName();
         LinkedHashMap<String, MappedByItem> map = new LinkedHashMap<>();
         for (PsiField field : targetClass.getAllFields()) {
@@ -165,8 +170,8 @@ public class NavigateMappedByAction extends AnAction {
 
 
                 String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, true);
-                if(Objects.equals(qualifiedName,psiFieldPropertyType)){
-                    map.put(field.getName(),new MappedByItem(field.getName(),field.getText()));
+                if (Objects.equals(qualifiedName, psiFieldPropertyType)) {
+                    map.put(field.getName(), new MappedByItem(field.getName(), field.getText()));
                 }
             }
 
