@@ -1,11 +1,13 @@
 package com.easy.query.plugin.action;
 
+import com.easy.query.plugin.core.entity.MappedByItem;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.util.MyStringUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
+import com.easy.query.plugin.windows.MappedByDialog;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -32,6 +34,10 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.kotlin.psi.KtFile;
 
+import javax.swing.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -56,6 +62,7 @@ public class NavigateMappedByAction extends AnAction {
             PsiFile psiFile = e.getData(LangDataKeys.PSI_FILE);
             if (psiFile != null) {
                 if (psiFile instanceof KtFile) {
+                    Messages.showErrorDialog(project, "暂时不支持kt如果需要请提交issue", "错误提示");
                     return;
                 }
                 PsiClassOwner psiClassOwner = (PsiClassOwner) psiFile;
@@ -65,59 +72,60 @@ public class NavigateMappedByAction extends AnAction {
                     int offset = editor.getCaretModel().getOffset();
                     PsiElement elementAt = psiFile.findElementAt(offset);
                     if (elementAt == null) {
+                        Messages.showErrorDialog(project, "无法获取元素,请将光标至于导航属性上后呼出对应的MappedBy菜单", "错误提示");
                         return;
                     }
                     //如果是字段的话
-                    if (ELEMENT_FIELD.accepts(elementAt)) {
-                        PsiIdentifier field = (PsiIdentifier) elementAt;
-                        String fieldName = MyStringUtil.toUpperUnderlined(field.getText());
+                    if (!ELEMENT_FIELD.accepts(elementAt)) {
+                        Messages.showErrorDialog(project, "当前元素不是字段信息,请将光标至于导航属性上后呼出对应的MappedBy菜单", "错误提示");
+                        return;
+                    }
+                    PsiIdentifier field = (PsiIdentifier) elementAt;
+                    String fieldName = MyStringUtil.toUpperUnderlined(field.getText());
 
 //                        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
-                        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-                        //获取当前类
-                        PsiClass ownerClass = psiClassOwner.getClasses()[0];
-                        String className = ownerClass.getName();
+                    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                    //获取当前类
+                    PsiClass ownerClass = psiClassOwner.getClasses()[0];
+                    String className = ownerClass.getName();
 
-                        PsiField currentField = PsiTreeUtil.getParentOfType(elementAt, PsiField.class);
-                        if (currentField == null) {
-                            Messages.showErrorDialog(project, "请选择对应的字段", "错误提示");
-                            return;
-                        }
+                    PsiField currentField = PsiTreeUtil.getParentOfType(elementAt, PsiField.class);
+                    if (currentField == null) {
+                        Messages.showErrorDialog(project, "请选择对应的字段", "错误提示");
+                        return;
+                    }
 
-                        PsiAnnotation navigate = currentField.getAnnotation("com.easy.query.core.annotation.Navigate");
-                        if (navigate == null) {
-                            Messages.showErrorDialog(project, "请选择对应的导航字段", "错误提示");
-                            return;
-                        }
-                        String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(currentField, true);
-                        PsiClass targetClass = JavaPsiFacade.getInstance(project).findClass(psiFieldPropertyType, GlobalSearchScope.allScope(project));
-                        if (targetClass == null) {
-                            Messages.showErrorDialog(project, "请选择对应的导航目标类:" + psiFieldPropertyType, "错误提示");
-                            return;
-                        }
-                        PsiFile targetFile = targetClass.getContainingFile();
+                    PsiAnnotation navigate = currentField.getAnnotation("com.easy.query.core.annotation.Navigate");
+                    if (navigate == null) {
+                        Messages.showErrorDialog(project, "请选择对应的导航字段", "错误提示");
+                        return;
+                    }
+                    String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(currentField, true);
+                    PsiClass targetClass = JavaPsiFacade.getInstance(project).findClass(psiFieldPropertyType, GlobalSearchScope.allScope(project));
+                    if (targetClass == null) {
+                        Messages.showErrorDialog(project, "请选择对应的导航目标类:" + psiFieldPropertyType, "错误提示");
+                        return;
+                    }
+//                    PsiFile targetFile = targetClass.getContainingFile();
 
-                        String navigateValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
-                        if (StrUtil.isBlank(navigateValue)) {
-                            Messages.showErrorDialog(project, "无法获取字段Navigate.value值", "错误提示");
-                            return;
-                        }
-                        String selfProperty = PsiUtil.getPsiAnnotationValue(navigate, "selfProperty", "");
-                        String targetProperty = PsiUtil.getPsiAnnotationValue(navigate, "targetProperty", "");
-                        String mappingClass = PsiUtil.getPsiAnnotationValue(navigate, "mappingClass", "");
-                        String selfMappingProperty = PsiUtil.getPsiAnnotationValue(navigate, "selfMappingProperty", "");
-                        String targetMappingProperty = PsiUtil.getPsiAnnotationValue(navigate, "targetMappingProperty", "");
-
-                        String navigateAnnotation = getNavigateAnnotation(navigateValue, selfProperty, targetProperty, mappingClass, selfMappingProperty, targetMappingProperty, className);
+                    Map<String, MappedByItem> targetNavigate = getTargetNavigate(targetClass, ownerClass);
 
 
-                        Messages.InputDialog dialog = new Messages.InputDialog("请输入字段名空则使用默认字段名", "提示名称", Messages.getQuestionIcon(), "", new InputAnyValidatorImpl());
-                        dialog.show();
+                    String navigateValue = PsiUtil.getPsiAnnotationValue(navigate, "value", "");
+                    if (StrUtil.isBlank(navigateValue)) {
+                        Messages.showErrorDialog(project, "无法获取字段Navigate.value值,请显示填写一对一或者一对多相关类型", "错误提示");
+                        return;
+                    }
+                    String selfProperty = PsiUtil.getPsiAnnotationValue(navigate, "selfProperty", "");
+                    String targetProperty = PsiUtil.getPsiAnnotationValue(navigate, "targetProperty", "");
+                    String mappingClass = PsiUtil.getPsiAnnotationValue(navigate, "mappingClass", "");
+                    String selfMappingProperty = PsiUtil.getPsiAnnotationValue(navigate, "selfMappingProperty", "");
+                    String targetMappingProperty = PsiUtil.getPsiAnnotationValue(navigate, "targetMappingProperty", "");
 
-                        String myFieldName = "";
-                        if (dialog.isOK()) {
-                            myFieldName = dialog.getInputString();
-                        }
+                    String navigateAnnotation = getNavigateAnnotation(navigateValue, selfProperty, targetProperty, mappingClass, selfMappingProperty, targetMappingProperty, className);
+
+
+                    MappedByDialog mappedByDialog = new MappedByDialog(targetNavigate, myFieldName -> {
 
                         String navigateField = getNavigateField(navigateValue, className, myFieldName);
                         PsiField psiField = elementFactory.createFieldFromText(navigateField, targetClass);
@@ -131,12 +139,17 @@ public class NavigateMappedByAction extends AnAction {
                         psiField.getModifierList().addBefore(annotationFromText, psiField.getModifierList().getFirstChild());
 
                         WriteCommandAction.runWriteCommandAction(project, () -> {
-
-
                             // 4. 添加字段到类中
                             targetClass.add(psiField);
                         });
-                    }
+                    }, project);
+
+
+                    SwingUtilities.invokeLater(() -> {
+                        mappedByDialog.setVisible(true);
+                    });
+
+
                 }
 
             }
@@ -145,6 +158,25 @@ public class NavigateMappedByAction extends AnAction {
         } catch (Exception ex) {
             Messages.showErrorDialog(e.getProject(), "请按规定：将光标移动到对应的Class的属性上:" + ex.getMessage(), "错误提示");
         }
+    }
+
+    private Map<String, MappedByItem> getTargetNavigate(PsiClass targetClass, PsiClass ownerClass) {
+        String qualifiedName = ownerClass.getQualifiedName();
+        LinkedHashMap<String, MappedByItem> map = new LinkedHashMap<>();
+        for (PsiField field : targetClass.getAllFields()) {
+
+            PsiAnnotation navigate = field.getAnnotation("com.easy.query.core.annotation.Navigate");
+            if (navigate != null) {
+
+
+                String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(field, true);
+                if (Objects.equals(qualifiedName, psiFieldPropertyType)) {
+                    map.put(field.getName(), new MappedByItem(field.getName(), field.getText()));
+                }
+            }
+
+        }
+        return map;
     }
 
     private String getNavigateField(String value, String className, String myFieldName) {

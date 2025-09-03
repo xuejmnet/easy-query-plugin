@@ -39,7 +39,7 @@ public class ClassNodeCirculateChecker {
         return repeat0;
     }
     public boolean pathRepeat0(ClassNodePropPath classNodePropPath) {
-        if (Objects.equals(rootClass, classNodePropPath.getTo())) {
+        if (Objects.equals(rootClass, classNodePropPath.getFrom())) {
 
             if (rootClassPathRepeatCount >= REPEAT_LIMIT) {
                 // 超过次数限定判断为重复
