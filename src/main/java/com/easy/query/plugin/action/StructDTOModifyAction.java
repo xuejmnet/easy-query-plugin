@@ -111,18 +111,9 @@ public class StructDTOModifyAction extends AnAction {
 //            entitySelectDialog.setVisible(true);
             // 跳过选择实体窗口, 直接进入字段选择
             entitySelectDialog.ok0(mainEntityClass.getQualifiedName());
-            entitySelectDialog.dispose();
+//            entitySelectDialog.dispose();
         });
 
 
-    }
-    /**
-     * 2022.2.5才有的方法
-     *
-     * @return
-     */
-    @Override
-    public @NotNull ActionUpdateThread getActionUpdateThread() {
-        return ActionUpdateThread.BGT;
     }
 }
