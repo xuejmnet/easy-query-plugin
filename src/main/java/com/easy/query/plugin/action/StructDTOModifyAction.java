@@ -11,6 +11,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -107,11 +108,9 @@ public class StructDTOModifyAction extends AnAction {
         dtoStructContext.setDtoPsiClass(dtoPsiClass); // 暂存DTO PsiClass 方便后面从 psiClass 中获取方法信息
 
         EntitySelectDialog entitySelectDialog = new EntitySelectDialog(dtoStructContext);
-        SwingUtilities.invokeLater(() -> {
-//            entitySelectDialog.setVisible(true);
-            // 跳过选择实体窗口, 直接进入字段选择
+
+        ApplicationManager.getApplication().runReadAction(()->{
             entitySelectDialog.ok0(mainEntityClass.getQualifiedName());
-//            entitySelectDialog.dispose();
         });
 
 
