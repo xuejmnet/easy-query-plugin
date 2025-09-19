@@ -277,6 +277,7 @@ public class EntitySelectDialog extends JDialog {
 //        Set<String> ignoreColumns = getIgnoreColumns(project);
 
         Messages.InputDialog dialog = new Messages.InputDialog("请输入树形深度,无限级输入-1", "树形深度", Messages.getQuestionIcon(), "5", new InputAnyValidatorImpl());
+
         dialog.show();
         if (!dialog.isOK()) {
             return false;
@@ -309,7 +310,10 @@ public class EntitySelectDialog extends JDialog {
 
         StructDTODialog structDTODialog = new StructDTODialog(structDTOContext, classNodes);
 
-        structDTODialog.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            structDTODialog.setVisible(true);
+        });
+
         if (!structDTOContext.isSuccess()) {
             return false;
         }
