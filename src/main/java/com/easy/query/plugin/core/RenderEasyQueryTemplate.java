@@ -422,7 +422,7 @@ public class RenderEasyQueryTemplate {
             context.put("className", className);
             context.put("author", ObjectUtil.defaultIfEmpty(config.getAuthor(), "easy-query-plugin automatic generation"));
             context.put("since", ObjectUtil.defaultIfEmpty(config.getSince(), "1.0"));
-            context.put("modelName", className + ObjectUtil.defaultIfNull(config.getModelSuffix(), "Entity"));
+            context.put("modelName", className + ObjectUtil.defaultIfNull(config.getModelSuffix(), ""));
             context.put("config", config);
             context.put("importClassList", tableInfo.getImportClassList());
             context.put("table", tableInfo);
