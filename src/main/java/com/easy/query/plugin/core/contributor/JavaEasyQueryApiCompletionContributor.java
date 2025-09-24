@@ -136,7 +136,6 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
             if (matchApiMethodReturnTypeName != null) {
                 addApiCodeTip(result, project, psiFile, offset, matchApiMethodReturnTypeName);
             } else if (StrUtil.equalsAny(inputText, "like")) {
-//                result.restartCompletionOnPrefixChange("like");
                 addCompareCodeTip(result, project, psiFile, offset, COMPARE_LIKE_METHODS);
             } else if (StrUtil.equalsAny(inputText, "")) {
 //                result.restartCompletionOnPrefixChange("like");
@@ -145,6 +144,9 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
                 String paramApi = matchParamApi(parameters.getPosition(), inputText, project);
                 if (paramApi != null) {
                     addParamApiCodeTip(result, project, psiFile, offset, paramApi);
+                }else {
+
+                    result.restartCompletionOnAnyPrefixChange();
                 }
             }
             //匹配匿名对象
@@ -378,23 +380,23 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
                     .withInsertHandler((context, item) -> {
 
                         try {
-                            PsiElement elementAt = psiFile.findElementAt(offset);
-                            if (elementAt == null) {
-                                return;
-                            }
-                            PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
-                            if (psiMethodCallExpression == null) {
-                                return;
-                            }
-                            PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
-                            PsiElement lastChild = methodExpression.getLastChild();
-                            if (lastChild == null) {
-                                return;
-                            }
-                            String joinText = lastChild.getText();
-                            if (!PREDICATE_METHODS.contains(joinText)) {
-                                return;
-                            }
+//                            PsiElement elementAt = psiFile.findElementAt(offset);
+//                            if (elementAt == null) {
+//                                return;
+//                            }
+//                            PsiMethodCallExpression psiMethodCallExpression = getMethodCallExpressionByParent(elementAt);
+//                            if (psiMethodCallExpression == null) {
+//                                return;
+//                            }
+//                            PsiReferenceExpression methodExpression = psiMethodCallExpression.getMethodExpression();
+//                            PsiElement lastChild = methodExpression.getLastChild();
+//                            if (lastChild == null) {
+//                                return;
+//                            }
+//                            String joinText = lastChild.getText();
+//                            if (!PREDICATE_METHODS.contains(joinText)) {
+//                                return;
+//                            }
                             easyContributor.insertString(context, Collections.emptyList(), false);
                         } catch (Exception ex) {
                             System.out.println(ex.getMessage());
@@ -403,6 +405,7 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
                 completionResultSet.addElement(elementBuilder);
             }
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

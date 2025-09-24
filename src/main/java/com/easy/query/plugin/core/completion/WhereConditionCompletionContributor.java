@@ -1,8 +1,12 @@
 package com.easy.query.plugin.core.completion;
 
+import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.StrUtil;
 import com.easy.query.plugin.core.icons.Icons;
+import com.easy.query.plugin.core.util.EasyQueryElementUtil;
+import com.easy.query.plugin.core.util.PsiCommentUtil;
 import com.easy.query.plugin.core.util.PsiJavaClassUtil;
+import com.easy.query.plugin.core.util.PsiJavaFieldUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
@@ -71,6 +75,17 @@ public class WhereConditionCompletionContributor extends CompletionContributor {
         if (!hasAnnoTable) {
             return;
         }
+
+        List<String> linkClassFields = Arrays.stream(linkPsiClass.getAllFields())
+            .filter(field -> !PsiJavaFieldUtil.ignoreField(field))
+            .filter(field -> !EasyQueryElementUtil.hasNavigateAnnotation(field))
+            .map(field -> field.getName())
+            .collect(Collectors.toList());
+        for (String currentClassField : linkClassFields) {
+            result.addElement(LookupElementBuilder.create(currentClassField).withIcon(Icons.EQ));
+        }
+
+
         PrefixMatcher prefixMatcher = result.getPrefixMatcher();
         String annoValue = prefixMatcher.getPrefix();
         List<String> tipFields = getNavigateFields(project, linkPsiClass, annoValue, true, annoValue);

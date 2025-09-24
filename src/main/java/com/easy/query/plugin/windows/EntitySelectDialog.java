@@ -144,7 +144,7 @@ public class EntitySelectDialog extends JDialog {
                     Set<String> search = search(entityName.trim(), cellRenderer);
                     model.removeAllElements();
                     model.addAll(search);
-                }else{
+                } else {
                     cellRenderer.setHighlightKey(new HashMap<>());
                     model.removeAllElements();
                     model.addAll(entityNameList);
@@ -177,18 +177,18 @@ public class EntitySelectDialog extends JDialog {
                 String packageName = cn.hutool.core.util.StrUtil.subBefore(el, ".", true);
                 String entityName = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
                 String finalKeyword = keyword;
-                String htmlText = "<html>" ;
-                htmlText += packageName+".";
+                String htmlText = "<html>";
+                htmlText += packageName + ".";
                 for (int i = 0; i < entityName.length(); i++) {
-                    String key = entityName.charAt(i) + "" ;
+                    String key = entityName.charAt(i) + "";
                     if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                        htmlText += "<span style='color:#c60'>" + key + "</span>" ;
+                        htmlText += "<span style='color:#c60'>" + key + "</span>";
                         finalKeyword = finalKeyword.replaceFirst(key, "");
                         continue;
                     }
                     htmlText += key;
                 }
-                htmlText += "</html>" ;
+                htmlText += "</html>";
                 idxMap.clear();
                 highlightMap.put(el, htmlText);
             });
@@ -217,7 +217,7 @@ public class EntitySelectDialog extends JDialog {
             .filter(el -> {
                 String elEntity = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
                 for (int i = 0; i < keyword.length(); i++) {
-                    String key = keyword.charAt(i) + "" ;
+                    String key = keyword.charAt(i) + "";
                     if (StringUtils.containsIgnoreCase(elEntity, key)) {
                         elEntity = elEntity.replaceFirst(key, "");
                     } else {
@@ -277,6 +277,7 @@ public class EntitySelectDialog extends JDialog {
 //        Set<String> ignoreColumns = getIgnoreColumns(project);
 
         Messages.InputDialog dialog = new Messages.InputDialog("请输入树形深度,无限级输入-1", "树形深度", Messages.getQuestionIcon(), "5", new InputAnyValidatorImpl());
+
         dialog.show();
         if (!dialog.isOK()) {
             return false;
@@ -310,6 +311,7 @@ public class EntitySelectDialog extends JDialog {
         StructDTODialog structDTODialog = new StructDTODialog(structDTOContext, classNodes);
 
         structDTODialog.setVisible(true);
+
         if (!structDTOContext.isSuccess()) {
             return false;
         }

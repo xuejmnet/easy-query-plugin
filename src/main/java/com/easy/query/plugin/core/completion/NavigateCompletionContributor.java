@@ -79,6 +79,7 @@ public class NavigateCompletionContributor extends CompletionContributor {
         for (String tipField : tipFields) {
             result.addElement(LookupElementBuilder.create(tipField).withIcon(Icons.EQ));
         }
+        result.restartCompletionOnAnyPrefixChange();
     }
 
     public List<String> getNavigateFields(Project project, PsiClass linkPsiClass, String annoValue, boolean root, String originalAnnoValue) {
