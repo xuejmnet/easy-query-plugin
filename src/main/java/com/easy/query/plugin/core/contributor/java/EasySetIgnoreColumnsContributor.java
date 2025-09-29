@@ -15,6 +15,7 @@ public class EasySetIgnoreColumnsContributor extends EasyContributor {
 
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
-        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.update.EntityUpdatable") ;
+        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.update.EntityUpdatable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.proxy.DbSet");
     }
 }
