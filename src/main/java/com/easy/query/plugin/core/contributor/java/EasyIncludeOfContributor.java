@@ -21,8 +21,8 @@ public class EasyIncludeOfContributor extends EasyContributor {
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
         String groupExpression = "Include.of()";
-        if(blockCode){
-            return StrUtil.format("{ %s };",groupExpression);
+        if (blockCode) {
+            return StrUtil.format("{ %s };", groupExpression);
         }
 
         return groupExpression;
@@ -30,11 +30,12 @@ public class EasyIncludeOfContributor extends EasyContributor {
 
     @Override
     protected int realBackOffset(int backOffset) {
-        return backOffset-2;
+        return backOffset - 2;
     }
 
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
-        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable");
+        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.proxy.DbSet");
     }
 }

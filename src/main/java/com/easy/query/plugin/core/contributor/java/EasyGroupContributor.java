@@ -12,7 +12,7 @@ import java.util.Collection;
  *
  * @author xuejiaming
  */
-public class EasyGroupContributor  extends EasyContributor {
+public class EasyGroupContributor extends EasyContributor {
 
     public EasyGroupContributor(@NotNull String insertWord, @NotNull String tipWord, boolean blockCode) {
         super(insertWord, tipWord, blockCode);
@@ -25,16 +25,18 @@ public class EasyGroupContributor  extends EasyContributor {
 
     @Override
     protected int realBackOffset(int backOffset) {
-        return backOffset-2;
+        return backOffset - 2;
     }
 
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
-        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable")||
-                beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.select.ClientQueryable") ||
-                beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.select.Queryable") ||
-                beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.select.KtQueryable");
+        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.proxy.DbSet") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.select.ClientQueryable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.select.Queryable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.select.KtQueryable");
     }
+
     @Override
     public String getDesc() {
         return "2.3.4+";

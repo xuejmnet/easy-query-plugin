@@ -21,8 +21,8 @@ public class EasyGroupTableContributor extends EasyContributor {
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
         String groupExpression = String.format("GroupKeys.TABLE%s.of()", queries.size());
-        if(blockCode){
-            return StrUtil.format("{ %s };",groupExpression);
+        if (blockCode) {
+            return StrUtil.format("{ %s };", groupExpression);
         }
 
         return groupExpression;
@@ -30,14 +30,15 @@ public class EasyGroupTableContributor extends EasyContributor {
 
     @Override
     protected int realBackOffset(int backOffset) {
-        return backOffset-2;
+        return backOffset - 2;
     }
 
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
-        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable")||
-                beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.select.ClientQueryable") ||
-                beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.select.Queryable") ||
-                beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.select.KtQueryable");
+        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.proxy.DbSet") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.select.ClientQueryable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.select.Queryable") ||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.select.KtQueryable");
     }
 }

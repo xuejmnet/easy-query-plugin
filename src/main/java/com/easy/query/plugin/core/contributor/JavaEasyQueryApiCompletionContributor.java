@@ -781,6 +781,7 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
 
     private static final List<String> ENTITY_QUERY_RETURN_TYPE_MATCH = Arrays.asList(
         "com.easy.query.api.proxy.entity.select.EntityQueryable",
+        "com.easy.query.core.proxy.DbSet",
         "com.easy.query.api.proxy.entity.update.ExpressionUpdatable",
         "com.easy.query.api.proxy.entity.update.EntityUpdatable",
         "com.easy.query.api.proxy.entity.delete.ExpressionDeletable"
@@ -803,7 +804,6 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
 
         if (ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o -> queryable.startsWith(o))) {
 
-            //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
             if (queryable.contains("<") && queryable.endsWith(">")) {
                 String replaceQueryable = StrUtil.subBefore(queryable, "<", false) + "<";
                 String typeString = queryable.replaceAll(replaceQueryable, "").replaceAll(QUERYABLE_END, "");
@@ -864,13 +864,6 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
 
     private boolean isQueryable(String queryable) {
 
-//        if (queryable.startsWith(QUERYABLE_ENTITY)) {
-//
-//            //com.easy.query.api.proxy.entity.select.EntityQueryable<org.example.entity.proxy.VCTable,org.example.entity.ValueCompany>
-//            if (queryable.contains("<") && queryable.endsWith(">")) {
-//                return true;
-//            }
-//        }
         if (ENTITY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o -> queryable.startsWith(o)) || EASY_QUERY_RETURN_TYPE_MATCH.stream().anyMatch(o -> queryable.startsWith(o))) {
             if (queryable.contains("<") && queryable.endsWith(">")) {
                 return true;

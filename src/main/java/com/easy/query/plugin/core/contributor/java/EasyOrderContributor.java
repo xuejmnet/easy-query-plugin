@@ -16,6 +16,7 @@ public class EasyOrderContributor extends EasyContributor {
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
         return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable")||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.proxy.DbSet")||
                 beforeMethodReturnTypeName.startsWith("com.easy.query.core.basic.api.select.ClientQueryable") ||
                 beforeMethodReturnTypeName.startsWith("com.easy.query.api4j.select.Queryable") ||
                 beforeMethodReturnTypeName.startsWith("com.easy.query.api4kt.select.KtQueryable");

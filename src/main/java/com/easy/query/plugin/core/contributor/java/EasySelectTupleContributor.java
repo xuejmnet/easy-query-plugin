@@ -35,6 +35,7 @@ public class EasySelectTupleContributor extends EasyContributor {
 
     @Override
     public boolean accept(String beforeMethodReturnTypeName) {
-        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable");
+        return beforeMethodReturnTypeName.startsWith("com.easy.query.api.proxy.entity.select.EntityQueryable")||
+            beforeMethodReturnTypeName.startsWith("com.easy.query.core.proxy.DbSet");
     }
 }
