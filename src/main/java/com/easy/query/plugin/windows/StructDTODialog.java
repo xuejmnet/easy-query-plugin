@@ -391,7 +391,7 @@ public class StructDTODialog extends JDialog {
             }
             if (psiAnnoColumn != null) {
                 AnnoAttrCompareResult columnAttrCompareResult = EasyQueryElementUtil.compareColumnAnnoAttr(psiAnnoColumn, null, featureKeepDtoColumnAnnotationValue);
-                String attrText = columnAttrCompareResult.getFixedAttrMap().values().stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+                String attrText = columnAttrCompareResult.getFixedAttrMap().values().stream().map(attr -> attr.getText())
                     .collect(Collectors.joining(", "));
                 // 再拼成 @Navigate 注解文本
                 String replacement = StrUtil.isBlank(attrText) ? "" : "@Column(" + attrText + ")";
