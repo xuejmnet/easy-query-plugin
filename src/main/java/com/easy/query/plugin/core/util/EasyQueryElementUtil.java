@@ -309,11 +309,12 @@ public class EasyQueryElementUtil {
             dtoRemoveKeys.addAll(dtoAnnoAttrMap.keySet());
             dtoRemoveKeys.remove("value");
             dtoRemoveKeys.remove("orderByProps"); // DTO 上可以保留 orderByProps
+            dtoRemoveKeys.remove("partitionOrder"); // DTO 上可以保留 partitionOrder
 
 
             AnnoAttrCompareResult compareResult = AnnoAttrCompareResult.newCompare(entityAnnoAttrMap, dtoAnnoAttrMap)
                     .withDtoRemoveKeys(Lists.newArrayList(dtoRemoveKeys))
-                    .withIgnoredKeys(Lists.newArrayList("orderByProps","limit","offset")) // 忽略 orderByProps 检查
+                    .withIgnoredKeys(Lists.newArrayList("orderByProps","limit","offset","partitionOrder")) // 忽略 orderByProps 检查
                     .compare();
             Map<String, PsiNameValuePair> fixedAttrMap = compareResult.getFixedAttrMap();
             List<String> problemMsgList = compareResult.getProblemMsgList();
