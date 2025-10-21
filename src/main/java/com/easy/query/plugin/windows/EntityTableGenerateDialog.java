@@ -1,5 +1,9 @@
 package com.easy.query.plugin.windows;
 
+import cn.hutool.setting.Setting;
+import com.alibaba.fastjson2.JSON;
+import com.easy.query.plugin.config.EasyQueryConfigManager;
+import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.Template;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
@@ -9,6 +13,7 @@ import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.render.ModuleComBoxRender;
 import com.easy.query.plugin.core.render.TableListCellRenderer;
 import com.easy.query.plugin.core.util.DialogUtil;
+import com.easy.query.plugin.core.util.EasyQueryConfigUtil;
 import com.easy.query.plugin.core.util.FileChooserUtil;
 import com.easy.query.plugin.core.util.MyModuleUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
@@ -52,8 +57,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,6 +75,7 @@ import java.util.stream.Collectors;
 
 public class EntityTableGenerateDialog extends JDialog {
     public static final String SINCE_CONFIG = "---请选择配置---" ;
+    public static final String PROJECT_CONFIG = "【使用当前项目配置】" ;
     public static final String SINCE_CONFIG_ADD = "添加配置" ;
     private JPanel contentPane;
     private JButton buttonOK;
@@ -104,6 +112,7 @@ public class EntityTableGenerateDialog extends JDialog {
     private JTextField superClassText;
     private JButton overrideBtn;
     private JButton search_btn;
+    private JButton projectBtn;
 
     Map<String, Module> moduleMap;
     Map<String, Map<String, String>> modulePackageMap;
@@ -271,6 +280,9 @@ public class EntityTableGenerateDialog extends JDialog {
                 model.addAll(search);
             }
         });
+        projectBtn.addActionListener(e -> {
+            configToProjectSetting();
+        });
         modelTemplateBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -299,8 +311,8 @@ public class EntityTableGenerateDialog extends JDialog {
     /**
      * Constructor with pre-selected table name
      * 构造函数，预选择表名
-     * 
-     * @param actionEvent 操作事件
+     *
+     * @param actionEvent          操作事件
      * @param preSelectedTableName 预选择的表名
      */
     public EntityTableGenerateDialog(AnActionEvent actionEvent, String preSelectedTableName) {
@@ -318,7 +330,7 @@ public class EntityTableGenerateDialog extends JDialog {
     /**
      * Perform search and update table list
      * 执行搜索并更新表列表
-     * 
+     *
      * @param searchText 搜索文本
      */
     private void performSearch(String searchText) {
@@ -331,7 +343,7 @@ public class EntityTableGenerateDialog extends JDialog {
             DefaultListModel<String> model = (DefaultListModel<String>) tableList.getModel();
             model.removeAllElements();
             model.addAll(searchResult);
-            
+
             // Auto-select the table if there's an exact match
             for (String tableName : searchResult) {
                 if (tableName.equalsIgnoreCase(searchText)) {
@@ -377,8 +389,37 @@ public class EntityTableGenerateDialog extends JDialog {
         return moduleMap.getOrDefault(packageName, "");
     }
 
+    private EasyQueryConfig getConfigData0(){
+        EasyQueryConfig config=null;
+        String selectItem = sinceComBox.getSelectedItem() + "" ;
+        if(PROJECT_CONFIG.equals(selectItem)){
+            config=getSettingConfigData0();
+        }else{
+            config = Template.getEasyQueryConfig(project, selectItem);
+        }
+        return config;
+    }
+    private EasyQueryConfig getSettingConfigData0(){
+        String generateValue = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_GENERATE, "");
+        if(StrUtil.isNotBlank(generateValue)){
+            try {
+                byte[] decode = Base64.getDecoder().decode(generateValue.getBytes(StandardCharsets.UTF_8));
+                String configJson = new String(decode, StandardCharsets.UTF_8);
+                return JSON.parseObject(configJson, EasyQueryConfig.class);
+            }catch (Exception e){
+                Messages.showWarningDialog("找不到名称为：【"+PROJECT_CONFIG+"】的配置", "提示");
+            }
+        }
+        return null;
+    }
     public EasyQueryConfig getConfigData() {
-        EasyQueryConfig config = Template.getEasyQueryConfig(project, sinceComBox.getSelectedItem() + "");
+
+
+
+        EasyQueryConfig config = getConfigData0();
+        if(config==null){
+            throw new RuntimeException((String.format("找不到名称为：【%s】的配置", sinceComBox.getSelectedItem() + "")));
+        }
 
         config.setModelPackage(modelPackagePath.getText());
         config.setModelModule(getTextFieldVal(modelCombox));
@@ -442,6 +483,15 @@ public class EntityTableGenerateDialog extends JDialog {
         initPackageList();
     }
 
+    private boolean initProjectSettingConfig() {
+        String generateValue = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_GENERATE, null);
+        if (StrUtil.isNotBlank(generateValue)) {
+            sinceComBox.insertItemAt(PROJECT_CONFIG,1);
+            return true;
+        }
+        return false;
+    }
+
     public void initSinceComBox(Integer idx) {
         Set<String> list = EasyQueryQueryPluginConfigData.getProjectSinceMap().keySet();
         sinceComBox.setRenderer(new DefaultListCellRenderer() {
@@ -463,6 +513,7 @@ public class EntityTableGenerateDialog extends JDialog {
                 sinceComBox.insertItemAt(item, 1);
             }
         }
+        boolean settingHasConfig = initProjectSettingConfig();
         sinceComBox.addItem(SINCE_CONFIG_ADD);
         if (ObjectUtil.isNull(idx)) {
             sinceComBox.setSelectedIndex(sinceComBox.getItemCount() > 2 ? 1 : 0);
@@ -502,6 +553,10 @@ public class EntityTableGenerateDialog extends JDialog {
             }
             String key = selectedItem.toString();
             LinkedHashMap<String, EasyQueryConfig> projectSinceMap = EasyQueryQueryPluginConfigData.getProjectSinceMap();
+            if(settingHasConfig){
+                EasyQueryConfig settingConfig = getSettingConfigData0();
+                projectSinceMap.put(PROJECT_CONFIG,settingConfig);
+            }
             EasyQueryConfig config = projectSinceMap.getOrDefault(key, new EasyQueryConfig());
             initConfigData(config);
         });
@@ -526,9 +581,11 @@ public class EntityTableGenerateDialog extends JDialog {
 
     /// /        }
 //    }
+
+
     public void initConfigData(EasyQueryConfig config) {
         if (ObjectUtil.isNull(config)) {
-            config = Template.getEasyQueryConfig(project, sinceComBox.getSelectedItem() + "");
+            config = getConfigData0();
         }
         modelPackagePath.setText(config.getModelPackage());
         String modelModule = config.getModelModule();
@@ -626,6 +683,28 @@ public class EntityTableGenerateDialog extends JDialog {
         onCancel();
     }
 
+    /**
+     * 配置保存到setting文件
+     */
+    private void configToProjectSetting() {
+        EasyQueryConfig configData = getConfigData();
+        String jsonString = JSON.toJSONString(configData);
+        if (jsonString == null) {
+            Messages.showWarningDialog("无法获取当前配置信息:[" + sinceComBox.getSelectedItem() + "]", "提示");
+            return;
+        }
+        byte[] encode = Base64.getEncoder().encode(jsonString.getBytes(StandardCharsets.UTF_8));
+        String value = new String(encode, StandardCharsets.UTF_8);
+        try {
+            Setting setting = EasyQueryConfigUtil.getProjectConfig(project);
+            setting.put(EasyQueryProjectSettingKey.SQL_GENERATE, value);
+            setting.store();
+            NotificationUtils.notifySuccess("配置保存成功", project);
+        } catch (Exception ex) {
+            Messages.showWarningDialog("配置保存失败:" + ex.getMessage(), "提示");
+        }
+    }
+
     private void onCancel() {
         // add your code here if necessary
         dispose();
@@ -637,6 +716,10 @@ public class EntityTableGenerateDialog extends JDialog {
             return;
         }
         String key = selectedItem.toString();
+        if(PROJECT_CONFIG.equals(key)){
+            Messages.showWarningDialog("配置保存失败:" + key+"无法被保存", "提示");
+            return;
+        }
         if (SINCE_CONFIG.equals(key)) {
             Messages.InputDialog dialog = new Messages.InputDialog("请输入配置名称", "配置名称", Messages.getQuestionIcon(), "", new InputValidatorImpl());
             dialog.show();

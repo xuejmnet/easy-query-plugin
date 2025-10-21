@@ -15,4 +15,8 @@ public interface EasyQueryProjectSettingKey {
      * 数据库格式化类型
      */
     String SQL_FORMAT_TYPE = "sql.format";
+    /**
+     * 数据库生成实体配置
+     */
+    String SQL_GENERATE = "sql.generate";
 }
