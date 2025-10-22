@@ -19,4 +19,13 @@ public interface EasyQueryProjectSettingKey {
      * 数据库生成实体配置
      */
     String SQL_GENERATE = "sql.generate";
+    /**
+     * lambda提示
+     */
+    String LAMBDA_TIP = "lambda.tip";
+
+    /**
+     * DTO忽略字段
+     */
+    String DTO_IGNORE_COLUMNS = "dto.columns.ignores";
 }

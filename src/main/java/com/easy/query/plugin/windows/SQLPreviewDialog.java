@@ -3,6 +3,7 @@ package com.easy.query.plugin.windows;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
+import com.easy.query.plugin.config.EasyQueryPluginSetting;
 import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.util.BasicFormatter;
 import com.easy.query.plugin.core.util.BasicFormatter2;
@@ -37,7 +38,7 @@ public class SQLPreviewDialog extends JDialog {
     private static final BasicFormatter2 FORMATTER2 = new BasicFormatter2();
 
     private static final Set<String> NEED_BRACKETS;
-
+    EasyQueryPluginSetting pluginSetting;
 
     static {
         Set<String> types = new HashSet<>(8);
@@ -81,12 +82,12 @@ public class SQLPreviewDialog extends JDialog {
 
         selectSQLText.setText(selectSQL);
 
-        String formatType = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_FORMAT_TYPE, "");
-
+        this.pluginSetting = EasyQueryConfigUtil.getPluginSetting(project);
+        String formatType = pluginSetting.getSQLFormatOrDefault("");
 
 
         sqlFormatTypeComBox.removeAllItems();
-        if(StrUtil.isNotBlank(formatType)){
+        if (StrUtil.isNotBlank(formatType)) {
             List<String> formatTypes = MyStringUtil.safeSplitList(formatType, ",", true);
             for (String ft : formatTypes) {
                 sqlFormatTypeComBox.addItem(ft);
@@ -109,7 +110,7 @@ public class SQLPreviewDialog extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
-    private @NotNull String getSelectSQLFormat(){
+    private @NotNull String getSelectSQLFormat() {
 
         Object selectedItem = sqlFormatTypeComBox.getSelectedItem();
         if (ObjectUtil.isNull(selectedItem)) {
@@ -118,10 +119,10 @@ public class SQLPreviewDialog extends JDialog {
         return selectedItem.toString();
     }
 
-    private void setFormatTypeText(){
+    private void setFormatTypeText() {
         String selectText = getSelectSQLFormat();
         String formatTypeText = "generic".equals(selectText) ? "hibernate格式" : "druid:" + selectText;
-        this.formatTypeText.setText("当前使用的格式化类型:"+formatTypeText);
+        this.formatTypeText.setText("当前使用的格式化类型:" + formatTypeText);
     }
 
     private void onCancel() {

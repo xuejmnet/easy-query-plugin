@@ -1,7 +1,9 @@
 package com.easy.query.plugin.action;
 
+import com.easy.query.plugin.config.EasyQueryPluginSetting;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
+import com.easy.query.plugin.core.util.EasyQueryConfigUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.easy.query.plugin.core.util.StrUtil;
@@ -28,23 +30,14 @@ public class QuickTipSettingAction  extends AnAction {
         if(project==null){
             return;
         }
-        EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvQuickSetting(new EasyQueryConfig());
-        if(config.getConfig()==null){
-            config.setConfig(new HashMap<>());
-        }
-        String projectName = project.getName();
-        String setting = config.getConfig().get(projectName);
-        if(StrUtil.isBlank(setting)){
-            setting="";
-            config.getConfig().put(projectName,setting);
-        }
-        Messages.InputDialog dialog = new Messages.InputDialog("请输入快速提示名称逗号分割,冒号分割组", "提示名称", Messages.getQuestionIcon(), setting, new InputAnyValidatorImpl());
+        EasyQueryPluginSetting pluginSetting = EasyQueryConfigUtil.getPluginSetting(project);
+        String lambdaTip = pluginSetting.getLambdaTip();
+
+        Messages.InputDialog dialog = new Messages.InputDialog("请输入快速提示名称逗号分割,冒号分割组", "提示名称", Messages.getQuestionIcon(), lambdaTip, new InputAnyValidatorImpl());
         dialog.show();
         if(dialog.isOK()){
             String settingVal = dialog.getInputString();
-            config.getConfig().put(projectName,settingVal);
-            EasyQueryQueryPluginConfigData.saveAllEnvProjectQuickSetting(config);
-            NotificationUtils.notifySuccess("保存成功", project);
+            pluginSetting.saveLambdaTip(settingVal,project);
         }
     }
 }

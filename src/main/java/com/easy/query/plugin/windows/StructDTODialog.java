@@ -6,6 +6,7 @@ import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
+import com.easy.query.plugin.config.EasyQueryPluginSetting;
 import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.config.AppSettings;
@@ -137,13 +138,10 @@ public class StructDTODialog extends JDialog {
 
     private void dynamicIgnoreButtons(Project project) {
         this.buttonMaps = new LinkedHashMap<>();
-        EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(new EasyQueryConfig());
-        if (config.getConfig() == null) {
-            config.setConfig(new HashMap<>());
-        }
-        String projectName = project.getName();
-        String setting = config.getConfig().get(projectName);
-        initIgnoreButtons(setting);
+
+        EasyQueryPluginSetting pluginSetting = EasyQueryConfigUtil.getPluginSetting(project);
+        String columnsIgnore = pluginSetting.getDTOColumnsIgnore();
+        initIgnoreButtons(columnsIgnore);
         for (Map.Entry<String, String> kv : buttonMaps.entrySet()) {
             JButton jButton = new JButton(kv.getKey());
             jButton.addActionListener(new ActionListener() {

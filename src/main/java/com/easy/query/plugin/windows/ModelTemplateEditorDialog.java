@@ -1,9 +1,14 @@
 package com.easy.query.plugin.windows;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.TypeReference;
 import com.easy.query.plugin.core.util.DialogUtil;
+import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.lang.xml.XMLLanguage;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.LanguageTextField;
 
 import javax.swing.*;
@@ -12,19 +17,22 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.LinkedHashMap;
 import java.util.function.Consumer;
 
 public class ModelTemplateEditorDialog extends JDialog {
-    private final Project project;
-    private final Consumer<String> okFunction;
+    private Project project;
+    private Consumer<String> okFunction;
+    private boolean shouldJson;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
     private LanguageTextField modelTemplateText;
 
-    public ModelTemplateEditorDialog(Project project, String modelTemplate, Consumer<String> okFunction) {
+    public ModelTemplateEditorDialog(Project project, String modelTemplate, boolean shouldJson, Consumer<String> okFunction) {
         this.project = project;
         this.okFunction = okFunction;
+        this.shouldJson = shouldJson;
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -63,7 +71,23 @@ public class ModelTemplateEditorDialog extends JDialog {
 
     private void onOK() {
         // add your code here
-        okFunction.accept(modelTemplateText.getText());
+        String inputJson = modelTemplateText.getText();
+        if (shouldJson) {
+            if (StrUtil.isBlank(inputJson)) {
+                okFunction.accept("{}");
+                return;
+            }
+            try {
+
+                LinkedHashMap<String, String> configMap = JSONObject.parseObject(inputJson,
+                    new TypeReference<LinkedHashMap<String, String>>() {
+                    });
+            } catch (Exception ex) {
+                Messages.showWarningDialog("输入内容为Map<String,String>,其中key为按钮名称,value为要忽略的值", "提示");
+                return;
+            }
+        }
+        okFunction.accept(inputJson);
         dispose();
     }
 
@@ -71,6 +95,7 @@ public class ModelTemplateEditorDialog extends JDialog {
         // add your code here if necessary
         dispose();
     }
+
     /**
      * 创建自定义控件
      */

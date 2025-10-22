@@ -2,6 +2,7 @@ package com.easy.query.plugin.core.contributor;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.config.EasyQueryPluginSetting;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.contributor.java.EasyAndOrContributor;
 import com.easy.query.plugin.core.contributor.java.EasyContributor;
@@ -9,6 +10,7 @@ import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
 import com.easy.query.plugin.core.entity.QueryType;
 import com.easy.query.plugin.core.icons.Icons;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
+import com.easy.query.plugin.core.util.EasyQueryConfigUtil;
 import com.easy.query.plugin.core.util.GenericTypeParserUtil;
 import com.easy.query.plugin.core.util.MyCollectionUtil;
 import com.easy.query.plugin.core.util.MyStringUtil;
@@ -902,17 +904,11 @@ public class JavaEasyQueryApiCompletionContributor extends BaseEasyQueryApiCompl
 
     private Map<Integer, List<String>> getMatchNames(Project project) {
 
-        EasyQueryConfig allEnvQuickSetting = EasyQueryQueryPluginConfigData.getAllEnvQuickSetting(null);
-        if (allEnvQuickSetting != null) {
-            Map<String, String> config = allEnvQuickSetting.getConfig();
-            if (config != null) {
-                String settingVal = config.get(project.getName());
-                if (StrUtil.isNotBlank(settingVal)) {
-                    String[] shortNames = settingVal.split(",");
-                    return Arrays.stream(shortNames).collect(Collectors.toMap(o -> o.split(":").length, o -> StrUtil.split(o, ":")));
-
-                }
-            }
+        EasyQueryPluginSetting pluginSetting = EasyQueryConfigUtil.getPluginSetting(project);
+        String lambdaTip = pluginSetting.getLambdaTip();
+        if (StrUtil.isNotBlank(lambdaTip)) {
+            List<String> shortNames = MyStringUtil.safeSplitList(lambdaTip, ",", true);
+            return shortNames.stream().collect(Collectors.toMap(o -> o.split(":").length, o -> StrUtil.split(o, ":")));
         }
         return new HashMap<>(0);
     }

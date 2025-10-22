@@ -427,26 +427,7 @@ public class RenderEasyQueryTemplate {
             context.put("importClassList", tableInfo.getImportClassList());
             context.put("table", tableInfo);
             renderTemplate(config.getModelTemplate(), context, className, velocityEngine, templateMap, config.getModelPackage(), suffix, factory, project, module);
-//            // 自定义模版渲染
-//            List<TabInfo> infoList = config.getTabList();
-//            if (CollectionUtils.isNotEmpty(infoList)) {
-//                for (TabInfo info : infoList) {
-//                    String genPath = info.getGenPath();
-//                    StringWriter sw = new StringWriter();
-//                    velocityEngine.evaluate(context, sw, "mybatis-flex", info.getContent());
-//                    File file = new File(genPath + File.separator + className + "." + info.getSuffix());
-//                    if (!file.getParentFile().exists()) {
-//                        Messages.showWarningDialog("自定义模板路径不存在：" + genPath, "警告");
-//                        return;
-//                    }
-//                    try {
-//                        FileOutputStream fileOutputStream = new FileOutputStream(file);
-//                        IoUtil.write(fileOutputStream, true, sw.toString().getBytes(StandardCharsets.UTF_8));
-//                    } catch (IOException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                }
-//            }
+
         }
         ValueHolder<Boolean> booleanValueHolder = new ValueHolder<>();
         booleanValueHolder.setValue(true);

@@ -2,11 +2,12 @@ package com.easy.query.plugin.windows;
 
 import cn.hutool.setting.Setting;
 import com.alibaba.fastjson2.JSON;
-import com.easy.query.plugin.config.EasyQueryConfigManager;
+import com.easy.query.plugin.config.EasyQueryPluginSetting;
 import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.RenderEasyQueryTemplate;
 import com.easy.query.plugin.core.Template;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
+import com.easy.query.plugin.core.config.NamedEasyQueryConfig;
 import com.easy.query.plugin.core.entity.MatchTypeMapping;
 import com.easy.query.plugin.core.entity.TableMetadata;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
@@ -74,9 +75,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class EntityTableGenerateDialog extends JDialog {
-    public static final String SINCE_CONFIG = "---请选择配置---" ;
-    public static final String PROJECT_CONFIG = "【使用当前项目配置】" ;
-    public static final String SINCE_CONFIG_ADD = "添加配置" ;
+    public static final String SINCE_CONFIG = "---请选择配置---";
+    public static final String PROJECT_CONFIG = "【使用当前项目配置】";
+    public static final String SINCE_CONFIG_ADD = "添加配置";
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -99,7 +100,7 @@ public class EntityTableGenerateDialog extends JDialog {
     private JTextField author;
     private JCheckBox entityProxyCheck;
     private JCheckBox entityFileProxyCheck;
-    private JComboBox sinceComBox;
+    private JComboBox<String> sinceComBox;
     private JButton saveConfigBtn;
     private JTextField modelSuffixText;
     private JCheckBox swaggerCheckBox;
@@ -111,17 +112,14 @@ public class EntityTableGenerateDialog extends JDialog {
     private JTextField ignoreColumnsText;
     private JTextField superClassText;
     private JButton overrideBtn;
-    private JButton search_btn;
     private JButton projectBtn;
-
+    EasyQueryPluginSetting pluginSetting;
+    NamedEasyQueryConfig tableGenerateConfig;
     Map<String, Module> moduleMap;
     Map<String, Map<String, String>> modulePackageMap;
-    Boolean isManvenProject;
     Project project;
     Map<String, TableMetadata> tableInfoMap;
     List<String> tableNameList;
-    Map<String, Set<String>> INVERTED_TABLE_INDEX = new HashMap<>();
-    Map<String, Set<String>> INVERTED_MODULE_INDEX = new HashMap<>();
     List<JComboBox<String>> list = Arrays.asList(modelCombox);
     List<JTextField> packageList = Arrays.asList(modelPackagePath);
 
@@ -215,6 +213,8 @@ public class EntityTableGenerateDialog extends JDialog {
         TableListCellRenderer cellRenderer = new TableListCellRenderer(tableInfoMap);
         tableList.setCellRenderer(cellRenderer);
 
+        this.pluginSetting = EasyQueryConfigUtil.getPluginSetting(project);
+        this.tableGenerateConfig = pluginSetting.getTableGenerateConfig();
         init();
 
         tableList.addListSelectionListener(e -> {
@@ -242,35 +242,17 @@ public class EntityTableGenerateDialog extends JDialog {
             @Override
             protected void textChanged(@NotNull DocumentEvent e) {
                 String tableName = tableSearch.getText();
-                if (StringUtils.isNotBlank(tableName)) {
-                    if (!tableList.isSelectionEmpty()) {
-                        tableList.clearSelection();
-                    }
-                    Set<String> search = search(tableName.trim(), cellRenderer);
-                    model.removeAllElements();
-                    model.addAll(search);
-                }
+                performSearch(tableName);
             }
         });
 
-        search_btn.addActionListener(e -> {
-            String tableName = tableSearch.getText();
-            if (StringUtils.isNotBlank(tableName)) {
-                if (!tableList.isSelectionEmpty()) {
-                    tableList.clearSelection();
-                }
-                Set<String> search = searchLike(tableName.trim(), cellRenderer);
-                model.removeAllElements();
-                model.addAll(search);
-            }
-        });
         projectBtn.addActionListener(e -> {
             configToProjectSetting();
         });
         modelTemplateBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project, modelTemplate, newTemplate -> {
+                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project, modelTemplate, false, newTemplate -> {
                     modelTemplate = newTemplate;
                 });
                 modelTemplateEditorDialog.setVisible(true);
@@ -285,11 +267,6 @@ public class EntityTableGenerateDialog extends JDialog {
                 columnMappingDialog.setVisible(true);
             }
         });
-//        initPackagePath();
-//        modelCombox.addActionListener(e -> {
-//            EasyQueryConfig configData = getConfigData();
-//            modelPackagePath.setText(getPackagePath(String.valueOf(modelCombox.getSelectedItem()), ObjectUtil.defaultIfNull(configData.getModelPackage(), "domain")));
-//        });
     }
 
     /**
@@ -322,19 +299,11 @@ public class EntityTableGenerateDialog extends JDialog {
             if (!tableList.isSelectionEmpty()) {
                 tableList.clearSelection();
             }
-            TableListCellRenderer cellRenderer = (TableListCellRenderer) tableList.getCellRenderer();
-            Set<String> searchResult = search(searchText, cellRenderer);
+//            TableListCellRenderer cellRenderer = (TableListCellRenderer) tableList.getCellRenderer();
+            Set<String> searchResult = tableNameList.stream().filter(o -> o.contains(searchText)).collect(Collectors.toSet());
             DefaultListModel<String> model = (DefaultListModel<String>) tableList.getModel();
             model.removeAllElements();
             model.addAll(searchResult);
-
-            // Auto-select the table if there's an exact match
-            for (String tableName : searchResult) {
-                if (tableName.equalsIgnoreCase(searchText)) {
-                    tableList.setSelectedValue(tableName, true);
-                    break;
-                }
-            }
         }
     }
 
@@ -356,52 +325,23 @@ public class EntityTableGenerateDialog extends JDialog {
         return moduleMap.get(moduleName);
     }
 
-    /**
-     * 得到包路径
-     *
-     * @param moduleName  模块名称
-     * @param packageName 系统配置包名
-     * @return {@code String}
-     */
-    public String getPackagePath(String moduleName, String packageName) {
-        Map<String, String> moduleMap = modulePackageMap.get(moduleName);
-        if (moduleMap == null || moduleMap.isEmpty()) {
-            NotificationUtils.notifyError("模块不存在!", "", project);
-            return "" ;
-            // throw new RuntimeException(StrUtil.format("模块不存在:{}", moduleName));
-        }
-        return moduleMap.getOrDefault(packageName, "");
-    }
 
-    private EasyQueryConfig getConfigData0(){
-        EasyQueryConfig config=null;
-        String selectItem = sinceComBox.getSelectedItem() + "" ;
-        if(PROJECT_CONFIG.equals(selectItem)){
-            config=getSettingConfigData0();
-        }else{
+    private EasyQueryConfig getConfigData0() {
+        EasyQueryConfig config = null;
+        String selectItem = sinceComBox.getSelectedItem() + "";
+        if (tableGenerateConfig != null && Objects.equals(selectItem, tableGenerateConfig.getName())) {
+            config = tableGenerateConfig.getEasyQueryConfig();
+        } else {
             config = Template.getEasyQueryConfig(project, selectItem);
         }
         return config;
     }
-    private EasyQueryConfig getSettingConfigData0(){
-        String generateValue = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_GENERATE, "");
-        if(StrUtil.isNotBlank(generateValue)){
-            try {
-                byte[] decode = Base64.getDecoder().decode(generateValue.getBytes(StandardCharsets.UTF_8));
-                String configJson = new String(decode, StandardCharsets.UTF_8);
-                return JSON.parseObject(configJson, EasyQueryConfig.class);
-            }catch (Exception e){
-                Messages.showWarningDialog("找不到名称为：【"+PROJECT_CONFIG+"】的配置", "提示");
-            }
-        }
-        return null;
-    }
-    public EasyQueryConfig getConfigData() {
 
+    public @NotNull EasyQueryConfig getConfigData() {
 
 
         EasyQueryConfig config = getConfigData0();
-        if(config==null){
+        if (config == null) {
             throw new RuntimeException((String.format("找不到名称为：【%s】的配置", sinceComBox.getSelectedItem() + "")));
         }
 
@@ -434,46 +374,13 @@ public class EntityTableGenerateDialog extends JDialog {
         return textField.getText();
     }
 
-    /**
-     * 传入表名集合，建立倒排索引
-     *
-     * @param tableNames 表名
-     */
-    public void initTableIndexText(Collection<String> tableNames) {
-        for (String tableName : tableNames) {
-            for (int i = 0; i < tableName.length(); i++) {
-                char word = tableName.charAt(i);
-                INVERTED_TABLE_INDEX.computeIfAbsent((word + ""), k -> new HashSet<>()).add(tableName);
-            }
-        }
-    }
-
-    public void initModuleIndexText(Collection<String> tableNames) {
-        for (String tableName : tableNames) {
-            for (int i = 0; i < tableName.length(); i++) {
-                char word = tableName.charAt(i);
-                INVERTED_MODULE_INDEX.computeIfAbsent((word + ""), k -> new HashSet<>()).add(tableName);
-            }
-        }
-    }
-
     private void init() {
-        initTableIndexText(tableNameList);
         // 初始化模块
         initModules(list);
         initBtn();
         initSinceComBox(null);
         initConfigData(null);
         initPackageList();
-    }
-
-    private boolean initProjectSettingConfig() {
-        String generateValue = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_GENERATE, null);
-        if (StrUtil.isNotBlank(generateValue)) {
-            sinceComBox.insertItemAt(PROJECT_CONFIG,1);
-            return true;
-        }
-        return false;
     }
 
     public void initSinceComBox(Integer idx) {
@@ -497,7 +404,9 @@ public class EntityTableGenerateDialog extends JDialog {
                 sinceComBox.insertItemAt(item, 1);
             }
         }
-        boolean settingHasConfig = initProjectSettingConfig();
+        if (this.tableGenerateConfig != null) {
+            sinceComBox.insertItemAt(tableGenerateConfig.getName(), 1);
+        }
         sinceComBox.addItem(SINCE_CONFIG_ADD);
         if (ObjectUtil.isNull(idx)) {
             sinceComBox.setSelectedIndex(sinceComBox.getItemCount() > 2 ? 1 : 0);
@@ -537,9 +446,8 @@ public class EntityTableGenerateDialog extends JDialog {
             }
             String key = selectedItem.toString();
             LinkedHashMap<String, EasyQueryConfig> projectSinceMap = EasyQueryQueryPluginConfigData.getProjectSinceMap();
-            if(settingHasConfig){
-                EasyQueryConfig settingConfig = getSettingConfigData0();
-                projectSinceMap.put(PROJECT_CONFIG,settingConfig);
+            if (tableGenerateConfig != null) {
+                projectSinceMap.put(tableGenerateConfig.getName(), tableGenerateConfig.getEasyQueryConfig());
             }
             EasyQueryConfig config = projectSinceMap.getOrDefault(key, new EasyQueryConfig());
             initConfigData(config);
@@ -547,7 +455,7 @@ public class EntityTableGenerateDialog extends JDialog {
     }
 
     public void initPackageList() {
-        packageList.stream().forEach(textField -> {
+        packageList.forEach(textField -> {
             ComponentValidator validator = new ComponentValidator(project);
             validator.withValidator(() -> {
                 String pt = textField.getText();
@@ -565,8 +473,6 @@ public class EntityTableGenerateDialog extends JDialog {
 
     /// /        }
 //    }
-
-
     public void initConfigData(EasyQueryConfig config) {
         if (ObjectUtil.isNull(config)) {
             config = getConfigData0();
@@ -655,13 +561,6 @@ public class EntityTableGenerateDialog extends JDialog {
 
     private void startGenCode(List<TableMetadata> selectedTableInfo, boolean override) {
         EasyQueryConfig configData = getConfigData();
-//        for (JCheckBox box : enableList) {
-//            boolean selected = box.isSelected();
-//            if (selected) {
-//                continue;
-//            }
-//            ReflectUtil.setFieldValue(configData, box.getName(),"");
-//        }
         RenderEasyQueryTemplate.assembleData(selectedTableInfo, configData, project, getModule(String.valueOf(modelCombox.getSelectedItem())), override);
         NotificationUtils.notifySuccess("代码生成成功", project);
         onCancel();
@@ -672,21 +571,8 @@ public class EntityTableGenerateDialog extends JDialog {
      */
     private void configToProjectSetting() {
         EasyQueryConfig configData = getConfigData();
-        String jsonString = JSON.toJSONString(configData);
-        if (jsonString == null) {
-            Messages.showWarningDialog("无法获取当前配置信息:[" + sinceComBox.getSelectedItem() + "]", "提示");
-            return;
-        }
-        byte[] encode = Base64.getEncoder().encode(jsonString.getBytes(StandardCharsets.UTF_8));
-        String value = new String(encode, StandardCharsets.UTF_8);
-        try {
-            Setting setting = EasyQueryConfigUtil.getProjectConfig(project);
-            setting.put(EasyQueryProjectSettingKey.SQL_GENERATE, value);
-            setting.store();
-            NotificationUtils.notifySuccess("配置保存成功", project);
-        } catch (Exception ex) {
-            Messages.showWarningDialog("配置保存失败:" + ex.getMessage(), "提示");
-        }
+
+        pluginSetting.saveTableGenerateConfig(configData, project);
     }
 
     private void onCancel() {
@@ -700,8 +586,8 @@ public class EntityTableGenerateDialog extends JDialog {
             return;
         }
         String key = selectedItem.toString();
-        if(PROJECT_CONFIG.equals(key)){
-            Messages.showWarningDialog("配置保存失败:" + key+"无法被保存", "提示");
+        if (PROJECT_CONFIG.equals(key)) {
+            Messages.showWarningDialog("配置保存失败:" + key + "无法被保存", "提示");
             return;
         }
         if (SINCE_CONFIG.equals(key)) {
@@ -753,158 +639,6 @@ public class EntityTableGenerateDialog extends JDialog {
     public boolean containsModule(String moduleName) {
         return moduleMap.containsKey(moduleName);
     }
-
-    private Set<String> search(String tableName, TableListCellRenderer cellRenderer) {
-        Map<String, String> highlightKey = highlightKey(tableName);
-        cellRenderer.setSearchTableName(tableName);
-        cellRenderer.setHighlightKey(highlightKey);
-        return highlightKey.keySet();
-    }
-
-    private Set<String> searchLike(String tableName, TableListCellRenderer cellRenderer) {
-        Map<String, String> highlightKey = highlightKeyLike(tableName);
-        cellRenderer.setSearchTableName(tableName);
-        cellRenderer.setHighlightKey(highlightKey);
-        return highlightKey.keySet();
-    }
-
-    /**
-     * 搜索
-     *
-     * @param keyword 关键字
-     * @return {@code Set<String>}
-     */
-    public Set<String> search(String keyword) {
-        if (StrUtil.isEmpty(keyword)) {
-            return INVERTED_TABLE_INDEX.values().stream()
-                .flatMap(el -> el.stream())
-                .collect(Collectors.toSet());
-        }
-        Set<String> result = new HashSet<>();
-        for (int i = 0; i < keyword.length(); i++) {
-            char key = keyword.charAt(i);
-            result.addAll(INVERTED_TABLE_INDEX.getOrDefault(key + "", Collections.emptySet()));
-        }
-        result = result.stream()
-            .filter(el -> {
-                return match(el, keyword);
-            })
-            .collect(Collectors.toSet());
-        return result;
-    }
-
-    private boolean match(String el, String keyword) {
-        try {
-
-            int contentIndex = 0, keywordIndex = 0;
-            int contentLen = el.length(), keywordLen = keyword.length();
-
-            // 处理边界情况
-            if (keywordLen == 0) return true; // keyword为空
-            if (contentLen < keywordLen) return false; // content比keyword短
-
-            while (contentIndex < contentLen && keywordIndex < keywordLen) {
-                // 如果剩余content长度不足，提前终止
-                if (contentLen - contentIndex < keywordLen - keywordIndex) {
-                    return false;
-                }
-                // 当前字符匹配成功，移动keyword指针
-                if (el.charAt(contentIndex) == keyword.charAt(keywordIndex)) {
-                    keywordIndex++;
-                }
-                contentIndex++;
-            }
-            return keywordIndex == keywordLen;
-        } catch (Exception ex) {
-
-            for (int i = 0; i < keyword.length(); i++) {
-                String key = keyword.charAt(i) + "" ;
-                if (StringUtils.containsIgnoreCase(el, key)) {
-                    el = el.replaceFirst(key, "");
-                } else {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
-    public Set<String> searchLike(String keyword) {
-        if (StrUtil.isEmpty(keyword)) {
-            return INVERTED_TABLE_INDEX.values().stream()
-                .flatMap(el -> el.stream())
-                .collect(Collectors.toSet());
-        }
-        Set<String> result = new HashSet<>();
-        for (int i = 0; i < keyword.length(); i++) {
-            char key = keyword.charAt(i);
-            result.addAll(INVERTED_TABLE_INDEX.getOrDefault(key + "", Collections.emptySet()));
-        }
-        result = result.stream()
-            .filter(el -> {
-                if (StrUtil.isNotBlank(el)) {
-                    return el.contains(keyword);
-                }
-                return false;
-            })
-            .collect(Collectors.toSet());
-        return result;
-    }
-
-    public Map<String, String> highlightKey(String keyword) {
-
-        Set<String> result = search(keyword);
-        if (StrUtil.isEmpty(keyword)) {
-            return result.stream().collect(Collectors.toMap(el -> el, el -> el));
-        }
-        // 字符串排序
-
-        Map<String, String> highlightMap = new HashMap<>();
-        result.forEach(el -> {
-            String finalKeyword = keyword;
-            StringBuilder htmlText = new StringBuilder("<html>");
-            for (int i = 0; i < el.length(); i++) {
-                String key = el.charAt(i) + "" ;
-                if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                    htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
-                    finalKeyword = finalKeyword.replaceFirst(key, "");
-                    continue;
-                }
-                htmlText.append(key);
-            }
-            htmlText.append("</html>");
-            highlightMap.put(el, htmlText.toString());
-        });
-        return highlightMap;
-    }
-
-    public Map<String, String> highlightKeyLike(String keyword) {
-
-        Set<String> result = searchLike(keyword);
-        if (StrUtil.isEmpty(keyword)) {
-            return result.stream().collect(Collectors.toMap(el -> el, el -> el));
-        }
-        // 字符串排序
-
-        Map<String, String> highlightMap = new HashMap<>();
-        result.forEach(el -> {
-            String finalKeyword = keyword;
-            StringBuilder htmlText = new StringBuilder("<html>");
-            for (int i = 0; i < el.length(); i++) {
-                String key = el.charAt(i) + "" ;
-                if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                    htmlText.append("<span style='color:#c60'>").append(key).append("</span>");
-                    finalKeyword = finalKeyword.replaceFirst(key, "");
-                    continue;
-                }
-                htmlText.append(key);
-            }
-            htmlText.append("</html>");
-            highlightMap.put(el, htmlText.toString());
-        });
-        return highlightMap;
-    }
-
 
     /**
      * 初始化模块
@@ -980,6 +714,5 @@ public class EntityTableGenerateDialog extends JDialog {
             }
             modulePackageMap.put(name, moduleMap);
         }
-        initModuleIndexText(modulePackageMap.keySet());
     }
 }

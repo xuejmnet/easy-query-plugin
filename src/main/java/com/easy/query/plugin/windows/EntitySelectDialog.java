@@ -1,6 +1,7 @@
 package com.easy.query.plugin.windows;
 
 import cn.hutool.core.util.NumberUtil;
+import com.easy.query.plugin.config.EasyQueryPluginSetting;
 import com.easy.query.plugin.core.config.EasyQueryConfig;
 import com.easy.query.plugin.core.entity.ClassNode;
 import com.easy.query.plugin.core.entity.struct.StructDTOContext;
@@ -8,6 +9,7 @@ import com.easy.query.plugin.core.entity.struct.StructDTOEntityContext;
 import com.easy.query.plugin.core.persistent.EasyQueryQueryPluginConfigData;
 import com.easy.query.plugin.core.render.EntityListCellRenderer;
 import com.easy.query.plugin.core.util.DialogUtil;
+import com.easy.query.plugin.core.util.EasyQueryConfigUtil;
 import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.StructDTOUtil;
@@ -31,8 +33,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +50,8 @@ public class EntitySelectDialog extends JDialog {
     private JList<String> entityList;
     private JTextField searchEntity;
     private JButton settingBtn;
-    Map<String, Set<String>> INVERTED_ENTITY_INDEX = new HashMap<>();
+    EasyQueryPluginSetting pluginSetting;
+    List<String> entityNameList;
 
     public EntitySelectDialog(StructDTOEntityContext structDTOEntityContext) {
         this.structDTOEntityContext = structDTOEntityContext;
@@ -74,20 +75,16 @@ public class EntitySelectDialog extends JDialog {
                 onCancel();
             }
         });
+        this.pluginSetting = EasyQueryConfigUtil.getPluginSetting(project);
         settingBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                EasyQueryConfig config = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(new EasyQueryConfig());
-                if (config.getConfig() == null) {
-                    config.setConfig(new HashMap<>());
-                }
-                String projectName = project.getName();
-                String setting = config.getConfig().get(projectName);
+                String dtoColumnsIgnore = pluginSetting.getDTOColumnsIgnore();
 
-                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project, setting, newTemplate -> {
-                    config.getConfig().put(projectName, newTemplate);
-                    EasyQueryQueryPluginConfigData.saveAllEnvEnvStructDTOIgnore(config);
+
+                ModelTemplateEditorDialog modelTemplateEditorDialog = new ModelTemplateEditorDialog(project, dtoColumnsIgnore,true, newTemplate -> {
+                    pluginSetting.saveDTOColumnsIgnore(newTemplate, project);
                     NotificationUtils.notifySuccess("保存成功", project);
                 });
                 modelTemplateEditorDialog.setVisible(true);
@@ -113,7 +110,7 @@ public class EntitySelectDialog extends JDialog {
         DefaultListModel<String> model = new DefaultListModel<>();
         Map<String, PsiClass> entityMap = structDTOEntityContext.getEntityClass();
         // tableNameSet按照字母降序
-        List<String> entityNameList = new ArrayList<>(entityMap.keySet());
+        this.entityNameList = new ArrayList<>(entityMap.keySet());
         Collections.sort(entityNameList);
         model.addAll(entityNameList);
         entityList.setModel(model);
@@ -141,108 +138,16 @@ public class EntitySelectDialog extends JDialog {
                     if (!entityList.isSelectionEmpty()) {
                         entityList.clearSelection();
                     }
-                    Set<String> search = search(entityName.trim(), cellRenderer);
+                    String searchName = entityName.trim();
+                    Set<String> search = entityNameList.stream().filter(o -> o.contains(searchName)).collect(Collectors.toSet());
                     model.removeAllElements();
                     model.addAll(search);
                 } else {
-                    cellRenderer.setHighlightKey(new HashMap<>());
                     model.removeAllElements();
                     model.addAll(entityNameList);
                 }
             }
         });
-
-        initEntityIndexText(entityNameList);
-    }
-
-    private Set<String> search(String entityName, EntityListCellRenderer cellRenderer) {
-        Map<String, String> highlightKey = highlightKey(entityName);
-        cellRenderer.setSearchTableName(entityName);
-        cellRenderer.setHighlightKey(highlightKey);
-        return highlightKey.keySet();
-    }
-
-    public Map<String, String> highlightKey(String keyword) {
-
-        Set<String> result = search(keyword);
-        if (StrUtil.isEmpty(keyword)) {
-            return result.stream().collect(Collectors.toMap(el -> el, el -> el));
-        }
-        // 字符串排序
-
-        Map<String, Integer> idxMap = new HashMap<>();
-        Map<String, String> highlightMap = new HashMap<>();
-        result.stream()
-            .forEach(el -> {
-                String packageName = cn.hutool.core.util.StrUtil.subBefore(el, ".", true);
-                String entityName = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
-                String finalKeyword = keyword;
-                String htmlText = "<html>";
-                htmlText += packageName + ".";
-                for (int i = 0; i < entityName.length(); i++) {
-                    String key = entityName.charAt(i) + "";
-                    if (StringUtils.containsIgnoreCase(finalKeyword, key)) {
-                        htmlText += "<span style='color:#c60'>" + key + "</span>";
-                        finalKeyword = finalKeyword.replaceFirst(key, "");
-                        continue;
-                    }
-                    htmlText += key;
-                }
-                htmlText += "</html>";
-                idxMap.clear();
-                highlightMap.put(el, htmlText);
-            });
-        return highlightMap;
-    }
-
-    /**
-     * 搜索
-     *
-     * @param keyword 关键字
-     * @return {@code Set<String>}
-     */
-    public Set<String> search(String keyword) {
-        if (StrUtil.isEmpty(keyword)) {
-            return INVERTED_ENTITY_INDEX.values().stream()
-                .flatMap(el -> el.stream())
-                .collect(Collectors.toSet());
-        }
-        Set<String> result = new HashSet<>();
-        for (int i = 0; i < keyword.length(); i++) {
-            char key = keyword.charAt(i);
-            result.addAll(INVERTED_ENTITY_INDEX.getOrDefault(key + "", Collections.emptySet()));
-        }
-        result = result.stream()
-//                .map(o-> cn.hutool.core.util.StrUtil.subAfter(o,".",true))
-            .filter(el -> {
-                String elEntity = cn.hutool.core.util.StrUtil.subAfter(el, ".", true);
-                for (int i = 0; i < keyword.length(); i++) {
-                    String key = keyword.charAt(i) + "";
-                    if (StringUtils.containsIgnoreCase(elEntity, key)) {
-                        elEntity = elEntity.replaceFirst(key, "");
-                    } else {
-                        return false;
-                    }
-                }
-                return true;
-            })
-            .collect(Collectors.toSet());
-        return result;
-    }
-
-    /**
-     * 传入表名集合，建立倒排索引
-     *
-     * @param entityNameList 表名
-     */
-    public void initEntityIndexText(Collection<String> entityNameList) {
-        for (String tableName : entityNameList) {
-            String entityName = cn.hutool.core.util.StrUtil.subAfter(tableName, ".", true);
-            for (int i = 0; i < entityName.length(); i++) {
-                char word = entityName.charAt(i);
-                INVERTED_ENTITY_INDEX.computeIfAbsent((word + "").toLowerCase(), k -> new HashSet<>()).add(tableName);
-            }
-        }
     }
 
     private void onOK() {
@@ -318,23 +223,6 @@ public class EntitySelectDialog extends JDialog {
         return true;
     }
 
-
-    private Set<String> getIgnoreColumns(Project project) {
-
-        EasyQueryConfig allEnvStructDTOIgnore = EasyQueryQueryPluginConfigData.getAllEnvStructDTOIgnore(null);
-        if (allEnvStructDTOIgnore != null) {
-            Map<String, String> config = allEnvStructDTOIgnore.getConfig();
-            if (config != null) {
-                String settingVal = config.get(project.getName());
-                if (cn.hutool.core.util.StrUtil.isNotBlank(settingVal)) {
-                    String[] shortNames = settingVal.split(",");
-                    return Arrays.stream(shortNames).collect(Collectors.toSet());
-
-                }
-            }
-        }
-        return new HashSet<>(0);
-    }
 
     private void onCancel() {
         // add your code here if necessary
