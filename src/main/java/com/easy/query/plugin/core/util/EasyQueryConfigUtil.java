@@ -2,6 +2,7 @@ package com.easy.query.plugin.core.util;
 
 import cn.hutool.setting.Setting;
 import com.easy.query.plugin.config.EasyQueryConfigManager;
+import com.easy.query.plugin.config.EasyQueryPluginSetting;
 import com.intellij.openapi.project.Project;
 
 /**
@@ -11,6 +12,14 @@ import com.intellij.openapi.project.Project;
  */
 public class EasyQueryConfigUtil {
 
+    /**
+     * 获取项目插件配置
+     * @param project 项目
+     * @return 返回一个可操作的插件配置
+     */
+    public static EasyQueryPluginSetting getPluginSetting(Project project){
+        return new EasyQueryPluginSetting(EasyQueryConfigManager.getInstance().getConfig(project));
+    }
     /**
      * 获取布尔类型的项目配置
      * 

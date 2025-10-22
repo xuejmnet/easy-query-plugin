@@ -1,5 +1,12 @@
 package com.easy.query.plugin.core.util;
 
+import cn.hutool.core.util.StrUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -9,6 +16,31 @@ import java.util.function.Function;
  * @author xuejiaming
  */
 public class MyStringUtil {
+
+    public static @NotNull String[] safeSplit(String value, String separatorChars) {
+        return safeSplit(value, separatorChars, false);
+    }
+
+    public static @NotNull String[] safeSplit(String value, String separatorChars, boolean removeBank) {
+        if (StrUtil.isBlank(value)) {
+            return new String[0];
+        }
+        String[] split = value.split(separatorChars);
+        if (removeBank) {
+            ArrayList<String> result = new ArrayList<>(split.length);
+            for (int i = 0; i < split.length; i++) {
+                if (StringUtils.isNotBlank(split[i])) {
+                    result.add(split[i]);
+                }
+            }
+            return result.toArray(new String[0]);
+        }
+        return split;
+    }
+    public static @NotNull List<String> safeSplitList(String value, String separatorChars, boolean removeBank) {
+        String[] strings = safeSplit(value, separatorChars, removeBank);
+        return new ArrayList<>(Arrays.asList(strings));
+    }
     /**
      * 将对象类型转成lambda入参短名称
      * @param str Topic || SysUser

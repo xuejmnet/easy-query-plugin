@@ -3,14 +3,16 @@ package com.easy.query.plugin.windows;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
-import com.alibaba.druid.util.JdbcConstants;
 import com.easy.query.plugin.config.EasyQueryProjectSettingKey;
 import com.easy.query.plugin.core.util.BasicFormatter;
 import com.easy.query.plugin.core.util.BasicFormatter2;
 import com.easy.query.plugin.core.util.DialogUtil;
 import com.easy.query.plugin.core.util.EasyQueryConfigUtil;
+import com.easy.query.plugin.core.util.MyStringUtil;
+import com.easy.query.plugin.core.util.ObjectUtil;
 import com.intellij.openapi.project.Project;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -21,7 +23,6 @@ import java.util.stream.Collectors;
 
 public class SQLPreviewDialog extends JDialog {
     private Project project;
-    private String formatType;
     private JPanel contentPane;
     private JButton buttonCancel;
     private JTextArea selectSQLText;
@@ -30,6 +31,7 @@ public class SQLPreviewDialog extends JDialog {
     private JButton mergeButton;
     private JCheckBox boolean2int;
     private JLabel formatTypeText;
+    private JComboBox<String> sqlFormatTypeComBox;
     private static final char MARK = '?';
     private static final BasicFormatter FORMATTER = new BasicFormatter();
     private static final BasicFormatter2 FORMATTER2 = new BasicFormatter2();
@@ -79,11 +81,18 @@ public class SQLPreviewDialog extends JDialog {
 
         selectSQLText.setText(selectSQL);
 
-        this.formatType = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_FORMAT_TYPE, "other");
-        String formatTypeText = StrUtil.isBlank(formatType) || "generic".equals(formatType) ? "hibernate格式" : "druid:" + formatType;
-        this.formatTypeText.setText("当前使用的格式化类型:"+formatTypeText);
+        String formatType = EasyQueryConfigUtil.getProjectSettingStr(project, EasyQueryProjectSettingKey.SQL_FORMAT_TYPE, "");
 
 
+
+        sqlFormatTypeComBox.removeAllItems();
+        if(StrUtil.isNotBlank(formatType)){
+            List<String> formatTypes = MyStringUtil.safeSplitList(formatType, ",", true);
+            for (String ft : formatTypes) {
+                sqlFormatTypeComBox.addItem(ft);
+            }
+        }
+        sqlFormatTypeComBox.addItem("generic");
         // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -98,6 +107,21 @@ public class SQLPreviewDialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+    }
+
+    private @NotNull String getSelectSQLFormat(){
+
+        Object selectedItem = sqlFormatTypeComBox.getSelectedItem();
+        if (ObjectUtil.isNull(selectedItem)) {
+            return "generic";
+        }
+        return selectedItem.toString();
+    }
+
+    private void setFormatTypeText(){
+        String selectText = getSelectSQLFormat();
+        String formatTypeText = "generic".equals(selectText) ? "hibernate格式" : "druid:" + selectText;
+        this.formatTypeText.setText("当前使用的格式化类型:"+formatTypeText);
     }
 
     private void onCancel() {
@@ -145,6 +169,7 @@ public class SQLPreviewDialog extends JDialog {
     }
 
     private void onConvert0(boolean newConvert) {
+        this.setFormatTypeText();
         String selectSQL = selectSQLText.getText();
         if (StringUtils.isBlank(selectSQL)) {
             previewSQLText.setText("");
@@ -170,7 +195,7 @@ public class SQLPreviewDialog extends JDialog {
 
 //                String formatSQL = newConvert ? FORMATTER2.format(sql) : FORMATTER.format(sql);
 
-
+                String formatType = getSelectSQLFormat();
                 String formatSQL = StrUtil.isBlank(formatType) || "generic".equals(formatType)
                     ? FORMATTER2.format(sql)
                     : formatSQLByDruid(sql, formatType);
@@ -284,26 +309,4 @@ public class SQLPreviewDialog extends JDialog {
 
         return queue;
     }
-//    private Queue<Map.Entry<String, String>> parseParams(String line) {
-//        if(StringUtils.isBlank(line)){
-//            return new ArrayDeque<>(0);
-//        }
-//        line = StringUtils.removeEnd(line, "\n").replaceAll(".*(Parameters[\\s]*(?=:)): ", "");
-//
-//        final String[] strings = StringUtils.splitByWholeSeparator(line, ",");
-//        final Queue<Map.Entry<String, String>> queue = new ArrayDeque<>(strings.length);
-//
-//        for (String s : strings) {
-//            String trim = StringUtils.trim(s);
-//            String value = StringUtils.substringBeforeLast(trim, "(");
-//            String type = StringUtils.substringBetween(trim, "(", ")");
-//            if (StringUtils.isEmpty(type)) {
-//                queue.offer(new AbstractMap.SimpleEntry<>(value, null));
-//            } else {
-//                queue.offer(new AbstractMap.SimpleEntry<>(value, type));
-//            }
-//        }
-//
-//        return queue;
-//    }
 }

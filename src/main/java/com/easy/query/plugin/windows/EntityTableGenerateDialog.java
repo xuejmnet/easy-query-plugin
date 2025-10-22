@@ -201,22 +201,6 @@ public class EntityTableGenerateDialog extends JDialog {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-//
-//
-//        tableList.addListSelectionListener(e -> {
-//
-//            if (e.getValueIsAdjusting()) {
-//                return;
-//            }
-//            boolean selected = selectAll.isSelected();
-//            if (selected) {
-//                selectAll.setSelected(false);
-//            }
-//            int size = tableList.getSelectedValuesList().size();
-//            if (size == tableList.getModel().getSize() && size > 0) {
-//                selectAll.setSelected(true);
-//            }
-//        });
         project = actionEvent.getProject();
 
         tableInfoMap = TableUtils.getAllTables(actionEvent)
