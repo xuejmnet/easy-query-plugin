@@ -48,7 +48,7 @@ public class EasyQueryConfigManager {
     /** 配置文件缓存 */
     private final Map<Project, Setting> configCache = new ConcurrentHashMap<>();
     /** 项目是否使用 easy-query 的检查结果缓存 */
-    private static final Map<Project, Boolean> projectUsingEasyQuery = new ConcurrentHashMap<>();
+    private static final Map<String, Boolean> projectUsingEasyQuery = new ConcurrentHashMap<>();
     
     /** 单例实例 */
     private static EasyQueryConfigManager instance;
@@ -117,7 +117,7 @@ public class EasyQueryConfigManager {
             log.info("在EDT线程上调用isProjectUsingEasyQuery，返回缓存结果或默认值，避免EDT线程阻塞");
             
             // 如果已有缓存结果，直接返回
-            Boolean result = projectUsingEasyQuery.get(project);
+            Boolean result = projectUsingEasyQuery.get(project.getBasePath());
             if (result != null) {
                 return result;
             }
@@ -140,7 +140,7 @@ public class EasyQueryConfigManager {
      * @return 是否使用了 easy-query
      */
     private static boolean isProjectUsingEasyQueryInBackground(Project project) {
-        return projectUsingEasyQuery.computeIfAbsent(project, p -> {
+        return projectUsingEasyQuery.computeIfAbsent(project.getBasePath(), p -> {
             try {
                 // 检查索引是否已准备好
                 if (com.intellij.openapi.project.DumbService.getInstance(project).isDumb()) {
@@ -173,7 +173,7 @@ public class EasyQueryConfigManager {
      */
     public static void invalidateProjectCache(Project project) {
         if (project != null) {
-            projectUsingEasyQuery.remove(project);
+            projectUsingEasyQuery.remove(project.getBasePath());
             log.info("EasyQuery usage cache invalidated for project: {}", project.getName());
         }
     }
@@ -264,7 +264,6 @@ public class EasyQueryConfigManager {
                             Setting setting = loadConfig(project);
                             configCache.put(project, setting);
                             log.info("已更新项目配置: {}", projectPath);
-                            break;
                         }
                     }
                 }

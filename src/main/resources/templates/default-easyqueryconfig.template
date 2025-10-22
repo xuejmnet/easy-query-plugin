@@ -13,4 +13,10 @@ dto.keepAnnoColumn=true
 startup.runInspection=true
 
 # 具体参考 com.alibaba.druid.util.FnvHash.DbType  如果是generic那么还是原先的格式化 如果不是generic且未匹配到则使用DbType.other
-sql.format=postgresql,mysql,sqlserver,oracle,h2sqlite
+sql.format=postgresql,mysql,sqlserver,oracle,h2,sqlite
+
+# lambda快速提示
+lambda.tip=
+
+# dto配置忽略json
+dto.columns.ignores=
