@@ -149,8 +149,10 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         APTVersion2_5.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
                     } else if(Objects.equals("6", easyQueryRevision))  {
                         APTVersion2_6.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
-                    } else {
+                    } else if(Objects.equals("7", easyQueryRevision))  {
                         APTVersion2_7.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
+                    } else {
+                        APTVersion2_8.generateApt(project, psiDirectoryMap, entityFileProxy, entityProxy, psiFile, moduleDirPath, config, moduleForFile, psiClass, oldFile, allCompileFrom);
                     }
 
                 }
