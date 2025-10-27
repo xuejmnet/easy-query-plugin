@@ -9,7 +9,7 @@ import com.easy.query.plugin.core.contributor.java.EasyFilterConfigureContributo
 import com.easy.query.plugin.core.contributor.java.EasyGroupContributor;
 import com.easy.query.plugin.core.contributor.java.EasyGroupTableContributor;
 import com.easy.query.plugin.core.contributor.java.EasyIncludeContributor;
-import com.easy.query.plugin.core.contributor.java.EasyIncludeOfContributor;
+import com.easy.query.plugin.core.contributor.java.EasyInclude2Contributor;
 import com.easy.query.plugin.core.contributor.java.EasyIncludesContributor;
 import com.easy.query.plugin.core.contributor.java.EasyOrderContributor;
 import com.easy.query.plugin.core.contributor.java.EasySelectClassContributor;
@@ -54,7 +54,7 @@ public class BaseEasyQueryApiCompletionContributor {
             new EasySelectDraftContributor("select", "selectDraft", false),
             new EasySelectTupleContributor("select", "selectTuple", false),
             new EasySelectClassContributor("select", "selectClass", false),
-            new EasyIncludeOfContributor("includeBy", "includeByOf", false),
+            new EasyInclude2Contributor("include", "include2"),
             new EasySelectContributor("having", "having", false),
             new EasySelectContributor("having", "having_code_block", true),
             new EasySelectContributor("selectColumn", "selectColumn", false),
