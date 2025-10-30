@@ -686,7 +686,9 @@ public class EntityTableGenerateDialog extends JDialog {
             DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(array);
 //            FilterComboBoxModel model = new FilterComboBoxModel(new ArrayList<>(moduleMap.keySet()), moduleMap.isEmpty() ? -1 : 0);
             modulesCombox.setModel(model);
-            modulesCombox.setSelectedIndex(0);
+            if(array.length>0){
+                modulesCombox.setSelectedIndex(0);
+            }
         }
         getModulePackages();
     }
