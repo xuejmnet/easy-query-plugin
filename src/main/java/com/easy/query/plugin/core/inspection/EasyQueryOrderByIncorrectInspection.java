@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.inspection;
 
+import cn.hutool.core.collection.CollUtil;
 import com.easy.query.plugin.core.util.EasyQueryElementUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.intellij.codeInspection.*;
@@ -128,8 +129,19 @@ public class EasyQueryOrderByIncorrectInspection extends AbstractBaseJavaLocalIn
         // 查找参数列表中的普通表达式语句
         List<PsiMethodCallExpression> methodCallExpressionList = EasyQueryElementUtil.getDirectChildOfType(argumentsList, PsiMethodCallExpression.class);
 
-        for (PsiMethodCallExpression methodCallExpression : methodCallExpressionList) {
-            checkMethodCall(methodCallExpression, holder);
+        if (CollUtil.isNotEmpty(methodCallExpressionList)) {
+            for (PsiMethodCallExpression methodCallExpression : methodCallExpressionList) {
+                checkMethodCall(methodCallExpression, holder);
+            }
+        } else {
+            PsiExpression[] args = argumentsList.getExpressions();
+            if (args.length > 0) {
+                // 只检查最后一个参数
+                PsiExpression sortArg = args[args.length - 1];
+                if (sortArg instanceof PsiMethodReferenceExpression) {
+                    holder.registerProblem(sortArg, PROBLEM_PREFIX + "OrderBy语句需要以 .asc() / .desc() / .orderBy() / .expression() 方法调用作为结尾,不支持方法引用模式", ProblemHighlightType.WARNING, addAscQuickFix, addDescQuickFix);
+                }
+            }
         }
 
     }

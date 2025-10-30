@@ -27,6 +27,7 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +73,7 @@ public class TableNavMappingCompletion extends CompletionContributor {
 //        }
         //是否是数据库对象
         PsiAnnotation entityTable = currentPsiClass.getAnnotation("com.easy.query.core.annotation.Table");
-        if(entityTable==null){
+        if (entityTable == null) {
             return;
         }
 
@@ -156,6 +157,17 @@ public class TableNavMappingCompletion extends CompletionContributor {
 
     }
 
+    public static PsiClass findStaticInnerClass(PsiClass psiClass, String innerClassName) {
+        for (PsiClass innerClass : psiClass.getInnerClasses()) {
+            if (innerClass.getName() != null
+                && innerClass.getName().equals(innerClassName)
+                && innerClass.hasModifierProperty(PsiModifier.STATIC)) {
+                return innerClass;
+            }
+        }
+        return null;
+    }
+
     public static String generateNavPropertyCode(Project project, NavMappingRelation relation) {
         String sourceEntityFullName = relation.getSourceEntity();
         String targetEntityFullName = relation.getTargetEntity();
@@ -165,9 +177,10 @@ public class TableNavMappingCompletion extends CompletionContributor {
         PsiClass sourceEntityClass = PsiJavaFileUtil.getPsiClass(project, sourceEntityFullName);
         String sourceEntitySimpleName = sourceEntityClass.getName();
 
-        PsiAnnotation sourceEntityClassAnnotation = sourceEntityClass.getAnnotation("lombok.experimental.FieldNameConstants");
+        boolean noLombok = sourceEntityClass.getAnnotation("lombok.experimental.FieldNameConstants") == null//没有注解
+            && findStaticInnerClass(sourceEntityClass, "Fields") == null;//也没有静态内部类 lombok可能是已经编译完了
         String sourceFieldPrefix;
-        if (sourceEntityClassAnnotation == null) {
+        if (noLombok) {
             sourceFieldPrefix = (sourceEntitySimpleName + "Proxy");
         } else {
             sourceFieldPrefix = sourceEntitySimpleName;
@@ -285,24 +298,24 @@ public class TableNavMappingCompletion extends CompletionContributor {
         code.append(newLine);
         code.append("private ");
         boolean toMany = StrUtil.endWith(relation.getRelationType(), "ToMany");
-        if(toMany){
+        if (toMany) {
             code.append("List<");
         }
         code.append(targetEntitySimpleName);
-        if(toMany){
+        if (toMany) {
             code.append(">");
         }
         code.append(" ");
-        if(StrUtil.isBlank(targetEntitySimpleName)){
-            if(toMany){
+        if (StrUtil.isBlank(targetEntitySimpleName)) {
+            if (toMany) {
                 code.append("itemList;");
-            }else{
+            } else {
                 code.append("item;");
             }
-        }else{
-            if(toMany){
+        } else {
+            if (toMany) {
                 code.append(StrUtil.toLowerCaseFirstOne(targetEntitySimpleName)).append("List;");
-            }else{
+            } else {
                 code.append(StrUtil.toLowerCaseFirstOne(targetEntitySimpleName)).append(";");
             }
 
@@ -313,6 +326,7 @@ public class TableNavMappingCompletion extends CompletionContributor {
 
     /**
      * 处理lombok的@FieldNameConstants
+     *
      * @param mappingFields
      * @param psiClass
      * @return
@@ -333,9 +347,9 @@ public class TableNavMappingCompletion extends CompletionContributor {
             if (lombokField && psiField != null && psiField.getParent() instanceof PsiClass) {
                 PsiClass parent = (PsiClass) psiField.getParent();
                 PsiAnnotation parentAnnotation = parent.getAnnotation("lombok.experimental.FieldNameConstants");
-                if(parentAnnotation!=null){
+                if (parentAnnotation != null) {
                     navigateField.prefix = parent.getName();
-                }else{
+                } else {
                     navigateField.prefix = (psiClassName + "Proxy");
                 }
             }
