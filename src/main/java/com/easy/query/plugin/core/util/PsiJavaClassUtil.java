@@ -85,9 +85,20 @@ public class PsiJavaClassUtil {
             if (StrUtil.isBlank(mainEntityClassQualifiedName)) {
                 String qualifiedName = currentClass.getQualifiedName();
                 if (StrUtil.isNotBlank(qualifiedName)) {
-                    String portableClassName = StrUtil.subBefore(qualifiedName,  ".", true) +"."+ mainEntityClassFromLink;
+                    String portableClassName = StrUtil.subBefore(qualifiedName, ".", true) + "." + mainEntityClassFromLink;
                     if (PsiJavaFileUtil.getPsiClass(currentClass.getProject(), portableClassName) != null) {
                         mainEntityClassQualifiedName = portableClassName;
+                    }
+                }
+                if (StrUtil.isBlank(mainEntityClassQualifiedName)) {
+                    //获取当前类的包名
+                    PsiFile containingFile = currentClass.getContainingFile();
+                    if (containingFile instanceof PsiClassOwner) {
+                        String packageName = ((PsiClassOwner) containingFile).getPackageName();
+                        String portableClassName = packageName + "." + mainEntityClassFromLink;
+                        if (PsiJavaFileUtil.getPsiClass(currentClass.getProject(), portableClassName) != null) {
+                            mainEntityClassQualifiedName = portableClassName;
+                        }
                     }
                 }
             }
