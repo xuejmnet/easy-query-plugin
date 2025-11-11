@@ -221,7 +221,7 @@ public class EasyQuerySetColumnsInspection extends AbstractBaseJavaLocalInspecti
                 // 这通常是错误的，比如仅调用 getter
                 LocalQuickFix suppressFix = new SuppressWarningQuickFix();
                 holder.registerProblem(topCall, // 在方法调用上报告问题
-                        INSPECTION_PREFIX + "SetColumns 中不允许仅调用属性访问器或选择器方法，请使用 'set', 'increment', 'decrement' 等更新方法", // 调整了警告信息
+                        INSPECTION_PREFIX + "SetColumns 中不允许仅调用属性访问器或选择器方法，请使用 'set', 'increment', 'decrement' 等更新方法或使用FETCHER属性选择器", // 调整了警告信息
                         ProblemHighlightType.WARNING,
                         suppressFix);
                 return; // 模式匹配，处理完毕
@@ -274,7 +274,7 @@ public class EasyQuerySetColumnsInspection extends AbstractBaseJavaLocalInspecti
             LocalQuickFix changeToSetFix = new ChangeToSetQuickFix(propertyChainText, argsText);
             LocalQuickFix suppressFix = new SuppressWarningQuickFix();
             holder.registerProblem(invalidCall, // 在最终的无效方法调用上报告问题
-                    INSPECTION_PREFIX + "SetColumns 中应使用以 'set' 开头、'increment' 或 'decrement' 的方法更新字段，而不是 '" + disallowedMethodName + "'",
+                    INSPECTION_PREFIX + "SetColumns 中应使用以 'set' 开头、'increment' 或 'decrement' 的方法更新字段或使用FETCHER属性选择器，而不是 '" + disallowedMethodName + "'",
                     ProblemHighlightType.WARNING,
                     changeToSetFix, suppressFix);
         }

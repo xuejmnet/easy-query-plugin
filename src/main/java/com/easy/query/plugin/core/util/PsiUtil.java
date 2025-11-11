@@ -20,37 +20,40 @@ import java.util.regex.Pattern;
  */
 public class PsiUtil {
 
-    private static final Set<String> EASY_QUERY_NAVIGATE_ANNOTATIONS =new HashSet<>(Arrays.asList(
+    private static final Set<String> EASY_QUERY_NAVIGATE_ANNOTATIONS = new HashSet<>(Arrays.asList(
         "com.easy.query.core.annotation.NavigateFlat",
         "com.easy.query.core.annotation.NavigateJoin"
     ));
-    private static final Set<String> EASY_QUERY_ALL_ANNOTATIONS=new HashSet<>(Arrays.asList(
+    private static final Set<String> EASY_QUERY_ALL_ANNOTATIONS = new HashSet<>(Arrays.asList(
         "com.easy.query.core.annotation.NavigateFlat",
         "com.easy.query.core.annotation.NavigateJoin",
         "com.easy.query.core.annotation.EasyWhereCondition"
     ));
-    private static final Set<String> EASY_QUERY_WHERE_CONDITION_ANNOTATIONS=new HashSet<>(Arrays.asList(
+    private static final Set<String> EASY_QUERY_WHERE_CONDITION_ANNOTATIONS = new HashSet<>(Arrays.asList(
         "com.easy.query.core.annotation.EasyWhereCondition"
     ));
-    public static boolean isEasyQueryNavigateFlatJoinAnnotation(PsiElement psiElement){
+
+    public static boolean isEasyQueryNavigateFlatJoinAnnotation(PsiElement psiElement) {
         PsiAnnotation parentOfType = PsiTreeUtil.getParentOfType(psiElement, PsiAnnotation.class);
-        if(parentOfType!=null){
+        if (parentOfType != null) {
             String qualifiedName = parentOfType.getQualifiedName();
             return EASY_QUERY_NAVIGATE_ANNOTATIONS.contains(qualifiedName);
         }
         return false;
     }
-    public static boolean isEasyQueryWhereConditionAnnotation(PsiElement psiElement){
+
+    public static boolean isEasyQueryWhereConditionAnnotation(PsiElement psiElement) {
         PsiAnnotation parentOfType = PsiTreeUtil.getParentOfType(psiElement, PsiAnnotation.class);
-        if(parentOfType!=null){
+        if (parentOfType != null) {
             String qualifiedName = parentOfType.getQualifiedName();
             return EASY_QUERY_WHERE_CONDITION_ANNOTATIONS.contains(qualifiedName);
         }
         return false;
     }
-    public static boolean isEasyQueryNavigateFlatJoinWhereConditionAnnotation(PsiElement psiElement){
+
+    public static boolean isEasyQueryNavigateFlatJoinWhereConditionAnnotation(PsiElement psiElement) {
         PsiAnnotation parentOfType = PsiTreeUtil.getParentOfType(psiElement, PsiAnnotation.class);
-        if(parentOfType!=null){
+        if (parentOfType != null) {
             String qualifiedName = parentOfType.getQualifiedName();
             return EASY_QUERY_ALL_ANNOTATIONS.contains(qualifiedName);
         }
@@ -87,10 +90,12 @@ public class PsiUtil {
         }
         return values;
     }
+
     public static boolean fieldIsStatic(PsiField field) {
         // 检查字段是否是 static
         return field.hasModifierProperty("static");
     }
+
     public static String getPsiAnnotationValueIfEmpty(PsiAnnotation annotation, String attr, String def) {
         String psiAnnotationValue = getPsiAnnotationValue(annotation, attr, "");
         if (StrUtil.isBlank(psiAnnotationValue)) {
@@ -101,8 +106,23 @@ public class PsiUtil {
 
     public static String getPsiAnnotationValue(PsiAnnotation annotation, String attr, String defaultVal) {
         if (!Objects.isNull(annotation)) {
+            Project project = annotation.getProject();
             PsiAnnotationMemberValue value = annotation.findAttributeValue(attr);
             if (Objects.nonNull(value)) {
+                if (value instanceof PsiReferenceExpression) {
+                    PsiReferenceExpression refExpr = (PsiReferenceExpression) value;
+                    PsiElement resolved = refExpr.resolve();
+                    if (resolved instanceof PsiField) {
+                        PsiField field = (PsiField) resolved;
+                        PsiExpression initializer = field.getInitializer();
+                        Object constValue = JavaPsiFacade.getInstance(project)
+                            .getConstantEvaluationHelper()
+                            .computeConstantExpression(initializer);
+                        if (constValue != null) {
+                            return constValue.toString();
+                        }
+                    }
+                }
                 String text = value.getText();
                 if (Objects.nonNull(text)) {
                     return text.replace("\"", "");
@@ -114,7 +134,7 @@ public class PsiUtil {
 
     private static String removeStarsAndTrim(String text) {
         // 定义正则表达式来匹配星号字符和首尾空白字符
-        String regex = "(?s)/\\*\\*|\\*|\\s*(\\*?/|$)";
+        String regex = "(?s)/\\*\\*|\\*|\\s*(\\*?/|$)" ;
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(text);
 
@@ -126,7 +146,7 @@ public class PsiUtil {
 
         String psiFieldComment = getPsiFieldComment(field, null);
         if (Objects.isNull(psiFieldComment)) {
-            return "/**";
+            return "/**" ;
         }
         return "/**\n" +
             "     * " + removeStarsAndTrim(psiFieldComment);
@@ -136,7 +156,7 @@ public class PsiUtil {
 
         String psiFieldComment = getPsiFieldComment(field, null);
         if (Objects.isNull(psiFieldComment)) {
-            return "";
+            return "" ;
         }
         return removeStarsAndTrim(psiFieldComment);
     }
@@ -174,6 +194,7 @@ public class PsiUtil {
         }
         return fieldType.getCanonicalText();
     }
+
     public static String replaceFieldType(String fieldDeclaration, String newType) {
         // 匹配两种情况：List<类名> 或 单一类名
         return fieldDeclaration
@@ -183,7 +204,7 @@ public class PsiUtil {
 
     public static String getPsiClassFieldPropertyType(PsiClassType fieldType, boolean isInclude) {
         if (fieldType.resolve() instanceof PsiTypeParameter) {
-            return "java.lang.Object";
+            return "java.lang.Object" ;
         }
         String canonicalText = fieldType.getCanonicalText();
         if (isInclude) {
@@ -196,7 +217,7 @@ public class PsiUtil {
     }
 
     public static String getPsiArrayFieldPropertyType(PsiArrayType fieldType, boolean isInclude) {
-        return "java.lang.Object";
+        return "java.lang.Object" ;
     }
 
     public static String parseGenericType(String genericTypeString) {
@@ -204,7 +225,7 @@ public class PsiUtil {
             return genericTypeString;
         }
         // 正则表达式用于匹配泛型类型字符串
-        String regex = "<(.+?)>$";
+        String regex = "<(.+?)>$" ;
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(genericTypeString);
 
