@@ -88,6 +88,20 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 for (PsiField dtoField : dtoFields) {
                     boolean ignoreField = PsiJavaFieldUtil.ignoreField(dtoField);
                     if (ignoreField) {
+                        // 看看字段上有没有 NavigateFlat 注解 com.easy.query.core.annotation.NavigateFlat
+                        PsiAnnotation annoNavigateFlat = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateFlat");
+                        if (annoNavigateFlat != null) {
+                            //如果有NavigateFlat注解并且存在Column注解且Column注解如果是conversion的那么就需要报错
+                            PsiAnnotation annoColumn = dtoField.getAnnotation("com.easy.query.core.annotation.Column");
+                            if (annoColumn != null) {
+                                // 1. 抑制警告， 在字段上添加 @SuppressWarnings("EasyQueryFieldMissMatch")
+                                @NotNull LocalQuickFix quickFixMethod1 = createQuickFixForSuppressWarningField("EasyQueryFieldMissMatch");
+                                LocalQuickFix[] localQuickFixes = new LocalQuickFix[]{quickFixMethod1};
+                                holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段在为[@NavigateFlat]注解[@Column]无法生效", ProblemHighlightType.WARNING, localQuickFixes);
+                                continue;
+                            }
+
+                        }
                         continue;
                     }
                     //region 字段名称不匹配
@@ -153,7 +167,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         if (!StrUtil.equals(dtoTypeRefName, entityTypeRefName)) {
                             if (StrUtil.startWithAny(dtoTypeRefName, "java.")) { // 常见包下面的视作基础类型
                                 // 类型不一致
-                                holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link"+entityTypeRefName+"}", ProblemHighlightType.ERROR);
+                                holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR);
                                 continue;
 
                             } else {
@@ -162,13 +176,13 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(psiClass);
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
-                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link"+entityTypeRefName+"}", ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR);
                                     continue;
                                 }
                                 String linkPsiClassName = linkPsiClass.getQualifiedName();
                                 if (!StrUtil.equals(linkPsiClassName, entityTypeRefName)) {
                                     // 类型不一致
-                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link"+entityTypeRefName+"}", ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR);
                                     continue;
                                 }
                             }
@@ -199,7 +213,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 PsiJavaCodeReferenceElement entityFieldTypeParamRef = ((PsiClassReferenceType) entityFieldTypeParam).getReference();
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
-                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段泛型和实体类中不一致,应为 " + entityFieldTypeParamRef.getQualifiedName() + " 或其生成的DTO需添加{@link"+entityTypeRefName+"}", ProblemHighlightType.ERROR);
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段泛型和实体类中不一致,应为 " + entityFieldTypeParamRef.getQualifiedName() + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR);
                                     continue;
                                 }
                                 String linkPsiClassName = linkPsiClass.getQualifiedName();
@@ -253,7 +267,6 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
     }
 
 
-
     /** 创建字段抑制QuickFix */
     public static LocalQuickFix createQuickFixForSuppressWarningField(String warningName) {
         return new LocalQuickFix() {
@@ -267,7 +280,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                 PsiAnnotation annotation = elementFactory.createAnnotationFromText("@SuppressWarnings(\"" + warningName + "\")", problemDescriptor.getPsiElement());
                 PsiField psiField = problemDescriptor.getPsiElement() instanceof PsiField ? (PsiField) problemDescriptor.getPsiElement() : PsiTreeUtil.getParentOfType(problemDescriptor.getPsiElement(), PsiField.class);
-                if(psiField==null){
+                if (psiField == null) {
                     return;
                 }
                 problemDescriptor.getPsiElement().addAfter(annotation, psiField.getDocComment());
@@ -287,13 +300,13 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
             public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor problemDescriptor) {
                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                 PsiField psiField = problemDescriptor.getPsiElement() instanceof PsiField ? (PsiField) problemDescriptor.getPsiElement() : PsiTreeUtil.getParentOfType(problemDescriptor.getPsiElement(), PsiField.class);
-                if(psiField==null){
+                if (psiField == null) {
                     return;
                 }
                 List<String> lines = StrUtil.split(psiField.getText(), "\n");
                 // 生成注释
                 lines.stream().map(line -> "// " + line).map(comment -> elementFactory.createCommentFromText(comment, null)).collect(Collectors.toList())
-                        .forEach(comment -> psiField.addBefore(comment, psiField));
+                    .forEach(comment -> psiField.addBefore(comment, psiField));
                 psiField.delete();
             }
         };
