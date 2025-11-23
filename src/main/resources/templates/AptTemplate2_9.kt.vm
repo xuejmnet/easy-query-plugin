@@ -94,6 +94,7 @@ class ${aptFileCompiler.getEntityClassProxyName()} : AbstractProxyEntity<${aptFi
      * 数据库列的简单获取
      * @return
      */
+    @kotlin.jvm.JvmField
     val FETCHER=${aptFileCompiler.getSelectorInfo().getName()}(this,null,SQLSelectAsExpression.empty)
 
 
