@@ -23,8 +23,11 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowAnchor;
@@ -147,10 +150,22 @@ public class RunEasyQueryInspectionAction extends AnAction {
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(false);
 
-                // 定义搜索 Java 文件的范围
+                // 定义搜索 Java 文件的范围，并过滤掉被忽略的文件
                 GlobalSearchScope projectScope = GlobalSearchScope.projectScope(project);
-                Collection<VirtualFile> javaFiles = ReadAction.compute(() ->
-                        FileTypeIndex.getFiles(StdFileTypes.JAVA, projectScope));
+
+                // 在 ReadAction 中获取并过滤文件列表
+                List<VirtualFile> javaFiles = ReadAction.compute(() -> {
+                    Collection<VirtualFile> allJavaFiles = FileTypeIndex.getFiles(StdFileTypes.JAVA, projectScope);
+                    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+                    ChangeListManager changeListManager = ChangeListManager.getInstance(project);
+
+                    // 过滤出需要扫描的文件
+                    return allJavaFiles.stream()
+                            .filter(file -> fileIndex.isInContent(file)
+                                    && !fileIndex.isExcluded(file)
+                                    && !changeListManager.isIgnoredFile(file))
+                            .collect(Collectors.toList());
+                });
 
                 int processedFiles = 0;
                 int totalFiles = javaFiles.size();
