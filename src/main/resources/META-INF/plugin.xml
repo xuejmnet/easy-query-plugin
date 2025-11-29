@@ -350,22 +350,22 @@
             <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
-        <action id="com.easy.query.plugin.action.PreviewEditorSQLAutoParamAction"
-                class="com.easy.query.plugin.action.PreviewEditorSQLAutoParamAction" text="Code -> SQL(Auto)"
-                icon="/icons/eq.svg">
-            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
-            <add-to-group group-id="GenerateGroup" anchor="first"/>
-            <!-- 添加到编辑器弹出菜单 -->
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-        </action>
-        <action id="com.easy.query.plugin.action.PreviewEditorSQLManualParamAction"
-                class="com.easy.query.plugin.action.PreviewEditorSQLManualParamAction" text="Code -> SQL(Manual)"
-                icon="/icons/eq.svg">
-            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>
-            <add-to-group group-id="GenerateGroup" anchor="first"/>
-            <!-- 添加到编辑器弹出菜单 -->
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-        </action>
+<!--        <action id="com.easy.query.plugin.action.PreviewEditorSQLAutoParamAction"-->
+<!--                class="com.easy.query.plugin.action.PreviewEditorSQLAutoParamAction" text="Code -> SQL(Auto)"-->
+<!--                icon="/icons/eq.svg">-->
+<!--            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>-->
+<!--            <add-to-group group-id="GenerateGroup" anchor="first"/>-->
+<!--            &lt;!&ndash; 添加到编辑器弹出菜单 &ndash;&gt;-->
+<!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
+<!--        </action>-->
+<!--        <action id="com.easy.query.plugin.action.PreviewEditorSQLManualParamAction"-->
+<!--                class="com.easy.query.plugin.action.PreviewEditorSQLManualParamAction" text="Code -> SQL(Manual)"-->
+<!--                icon="/icons/eq.svg">-->
+<!--            <add-to-group group-id="com.easy.query.plugin.ToolGroup" anchor="last"/>-->
+<!--            <add-to-group group-id="GenerateGroup" anchor="first"/>-->
+<!--            &lt;!&ndash; 添加到编辑器弹出菜单 &ndash;&gt;-->
+<!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
+<!--        </action>-->
 
         <!--        MyBatisPlusToEasyQueryAction-->
         <action id="com.easy.query.plugin.action.MyBatisPlusToEasyQueryAction"

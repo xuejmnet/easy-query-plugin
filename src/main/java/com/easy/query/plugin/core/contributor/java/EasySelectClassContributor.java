@@ -20,12 +20,7 @@ public class EasySelectClassContributor extends EasyContributor {
 
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
-        String groupExpression = "new ClassProxy<>()";
-        if(blockCode){
-            return StrUtil.format("{ %s };",groupExpression);
-        }
-
-        return groupExpression;
+        return "Select.of()";
     }
 
     @Override
