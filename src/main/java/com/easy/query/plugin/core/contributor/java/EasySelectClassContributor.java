@@ -20,11 +20,20 @@ public class EasySelectClassContributor extends EasyContributor {
 
     @Override
     protected String getLambdaBody(Collection<QueryType> queries, String lambdaBody) {
-        return "Select.of()";
+        String groupExpression = "Select.of()";
+        if(blockCode){
+            return String.format("{ return %s; }",groupExpression);
+        }
+
+        return groupExpression;
     }
 
     @Override
     protected int realBackOffset(int backOffset) {
+        if(blockCode){
+            return backOffset-5;
+        }
+
         return backOffset-2;
     }
 
