@@ -2,6 +2,7 @@ package com.easy.query.plugin.core.inspection;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.easy.query.plugin.core.ResultWithError;
 import com.easy.query.plugin.core.config.ProjectSettings;
 import com.easy.query.plugin.core.entity.InspectionResult;
 import com.easy.query.plugin.core.util.*;
@@ -18,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.easy.query.plugin.core.reference.ReferenceSegementUtils.findSegmentTargetElement;
 
 /**
  * DTO 字段检测<br/>
@@ -99,6 +102,22 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 LocalQuickFix[] localQuickFixes = new LocalQuickFix[]{quickFixMethod1};
                                 holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段在为[@NavigateFlat]注解[@Column]无法生效", ProblemHighlightType.WARNING, localQuickFixes);
                                 continue;
+                            }
+                            //判断pathAlias内容是否符合引用规则
+
+                            String pathAlias = PsiUtil.getPsiAnnotationValueIfEmpty(annoNavigateFlat, "pathAlias", "");
+                            if (StrUtil.isBlank(pathAlias)) {
+                                LocalQuickFix[] localQuickFixes = new LocalQuickFix[]{};
+                                holder.registerProblem(dtoField, INSPECTION_PREFIX + "无法找到对应的ptahAlias引用", ProblemHighlightType.ERROR, localQuickFixes);
+                                continue;
+                            } else {
+                                String[] pathSegments = pathAlias.split("\\.");
+                                ResultWithError<PsiElement> resultWithError = findSegmentTargetElement(project, dtoField, pathSegments);
+                                if (resultWithError.error != null) {
+                                    LocalQuickFix[] localQuickFixes = new LocalQuickFix[]{};
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "无法找到对应的ptahAlias引用:" + resultWithError.error, ProblemHighlightType.ERROR, localQuickFixes);
+                                    continue;
+                                }
                             }
 
                         }

@@ -55,7 +55,7 @@ public class BaseEasyQueryApiCompletionContributor {
             new EasySelectTupleContributor("select", "selectTuple", false),
             new EasySelectClassContributor("select", "select_class", false),
             new EasySelectClassContributor("select", "select_class_code_block", true),
-            new EasyInclude2Contributor("include", "include2"),
+            new EasyInclude2Contributor("include2", "include2"),
             new EasySelectContributor("having", "having", false),
             new EasySelectContributor("having", "having_code_block", true),
             new EasySelectContributor("selectColumn", "selectColumn", false),
