@@ -431,6 +431,15 @@
             <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
 
+        <!-- refactor menu -->
+        <action id="com.easy.query.plugin.action.EasyQueryRenameAction"
+                icon="/icons/eq.svg"
+                class="com.easy.query.plugin.action.EasyQueryRenameAction"
+                text="RenameEasyQuery">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
+
+
     </actions>
     <!--    <project-components>-->
     <!--        <component>-->
@@ -445,6 +454,6 @@
         
         <!-- For older versions and as a fallback -->
         <postStartupActivity implementation="com.easy.query.plugin.components.MyStartupActivity"/>
-        
+
     </extensions>
 </idea-plugin>
