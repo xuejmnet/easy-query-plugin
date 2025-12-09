@@ -20,3 +20,7 @@ lambda.tip=
 
 # dto配置忽略json
 dto.columns.ignores=
+
+
+# 数据库生成配置文件
+sql.generate =
