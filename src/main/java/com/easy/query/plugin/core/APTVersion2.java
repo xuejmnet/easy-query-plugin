@@ -205,7 +205,7 @@ public class APTVersion2 {
             context.put("aptFileCompiler", aptFileCompiler);
             String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
             PsiFile psiProxyFile = VelocityUtils.render(project, context, Template.getTemplateContent("AptTemplate2" + suffix), proxyEntityName + suffix);
-            CodeStyleManager.getInstance(project).reformat(psiProxyFile);
+//            CodeStyleManager.getInstance(project).reformat(psiProxyFile);
             psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
         });
     }

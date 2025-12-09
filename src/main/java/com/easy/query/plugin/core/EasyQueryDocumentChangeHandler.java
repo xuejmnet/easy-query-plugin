@@ -185,6 +185,7 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                             if (ObjectUtil.isNotNull(file)) {
                                 //允许覆盖
                                 if (generateFile.isOverrideWrite()) {
+                                    CodeStyleManager.getInstance(project).reformat(tmpFile);
                                     String text = tmpFile.getText();
                                     Document document = file.getViewProvider().getDocument();
                                     if (!Objects.equals(document.getText(), text)) {

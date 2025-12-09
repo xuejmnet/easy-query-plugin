@@ -203,7 +203,7 @@ public class APTVersion2_9 {
             context.put("aptFileCompiler", aptFileCompiler);
             String suffix = fileType == FileTypeEnum.Kotlin ? ".kt" : ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
             PsiFile psiProxyFile = VelocityUtils.render(project, context, Template.getTemplateContent("AptTemplate2_9" + suffix), proxyEntityName + suffix);
-            CodeStyleManager.getInstance(project).reformat(psiProxyFile);
+//            CodeStyleManager.getInstance(project).reformat(psiProxyFile);
             psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
         });
     }
