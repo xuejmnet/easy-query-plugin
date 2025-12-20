@@ -99,8 +99,8 @@ public class PsiJavaFieldUtil {
         }
 
 
-        PsiAnnotation psiAnnoColumnIgnore = dtoField.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
-        PsiAnnotation psiAnnoNavigateFlat = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateFlat");
+//        PsiAnnotation psiAnnoColumnIgnore = dtoField.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
+//        PsiAnnotation psiAnnoNavigateFlat = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateFlat");
 
 
         return dtoField;
