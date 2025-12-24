@@ -70,6 +70,8 @@ public class CreateStructDTOAction extends AnAction {
 //                    }
                 }
             }
+        }else{
+            Messages.showErrorDialog(project, "请选择对应的包而不是类或者其他地方右键", "错误提示");
         }
 //        String fullClassName = "org.example.entity.CityEntity";
 //        PsiClass psiClass = ClassUtil.findClass(project,fullClassName,true);
