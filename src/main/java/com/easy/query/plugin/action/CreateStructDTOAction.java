@@ -61,21 +61,10 @@ public class CreateStructDTOAction extends AnAction {
                         entitySelectDialog.setVisible(true);
                     });
 
-//                    StructDTOContext structDTOContext = new StructDTOContext(project,path, packageName, module,entityProps);
-//                    structDTOContext.getImports().addAll(imports);
-////        new TestCaseConfigUI().showUI(project);
-//                    StructDTODialog structDTODialog = new StructDTODialog(structDTOContext,classNodes);
-////                    try (AccessToken accessToken = ThreadContext.resetThreadContext()) {
-//                        structDTODialog.setVisible(true);
-//                    }
                 }
             }
         }else{
             Messages.showErrorDialog(project, "请选择对应的包而不是类或者其他地方右键", "错误提示");
         }
-//        String fullClassName = "org.example.entity.CityEntity";
-//        PsiClass psiClass = ClassUtil.findClass(project,fullClassName,true);
-//        String entityName = psiClass.getName();
-//        String entityFullName = psiClass.getQualifiedName();
     }
 }

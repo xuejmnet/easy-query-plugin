@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -88,6 +89,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                 Project project = currentClass.getProject();
 
+                PsiField extraAutoIncludeConfigure = Arrays.stream(dtoFields).filter(f -> f.hasModifierProperty(PsiModifier.STATIC) && Objects.equals("EXTRA_AUTO_INCLUDE_CONFIGURE", f.getName())).findFirst().orElse(null);
                 for (PsiField dtoField : dtoFields) {
                     boolean ignoreField = PsiJavaFieldUtil.ignoreField(dtoField);
                     if (ignoreField) {
@@ -165,10 +167,18 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                             }
                         }
 
+                        if (extraAutoIncludeConfigure != null) {
+
+                            boolean usedInAs = isUsedInAs(extraAutoIncludeConfigure, dtoField.getName());
+                            if(usedInAs){
+                                continue;
+                            }
+                        }
+
 
                         // 这个字段不在实体类中, 需要警告
 
-                        holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在", ProblemHighlightType.WARNING, localQuickFixes.toArray(new LocalQuickFix[0]));
+                        holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段在实体类 " + linkClass.getQualifiedName() + " 中不存在,且未在EXTRA_AUTO_INCLUDE_CONFIGURE中被as别名使用", ProblemHighlightType.WARNING, localQuickFixes.toArray(new LocalQuickFix[0]));
                         continue;
                     }
                     //endregion
@@ -329,5 +339,60 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 psiField.delete();
             }
         };
+    }
+
+    private static boolean isUsedInAs(
+        @NotNull PsiField extraConfigField,
+        @NotNull String dtoFieldName
+    ) {
+        PsiExpression initializer = extraConfigField.getInitializer();
+        if (initializer == null) return false;
+
+        AtomicBoolean used = new AtomicBoolean(false);
+
+        initializer.accept(new JavaRecursiveElementWalkingVisitor() {
+
+            @Override
+            public void visitMethodCallExpression(PsiMethodCallExpression call) {
+                super.visitMethodCallExpression(call);
+
+                // ① 只认 as(...)
+                if (!"as".equals(call.getMethodExpression().getReferenceName())) {
+                    return;
+                }
+
+                PsiExpression[] args = call.getArgumentList().getExpressions();
+                if (args.length != 1) return;
+
+                PsiExpression arg = args[0];
+
+                // ② .as("userCount")
+                if (arg instanceof PsiLiteralExpression) {
+                    Object v = ((PsiLiteralExpression) arg).getValue();
+                    if (dtoFieldName.equals(v)) {
+                        used.set(true);
+                    }
+                }
+
+                // ③ .as(Fields.userCount)
+                if (arg instanceof PsiReferenceExpression) {
+                    PsiElement resolved = ((PsiReferenceExpression) arg).resolve();
+                    if (resolved instanceof PsiField) {
+                        PsiField refField = (PsiField) resolved;
+
+                        // 取常量真实值
+                        PsiExpression init = refField.getInitializer();
+                        if (init instanceof PsiLiteralExpression) {
+                            Object v = ((PsiLiteralExpression) init).getValue();
+                            if (dtoFieldName.equals(v)) {
+                                used.set(true);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return used.get();
     }
 }
