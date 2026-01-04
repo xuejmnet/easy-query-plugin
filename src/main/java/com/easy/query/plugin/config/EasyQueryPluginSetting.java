@@ -92,7 +92,7 @@ public class EasyQueryPluginSetting {
     }
 
     public void saveLambdaTip(String lambdaTip, Project project) {
-        saveConfig(EasyQueryProjectSettingKey.SQL_GENERATE, lambdaTip == null ? "" : lambdaTip, project);
+        saveConfig(EasyQueryProjectSettingKey.LAMBDA_TIP, lambdaTip == null ? "" : lambdaTip, project);
     }
 
     public @NotNull String getDTOColumnsIgnore() {
