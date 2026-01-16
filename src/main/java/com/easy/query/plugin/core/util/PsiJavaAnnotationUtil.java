@@ -6,7 +6,6 @@ import com.google.common.collect.Sets;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 import groovy.lang.Tuple3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,7 +130,7 @@ public class PsiJavaAnnotationUtil {
      * @return 注解
      */
     public static PsiAnnotation createAnnotation(PsiElementFactory elementFactory, PsiElement relatedElement, String annoName, Map<String, PsiNameValuePair> attrMap) {
-        String attrText = attrMap.values().stream().map(attr -> ((PsiNameValuePairImpl) attr).getText())
+        String attrText = attrMap.values().stream().map(attr -> (attr).getText())
                 .collect(Collectors.joining(", "));
         // 再拼成 @Navigate 注解文本
         String replacement = "@"+ annoName +"(" + attrText + ")";
