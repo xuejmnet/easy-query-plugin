@@ -96,7 +96,14 @@ public class EasyQueryElementUtil {
         // 属性不一致
 
 // 实体上有@Column 注解, 那么应该精简一下, 看看是否有必要更新
-        PsiAnnotation dtoAnnoColumnNew = (PsiAnnotation) entityAnnoColumn.copy();
+
+        PsiAnnotation dtoAnnoColumnNew =
+            PsiJavaAnnotationUtil.createAnnotation(
+                project,
+                dtoField,
+                "Column",
+                newAttrMap
+            );
         PsiAnnotationParameterList parameterList = dtoAnnoColumnNew.getParameterList();
         PsiNameValuePair[] attributes = parameterList.getAttributes();
         int length = attributes.length;

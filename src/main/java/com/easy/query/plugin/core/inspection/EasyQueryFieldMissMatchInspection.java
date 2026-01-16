@@ -334,7 +334,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                 }
                 List<String> lines = StrUtil.split(psiField.getText(), "\n");
                 // 生成注释
-                lines.stream().map(line -> "// " + line).map(comment -> elementFactory.createCommentFromText(comment, null)).collect(Collectors.toList())
+                lines.stream().filter(line -> StrUtil.isNotBlank(line)).map(line -> "// " + line).map(comment -> elementFactory.createCommentFromText(comment, null)).collect(Collectors.toList())
                     .forEach(comment -> psiField.addBefore(comment, psiField));
                 psiField.delete();
             }
