@@ -7,6 +7,7 @@ import com.easy.query.plugin.core.entity.*;
 import com.easy.query.plugin.core.entity.struct.RenderStructDTOContext;
 import com.easy.query.plugin.core.util.*;
 import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
@@ -381,14 +382,20 @@ public class RenderEasyQueryTemplate {
                         } catch (IncorrectOperationException e) {
                             if (e.getMessage().contains("already exists")) {
                                 PsiFile file = (PsiFile) psiFile;
-                                Messages.showErrorDialog("文件已存在：" + file.getName(), "错误");
+                                ApplicationManager.getApplication().invokeLater(() -> {
+                                    Messages.showErrorDialog("文件已存在：" + file.getName(), "错误");
+                                });
                                 valueHolder.setValue(false);
                             } else {
-                                Messages.showErrorDialog(" 操作错误：" + e.getMessage(), "错误");
+                                ApplicationManager.getApplication().invokeLater(() -> {
+                                    Messages.showErrorDialog(" 操作错误：" + e.getMessage(), "错误");
+                                });
                                 valueHolder.setValue(false);
                             }
                         } catch (Exception e) {
-                            Messages.showErrorDialog("索引未更新:" + e.getMessage(), "错误");
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                Messages.showErrorDialog("索引未更新:" + e.getMessage(), "错误");
+                            });
                             valueHolder.setValue(false);
                         }
                     }
