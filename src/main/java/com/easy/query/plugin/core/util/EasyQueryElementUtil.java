@@ -213,6 +213,7 @@ public class EasyQueryElementUtil {
         ignoreKeys.add("renameFrom"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
         ignoreKeys.add("exist"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
         ignoreKeys.add("autoSelect"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        ignoreKeys.add("length"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
 
         return AnnoAttrCompareResult.newCompare(entityAnnoColumnAttrMap, dtoAnnoColumnAttrMap)
                 .withEntityOnlyKeysPermit(entityOnlyKeysPermit)

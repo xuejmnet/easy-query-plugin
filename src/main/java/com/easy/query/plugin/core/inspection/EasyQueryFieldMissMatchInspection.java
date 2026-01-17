@@ -170,7 +170,7 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         if (extraAutoIncludeConfigure != null) {
 
                             boolean usedInAs = isUsedInAs(extraAutoIncludeConfigure, dtoField.getName());
-                            if(usedInAs){
+                            if (usedInAs) {
                                 continue;
                             }
                         }
@@ -186,6 +186,8 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
 
                     // 现在是有这个字段, 需要比对类型
                     PsiField entityField = entityFieldMap.get(dtoField.getName());
+                    // 1. 抑制警告， 在字段上添加 @SuppressWarnings("EasyQueryFieldMissMatch")
+                    @NotNull LocalQuickFix quickFixMethodFieldMissMatch = createQuickFixForSuppressWarningField("EasyQueryFieldMissMatch");
 
                     //region 字段名称匹配, 比较类型
                     if (dtoField.getType() instanceof PsiClassReferenceType && entityField.getType() instanceof PsiClassReferenceType) {
@@ -196,7 +198,8 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                         if (!StrUtil.equals(dtoTypeRefName, entityTypeRefName)) {
                             if (StrUtil.startWithAny(dtoTypeRefName, "java.")) { // 常见包下面的视作基础类型
                                 // 类型不一致
-                                holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR);
+                                LocalQuickFix[] localQuickFixes = {quickFixMethodFieldMissMatch};
+                                holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR, localQuickFixes);
                                 continue;
 
                             } else {
@@ -205,13 +208,15 @@ public class EasyQueryFieldMissMatchInspection extends AbstractBaseJavaLocalInsp
                                 PsiClass linkPsiClass = PsiJavaClassUtil.getLinkPsiClass(psiClass);
                                 if (Objects.isNull(linkPsiClass)) {
                                     // 没有找到对应的类, 无法比对， 视为不一致
-                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR);
+                                    LocalQuickFix[] localQuickFixes = {quickFixMethodFieldMissMatch};
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR, localQuickFixes);
                                     continue;
                                 }
                                 String linkPsiClassName = linkPsiClass.getQualifiedName();
                                 if (!StrUtil.equals(linkPsiClassName, entityTypeRefName)) {
                                     // 类型不一致
-                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR);
+                                    LocalQuickFix[] localQuickFixes = {quickFixMethodFieldMissMatch};
+                                    holder.registerProblem(dtoField, INSPECTION_PREFIX + "当前字段类型和实体类中不一致,应为 " + entityTypeRefName + " 或其生成的DTO需添加{@link" + entityTypeRefName + "}", ProblemHighlightType.ERROR, localQuickFixes);
                                     continue;
                                 }
                             }
