@@ -39,7 +39,7 @@ public class JavadocCompletion extends CompletionContributor {
                 ) {
                     // 添加 "link" 的补全建议
                     result.addElement(
-                        LookupElementBuilder.create("link")
+                        LookupElementBuilder.create("link_")
                             .withInsertHandler((ctx, item) -> {
                                 // 获取当前输入的文本范围（包括前面的 "@"）
                                 int startOffset = ctx.getStartOffset() - 1; // 包含 "@"

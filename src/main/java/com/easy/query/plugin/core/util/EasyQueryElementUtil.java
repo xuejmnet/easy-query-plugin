@@ -204,6 +204,14 @@ public class EasyQueryElementUtil {
         }
         dtoRemoveKeys.add("sqlExpression"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
         dtoRemoveKeys.add("sqlConversion"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("nullable"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("comment"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("dbDefault"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("dbType"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("renameFrom"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("exist"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("autoSelect"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
+        dtoRemoveKeys.add("length"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
 
         List<String> ignoreKeys = Lists.newArrayList();
         ignoreKeys.add("nullable"); // sql表达式 在实体上就能工作， 没必要拷贝到DTO上
