@@ -163,11 +163,12 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                     log.warn("psiJavaFile.getText():[" + psiFile.getText() + "],psiJavaFile.getClasses() is empty");
                     continue;
                 }
-                PsiClass mainClass = classes[0];
-                createAptFile0(psiFile, mainClass, project, psiDirectoryMap, moduleDirPath, config, moduleForFile, oldFile, allCompileFrom);
-                for (PsiClass innerClass : mainClass.getInnerClasses()) {
-                    if (innerClass.hasModifierProperty(PsiModifier.PUBLIC) && innerClass.hasModifierProperty(PsiModifier.STATIC)) {
-                        createAptFile0(psiFile, innerClass, project, psiDirectoryMap, moduleDirPath, config, moduleForFile, oldFile, allCompileFrom);
+                for (PsiClass mainClass : classes) {
+                    createAptFile0(psiFile, mainClass, project, psiDirectoryMap, moduleDirPath, config, moduleForFile, oldFile, allCompileFrom);
+                    for (PsiClass innerClass : mainClass.getInnerClasses()) {
+                        if (innerClass.hasModifierProperty(PsiModifier.PUBLIC) && innerClass.hasModifierProperty(PsiModifier.STATIC)) {
+                            createAptFile0(psiFile, innerClass, project, psiDirectoryMap, moduleDirPath, config, moduleForFile, oldFile, allCompileFrom);
+                        }
                     }
                 }
 
