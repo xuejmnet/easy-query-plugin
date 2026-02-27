@@ -8,6 +8,8 @@ import com.easy.query.plugin.core.util.PsiJavaFileUtil;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -38,13 +40,19 @@ public class CompileAllAction extends AnAction {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(false);
+                
+                // 0. 首先等待索引准备好，避免 createAptFile 内部触发 runWhenSmart 回调
+                if (DumbService.getInstance(project).isDumb()) {
+                    indicator.setText("正在等待索引准备...");
+                    DumbService.getInstance(project).waitForSmartMode();
+                }
 
-                // 1. 获取所有需要编译的类
+                // 1. 获取所有需要编译的类 (需要在 ReadAction 中执行)
                 indicator.setText("正在扫描需要编译的实体类...");
-                Collection<PsiClass> annotationPsiProxyClass = PsiJavaFileUtil.getAnnotationPsiClass(project, 
-                    "com.easy.query.core.annotation.EntityProxy");
-                Collection<PsiClass> annotationPsiFileProxyClass = PsiJavaFileUtil.getAnnotationPsiClass(project, 
-                    "com.easy.query.core.annotation.EntityFileProxy");
+                Collection<PsiClass> annotationPsiProxyClass = ReadAction.compute(() -> 
+                    PsiJavaFileUtil.getAnnotationPsiClass(project, "com.easy.query.core.annotation.EntityProxy"));
+                Collection<PsiClass> annotationPsiFileProxyClass = ReadAction.compute(() -> 
+                    PsiJavaFileUtil.getAnnotationPsiClass(project, "com.easy.query.core.annotation.EntityFileProxy"));
                 
                 List<PsiClass> annotationPsiClass = new ArrayList<>();
                 annotationPsiClass.addAll(annotationPsiProxyClass);
@@ -55,8 +63,6 @@ public class CompileAllAction extends AnAction {
                 if (totalFiles == 0) {
                     return;
                 }
-
-                indicator.setText(String.format("找到 %d 个需要编译的实体类", totalFiles));
 
                 // 2. 分批处理文件，每批处理一部分，更新进度
                 List<VirtualFile> virtualFiles = new ArrayList<>();
@@ -70,11 +76,20 @@ public class CompileAllAction extends AnAction {
                     
                     processedFiles++;
                     indicator.setFraction((double) processedFiles / totalFiles);
-                    indicator.setText2(String.format("正在处理: %s (%d/%d)", 
-                        psiClass.getName(), processedFiles, totalFiles));
-
-                    VirtualFile virtualFile = psiClass.getContainingFile()
-                            .getVirtualFile();
+                    
+                    // 在 ReadAction 中获取 VirtualFile
+                    final PsiClass currentPsiClass = psiClass;
+                    final int currentProcessed = processedFiles;
+                    VirtualFile virtualFile = ReadAction.compute(() -> {
+                        String className = currentPsiClass.getName();
+                        // 主标题显示总体进度：已处理/总数
+                        indicator.setText(String.format("EasyQuery 全量编译 (%d/%d)", 
+                            currentProcessed, totalFiles));
+                        // 副标题显示当前处理的类名
+                        indicator.setText2("正在处理: " + className);
+                        return currentPsiClass.getContainingFile().getVirtualFile();
+                    });
+                    
                     if (virtualFile != null) {
                         virtualFile.putUserData(EasyQueryDocumentChangeHandler.CHANGE, true);
                         virtualFiles.add(virtualFile);
@@ -94,15 +109,26 @@ public class CompileAllAction extends AnAction {
                     processBatch(virtualFiles, project);
                 }
 
-                // 3. 更新 generated sources root
+                // 3. 等待所有后台任务完成（createAptFile 内部使用了 DumbService.runWhenSmart）
                 if (!indicator.isCanceled()) {
-                    indicator.setText("正在更新生成的源代码根目录...");
+                    indicator.setText(String.format("EasyQuery 全量编译 (%d/%d) - 等待处理完成...", 
+                        processedFiles, totalFiles));
+                    indicator.setText2("");
+                    // 确保所有后台任务完成
+                    DumbService.getInstance(project).waitForSmartMode();
+                }
+                
+                // 4. 更新 generated sources root
+                if (!indicator.isCanceled()) {
+                    indicator.setText(String.format("EasyQuery 全量编译 (%d/%d) - 正在更新源代码根目录...", 
+                        processedFiles, totalFiles));
                     ProjectStartupHelper.updateGeneratedSourceRoot(project);
                 }
 
-                // 4. 清除缓存
+                // 5. 清除缓存
                 if (!indicator.isCanceled()) {
-                    indicator.setText("正在清除缓存...");
+                    indicator.setText(String.format("EasyQuery 全量编译 (%d/%d) - 正在清除缓存...", 
+                        processedFiles, totalFiles));
                     EasyQueryConfigManager.invalidateProjectCache(project);
                 }
             }
@@ -111,6 +137,7 @@ public class CompileAllAction extends AnAction {
                 if (virtualFiles.isEmpty()) {
                     return;
                 }
+                // 索引已经在 run() 开始时等待准备好了，直接调用即可
                 EasyQueryDocumentChangeHandler.createAptFile(
                     new ArrayList<>(virtualFiles), project, true);
             }
@@ -143,15 +170,7 @@ public class CompileAllAction extends AnAction {
 
             @Override
             public void onThrowable(@NotNull Throwable error) {
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    if (project.isDisposed()) {
-                        return;
-                    }
-                    NotificationUtils.notifyError(
-                        "编译过程中发生错误: " + error.getMessage(), 
-                        "EasyQuery", 
-                        project);
-                });
+
             }
         });
     }
