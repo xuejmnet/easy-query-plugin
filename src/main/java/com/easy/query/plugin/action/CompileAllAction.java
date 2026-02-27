@@ -137,9 +137,11 @@ public class CompileAllAction extends AnAction {
                 if (virtualFiles.isEmpty()) {
                     return;
                 }
-                // 索引已经在 run() 开始时等待准备好了，直接调用即可
-                EasyQueryDocumentChangeHandler.createAptFile(
-                    new ArrayList<>(virtualFiles), project, true);
+                // createAptFile 内部需要 Read Access
+                ReadAction.run(() -> {
+                    EasyQueryDocumentChangeHandler.createAptFile(
+                        new ArrayList<>(virtualFiles), project, true);
+                });
             }
 
             @Override
