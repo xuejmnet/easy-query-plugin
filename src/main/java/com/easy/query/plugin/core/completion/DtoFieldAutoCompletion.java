@@ -72,6 +72,7 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
         Map<String, PsiField> entityFieldMap = Arrays.stream(entityFields).filter(field -> !PsiUtil.fieldIsStatic(field)).collect(Collectors.toMap(o -> o.getName(), o -> o, (k1, k2) -> k2));
         String dtoSchema = PsiJavaClassUtil.getDtoSchema(topLevelDtoClass);
 
+        boolean hasAtData = topLevelDtoClass != null && (topLevelDtoClass.getAnnotation("lombok.Data") != null);
 
         boolean appendAllFields = false;
         // 找到 psiFields 不在 dtoFields 中的字段
@@ -132,6 +133,10 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
                                 fieldWithInternalClass.append(newLine);
                                 fieldWithInternalClass.append("**/");
                                 fieldWithInternalClass.append(newLine);
+                                if(hasAtData){
+                                    fieldWithInternalClass.append("@Data");
+                                    fieldWithInternalClass.append(newLine);
+                                }
                                 fieldWithInternalClass.append("public static class ").append(className).append(" {");
                                 fieldWithInternalClass.append(newLine);
                                 fieldWithInternalClass.append("}");
