@@ -22,6 +22,7 @@ import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.VelocityUtils;
 import com.easy.query.plugin.core.util.VirtualFileUtils;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
@@ -310,23 +311,26 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             return false; // 在索引未准备好时返回false，稍后会重试
         }
 
-        PsiManager psiManager = PsiManager.getInstance(project);
-        PsiFile psiFile = psiManager.findFile(currentFile);
-        // 支持java和kotlin
-        if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {
-            return false;
-        }
-        String text = psiFile.getText();
-//        Set<String> importSet = new HashSet<>();
-//        if (psiFile instanceof KtFile) {
-//            KtFile ktFile = (KtFile) psiFile;
-//            importSet = KtFileUtil.getImportSet(ktFile);
-//        }
-//        if (psiFile instanceof PsiJavaFile) {
-//            PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
-//            importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
-//        }
-        return text.contains("com.easy.query.core.annotation.EntityProxy") || text.contains("com.easy.query.core.annotation.*") || text.contains("com.easy.query.core.annotation.EntityFileProxy");
+        // 使用 ReadAction 包裹 PSI 访问，以兼容 IntelliJ IDEA 2026.1 的线程访问限制
+        return ReadAction.compute(() -> {
+            PsiManager psiManager = PsiManager.getInstance(project);
+            PsiFile psiFile = psiManager.findFile(currentFile);
+            // 支持java和kotlin
+            if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {
+                return false;
+            }
+            String text = psiFile.getText();
+    //        Set<String> importSet = new HashSet<>();
+    //        if (psiFile instanceof KtFile) {
+    //            KtFile ktFile = (KtFile) psiFile;
+    //            importSet = KtFileUtil.getImportSet(ktFile);
+    //        }
+    //        if (psiFile instanceof PsiJavaFile) {
+    //            PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
+    //            importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
+    //        }
+            return text.contains("com.easy.query.core.annotation.EntityProxy") || text.contains("com.easy.query.core.annotation.*") || text.contains("com.easy.query.core.annotation.EntityFileProxy");
+        });
     }
 
     @Override
