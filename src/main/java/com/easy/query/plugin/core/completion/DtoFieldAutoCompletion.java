@@ -81,80 +81,70 @@ public class DtoFieldAutoCompletion extends CompletionContributor {
             PsiField entityFieldRaw = entityFieldKv.getValue();
             if (!dtoFieldNameSet.contains(fieldName)) {
 
-                LookupElement lookupElementWithoutEq = PrioritizedLookupElement.withPriority(
-                    LookupElementBuilder.create(entityFieldRaw.getName())
-                        .withTypeText(entityFieldRaw.getType().getPresentableText())
-                        .withInsertHandler((context, item) -> {
 
-                            PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                            context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
-                        })
-                        .withIcon(Icons.EQ),
-                    400d);
-                result.addElement(lookupElementWithoutEq);
-                String psiFieldComment = PsiUtil.getPsiFieldOnlyComment(entityFieldRaw);
-                String shortComment = StrUtil.subSufByLength(psiFieldComment, 15);
-                // 再添加一个eq:开头的, 进行索引
-                LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
-                    LookupElementBuilder.create("eq实体字段:" + entityFieldRaw.getName() + " " + shortComment)
-                        .withTypeText(entityFieldRaw.getType().getPresentableText())
-                        .withInsertHandler((context, item) -> {
-                            PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                            context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
-                        })
-                        .withIcon(Icons.EQ),
-                    400d);
-                result.addElement(lookupElementWithEq);
-                PsiAnnotation navigateAnnotation = entityFieldRaw.getAnnotation("com.easy.query.core.annotation.Navigate");
-                if (navigateAnnotation != null) {
-
-                    // 再添加一个eq:开头的, 进行索引
-                    LookupElement lookupElementWithEqInternalClass = PrioritizedLookupElement.withPriority(
-                        LookupElementBuilder.create("eq实体字段InternalClass:" + entityFieldRaw.getName() + " " + shortComment)
+                    LookupElement lookupElementWithoutEq = PrioritizedLookupElement.withPriority(
+                        LookupElementBuilder.create(entityFieldRaw.getName())
                             .withTypeText(entityFieldRaw.getType().getPresentableText())
                             .withInsertHandler((context, item) -> {
+
                                 PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
-                                String text = dtoField.getText();
-//                                String field = "private "+StrUtil.subAfter(text, "private ", true);
-                                String className = "Internal" + StrUtil.upperFirst(entityFieldRaw.getName());
-                                // 移除dtoName 后面的 List / Set / Map / Array
-                                className = ReUtil.replaceAll(className, "(List|Set|Map|Array)$", "");
-
-                                text = PsiUtil.replaceFieldType(text, className);
-
-                                StringBuilder fieldWithInternalClass = new StringBuilder();
-                                String newLine = IdeaUtil.lineSeparator();
-                                String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(entityFieldRaw, true);
-                                fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append("/**");
-                                fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append("* {@link ").append(psiFieldPropertyType).append("}");
-                                fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append("**/");
-                                fieldWithInternalClass.append(newLine);
-                                if(hasAtData){
-                                    fieldWithInternalClass.append("@Data");
-                                    fieldWithInternalClass.append(newLine);
-                                }
-                                fieldWithInternalClass.append("public static class ").append(className).append(" {");
-                                fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append("}");
-                                fieldWithInternalClass.append(newLine);
-                                fieldWithInternalClass.append("}");
-                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), text);
-                                String text1 = context.getDocument().getText();
-                                int i = text1.lastIndexOf("}");
-                                String newDocWithoutRightBrace = text1.substring(0, i);
-                                String newDoc = newDocWithoutRightBrace + fieldWithInternalClass.toString();
-                                context.getDocument().setText(newDoc);
-                                // 格式化代码
-                                PsiClass psiClass = getPsiClass(currentPsiClass);
+                                context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
                             })
                             .withIcon(Icons.EQ),
                         400d);
-                    result.addElement(lookupElementWithEqInternalClass);
-                }
+                    result.addElement(lookupElementWithoutEq);
+                    String psiFieldComment = PsiUtil.getPsiFieldOnlyComment(entityFieldRaw);
+                    String shortComment = StrUtil.subSufByLength(psiFieldComment, 15);
+                    // 再添加一个eq:开头的, 进行索引
+                    LookupElement lookupElementWithEq = PrioritizedLookupElement.withPriority(
+                        LookupElementBuilder.create("eq实体字段:" + entityFieldRaw.getName() + " " + shortComment)
+                            .withTypeText(entityFieldRaw.getType().getPresentableText())
+                            .withInsertHandler((context, item) -> {
+                                PsiAnnotation navigateAnnotation = entityFieldRaw.getAnnotation("com.easy.query.core.annotation.Navigate");
+                                if(navigateAnnotation==null){
+                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), dtoField.getText());
+                                }else{
+                                    PsiField dtoField = PsiJavaFieldUtil.copyAndPureFieldBySchema(entityFieldRaw, dtoSchema);
+                                    String text = dtoField.getText();
+//                                String field = "private "+StrUtil.subAfter(text, "private ", true);
+                                    String className = "Internal" + StrUtil.upperFirst(entityFieldRaw.getName());
+                                    // 移除dtoName 后面的 List / Set / Map / Array
+                                    className = ReUtil.replaceAll(className, "(List|Set|Map|Array)$", "");
+
+                                    text = PsiUtil.replaceFieldType(text, className);
+
+                                    StringBuilder fieldWithInternalClass = new StringBuilder();
+                                    String newLine = IdeaUtil.lineSeparator();
+                                    String psiFieldPropertyType = PsiUtil.getPsiFieldPropertyType(entityFieldRaw, true);
+                                    fieldWithInternalClass.append(newLine);
+                                    fieldWithInternalClass.append(newLine);
+                                    fieldWithInternalClass.append("/**");
+                                    fieldWithInternalClass.append(newLine);
+                                    fieldWithInternalClass.append("* {@link ").append(psiFieldPropertyType).append("}");
+                                    fieldWithInternalClass.append(newLine);
+                                    fieldWithInternalClass.append("**/");
+                                    fieldWithInternalClass.append(newLine);
+                                    if (hasAtData) {
+                                        fieldWithInternalClass.append("@Data");
+                                        fieldWithInternalClass.append(newLine);
+                                    }
+                                    fieldWithInternalClass.append("public static class ").append(className).append(" {");
+                                    fieldWithInternalClass.append(newLine);
+                                    fieldWithInternalClass.append("}");
+                                    fieldWithInternalClass.append(newLine);
+                                    fieldWithInternalClass.append("}");
+                                    context.getDocument().replaceString(context.getStartOffset(), context.getTailOffset(), text);
+                                    String text1 = context.getDocument().getText();
+                                    int i = text1.lastIndexOf("}");
+                                    String newDocWithoutRightBrace = text1.substring(0, i);
+                                    String newDoc = newDocWithoutRightBrace + fieldWithInternalClass.toString();
+                                    context.getDocument().setText(newDoc);
+                                }
+                            })
+                            .withIcon(Icons.EQ),
+                        400d);
+                    result.addElement(lookupElementWithEq);
 
                 appendAllFields = true;
             }
