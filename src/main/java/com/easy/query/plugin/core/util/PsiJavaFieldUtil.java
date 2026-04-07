@@ -8,6 +8,7 @@ import com.easy.query.plugin.core.entity.AnnoAttrCompareResult;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.impl.source.tree.java.PsiNameValuePairImpl;
 
 import java.util.List;
@@ -46,63 +47,65 @@ public class PsiJavaFieldUtil {
         // 项目设置, 是否保留DTO上的@Column注解 value 值
         Boolean featureKeepDtoColumnAnnotation = EasyQueryConfigUtil.getProjectSettingBool(project, EasyQueryProjectSettingKey.DTO_KEEP_ANNO_COLUMN, true);
 
-        // 先拷贝一份
-        PsiField dtoField = (PsiField) entityField.copy();
-
-        // 处理一下 @Navigate 注解
-        PsiAnnotation psiAnnoNavigate = dtoField.getAnnotation("com.easy.query.core.annotation.Navigate");
-        if (psiAnnoNavigate != null) {
-            // 这个注解只保留 value 属性
-            List<JvmAnnotationAttribute> attrList = psiAnnoNavigate.getAttributes().stream()
-                    .filter(attr -> cn.hutool.core.util.StrUtil.equalsAny(attr.getAttributeName(), "value"))
-                    .collect(Collectors.toList());
-            String attrText = attrList.stream().map(attr -> ((PsiNameValuePair) attr).getText())
-                    .collect(Collectors.joining(", "));
-            // 再拼成 @Navigate 注解文本
-            String replacement = "@Navigate(" + attrText + ")";
-            PsiElementFactory elementFactory = PsiElementFactory.getInstance(project);
-            PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
-            psiAnnoNavigate.replace(newAnno);
-
+        // 使用 PsiElementFactory 创建新字段，避免操作编译后的元素
+        PsiElementFactory elementFactory = PsiElementFactory.getInstance(project);
+        
+        // 构建字段文本（包含注释、注解、修饰符、类型和名称）
+        StringBuilder fieldTextBuilder = new StringBuilder();
+        
+        // 添加文档注释（如果存在）
+        PsiDocComment docComment = entityField.getDocComment();
+        if (docComment != null) {
+            fieldTextBuilder.append(docComment.getText()).append("\n");
         }
-
-        // 处理一下 @Column 注解
-        PsiAnnotation psiAnnoColumn = dtoField.getAnnotation("com.easy.query.core.annotation.Column");
-        if (psiAnnoColumn != null) {
-            // 这个注解移除主键相关信息
-
-            AnnoAttrCompareResult attrCompareResult = EasyQueryElementUtil.compareColumnAnnoAttr(psiAnnoColumn, null, featureKeepDtoColumnAnnotation);
-
-            Map<String, PsiNameValuePair> fixedAttrMap = attrCompareResult.getFixedAttrMap();
-
-
-            // 如果 attrList 为空， 则不添加这个注解了
-            if (MapUtil.isEmpty(fixedAttrMap)) {
-                psiAnnoColumn.delete();
-            } else {
-                // 如果只有 value , 则不需要保留, // FIXME @Column value 当前版本需要始终保留, 因为DTO 关联的是数据库字段, 不可删除, 等后续支持 关联属性再增加设置来匹配
-//                if (attrList.size() == 1 && cn.hutool.core.util.StrUtil.equalsAny(attrList.get(0).getAttributeName(), "value")) {
-//                    psiAnnoColumn.delete();
-//                }else{
-                String attrText = fixedAttrMap.values().stream().map(attr -> attr.getText())
-                        .collect(Collectors.joining(", "));
-                // 再拼成 @Navigate 注解文本
-                String replacement = "@Column(" + attrText + ")";
-                PsiElementFactory elementFactory = PsiElementFactory.getInstance(project);
-                PsiAnnotation newAnno = elementFactory.createAnnotationFromText(replacement, dtoField);
-                psiAnnoColumn.replace(newAnno);
-//                }
-
+        
+        // 处理注解
+        PsiAnnotation[] annotations = entityField.getAnnotations();
+        for (PsiAnnotation annotation : annotations) {
+            String qualifiedName = annotation.getQualifiedName();
+            if (qualifiedName == null) {
+                continue;
             }
-
-
+            
+            if ("com.easy.query.core.annotation.Navigate".equals(qualifiedName)) {
+                // 只保留 value 属性
+                List<JvmAnnotationAttribute> attrList = annotation.getAttributes().stream()
+                        .filter(attr -> cn.hutool.core.util.StrUtil.equalsAny(attr.getAttributeName(), "value"))
+                        .collect(Collectors.toList());
+                if (CollectionUtil.isEmpty(attrList)) {
+                    fieldTextBuilder.append("@Navigate\n");
+                } else {
+                    String attrText = attrList.stream().map(attr -> ((PsiNameValuePair) attr).getText())
+                            .collect(Collectors.joining(", "));
+                    fieldTextBuilder.append("@Navigate(").append(attrText).append(")\n");
+                }
+            } else if ("com.easy.query.core.annotation.Column".equals(qualifiedName)) {
+                // 处理 @Column 注解，移除主键相关信息
+                AnnoAttrCompareResult attrCompareResult = EasyQueryElementUtil.compareColumnAnnoAttr(annotation, null, featureKeepDtoColumnAnnotation);
+                Map<String, PsiNameValuePair> fixedAttrMap = attrCompareResult.getFixedAttrMap();
+                
+                if (MapUtil.isNotEmpty(fixedAttrMap)) {
+                    String attrText = fixedAttrMap.values().stream().map(attr -> attr.getText())
+                            .collect(Collectors.joining(", "));
+                    fieldTextBuilder.append("@Column(").append(attrText).append(")\n");
+                }
+                // 如果 attrMap 为空，则不添加该注解
+            } else {
+                // 其他注解直接保留
+                fieldTextBuilder.append(annotation.getText()).append("\n");
+            }
         }
-
-
-//        PsiAnnotation psiAnnoColumnIgnore = dtoField.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
-//        PsiAnnotation psiAnnoNavigateFlat = dtoField.getAnnotation("com.easy.query.core.annotation.NavigateFlat");
-
-
+        
+        // 添加修饰符、类型和字段名
+        String modifiers = entityField.getModifierList() != null ? entityField.getModifierList().getText() : "private";
+        String typeText = entityField.getType().getCanonicalText();
+        String fieldName = entityField.getName();
+        
+        fieldTextBuilder.append(modifiers).append(" ").append(typeText).append(" ").append(fieldName).append(";");
+        
+        // 使用 PsiElementFactory 创建新字段
+        PsiField dtoField = elementFactory.createFieldFromText(fieldTextBuilder.toString(), entityField.getContainingClass());
+        
         return dtoField;
     }
 
