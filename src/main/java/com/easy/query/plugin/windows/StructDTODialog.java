@@ -20,6 +20,7 @@ import com.easy.query.plugin.core.util.*;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
 import com.easy.query.plugin.windows.ui.dto2ui.JCheckBoxTree;
 import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.*;
@@ -256,6 +257,30 @@ public class StructDTODialog extends JDialog {
             }
         }
 
+
+        // 去掉 appNode，只把子节点传给 buildRenderContext
+        List<TreeClassNode> childNodeList = new ArrayList<>();
+        while (iterator.hasNext()) {
+            childNodeList.add(iterator.next());
+        }
+
+        final String finalEntityDTOName = entityDTOName;
+        RenderStructDTOContext renderContext = ReadAction.compute(() -> {
+            return buildRenderContext(finalEntityDTOName, appNode, app, structDTOApp, childNodeList);
+        });
+
+        boolean b = RenderEasyQueryTemplate.renderStructDTOType(renderContext);
+        if (!b) {
+            return;
+        }
+        NotificationUtils.notifySuccess("生成成功", project);
+        structDTOContext.setSuccess(true);
+        dispose();
+    }
+
+    private RenderStructDTOContext buildRenderContext(String entityDTOName, TreeClassNode appNode, ClassNode app, StructDTOApp structDTOApp, List<TreeClassNode> nodeList) {
+        Project project = structDTOContext.getProject();
+        Iterator<TreeClassNode> iterator = nodeList.iterator();
 
         RenderStructDTOContext renderContext = new RenderStructDTOContext(project,
             structDTOContext.getPath(), structDTOContext.getPackageName(), entityDTOName, structDTOApp,
@@ -549,13 +574,7 @@ public class StructDTODialog extends JDialog {
         renderContext.getEntities().sort(Comparator.comparing(PropAppendable::getPropName));
         renderContext.setAuthor(appSetting.getAuthor());
 
-        boolean b = RenderEasyQueryTemplate.renderStructDTOType(renderContext);
-        if (!b) {
-            return;
-        }
-        NotificationUtils.notifySuccess("生成成功", project);
-        structDTOContext.setSuccess(true);
-        dispose();
+        return renderContext;
     }
 
     private void onCancel() {

@@ -14,6 +14,7 @@ import com.easy.query.plugin.core.util.NotificationUtils;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.StructDTOUtil;
 import com.easy.query.plugin.core.validator.InputAnyValidatorImpl;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
@@ -203,7 +204,9 @@ public class EntitySelectDialog extends JDialog {
         Map<String, Map<String, ClassNode>> entityProps = new HashMap<>();
         List<ClassNode> classNodes = new ArrayList<>();
         LinkedHashSet<String> imports = new LinkedHashSet<>();
-        StructDTOUtil.parseClassList(deepMax, project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, new HashSet<>());
+        ReadAction.run(() -> {
+            StructDTOUtil.parseClassList(deepMax, project, entityName, psiClass, structDTOEntityContext.getEntityClass(), entityProps, classNodes, imports, new HashSet<>());
+        });
         StructDTOContext structDTOContext = new StructDTOContext(project, structDTOEntityContext.getPath(), structDTOEntityContext.getPackageName(), structDTOEntityContext.getModule(), entityProps);
         structDTOContext.getImports().addAll(imports);
 
