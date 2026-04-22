@@ -81,6 +81,9 @@ public class AptPropertyInfo {
     public String getPropertyTypeClass() {
         return propertyColumn.getPropertyTypeClass(includeProperty);
     }
+    public String getKtPropertyTypeClass() {
+        return propertyColumn.getKtPropertyTypeClass(includeProperty);
+    }
 
     public String getEntityName() {
         return entityName;
