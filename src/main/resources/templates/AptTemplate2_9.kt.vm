@@ -42,7 +42,7 @@ class ${aptFileCompiler.getEntityClassProxyName()} : AbstractProxyEntity<${aptFi
                 #else
                     #if(${property.isAnyType()})
                         fun ${property.getProxyPropertyName()}(): ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> {
-                            return ${property.getSqlColumnMethod()}("${property.getPropertyName()}",${property.getPropertyTypeClass()})
+                            return ${property.getSqlColumnMethod()}("${property.getPropertyName()}",${property.getKtPropertyTypeClass()})
                         }
                         val ${property.getProxyPropertyName()}: ${property.getSqlColumn()}<${aptFileCompiler.getEntityClassProxyName()},${property.getPropertyType()}> get() = ${property.getProxyPropertyName()}()
                     #else

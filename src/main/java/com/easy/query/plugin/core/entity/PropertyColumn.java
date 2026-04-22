@@ -17,6 +17,7 @@ public interface PropertyColumn {
     String getPropertyType();
 
     String getPropertyTypeClass(boolean includeProperty);
+    String getKtPropertyTypeClass(boolean includeProperty);
 
     String getImport();
 

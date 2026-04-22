@@ -75,6 +75,19 @@ public class PropertyColumn2Impl implements PropertyColumn {
     }
 
     @Override
+    public String getKtPropertyTypeClass(boolean includeProperty) {
+        if (!includeProperty) {
+            if (Objects.equals("SQLAnyTypeColumn", sqlColumnName)) {
+                return "__cast(Object::class.java)";
+            }
+        }
+        if(anyType!=null&&anyType){
+            return "__cast(Object::class.java)";
+        }
+        return propertyType + ".class";
+    }
+
+    @Override
     public String getImport() {
         return IMPORT_MAPPING.get(sqlColumnName);
     }
