@@ -1,5 +1,6 @@
 package com.easy.query.plugin.core.util;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.codeStyle.CodeStyleManager;
@@ -19,6 +20,7 @@ public class CodeReformatUtil {
      */
     public static PsiElement reformat(PsiElement psiElement) {
         Project project = psiElement.getProject();
-        return CodeStyleManager.getInstance(project).reformat(psiElement);
+//        return CodeStyleManager.getInstance(project).reformat(psiElement);
+        return ReadAction.compute(() -> CodeStyleManager.getInstance(project).reformat(psiElement));
     }
 }
