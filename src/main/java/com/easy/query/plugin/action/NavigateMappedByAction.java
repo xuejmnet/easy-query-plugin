@@ -127,18 +127,18 @@ public class NavigateMappedByAction extends AnAction {
 
                     MappedByDialog mappedByDialog = new MappedByDialog(targetNavigate, myFieldName -> {
 
-                        String navigateField = getNavigateField(navigateValue, className, myFieldName);
-                        PsiField psiField = elementFactory.createFieldFromText(navigateField, targetClass);
-                        PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(navigateAnnotation, targetClass);
-                        PsiModifierList modifierList = psiField.getModifierList();
-                        if (modifierList == null) {
-                            Messages.showErrorDialog(project, "无法获取字段PsiModifierList值", "错误提示");
-                            return;
-                        }
-                        // 3. 把注解添加到字段
-                        psiField.getModifierList().addBefore(annotationFromText, psiField.getModifierList().getFirstChild());
-
                         WriteCommandAction.runWriteCommandAction(project, () -> {
+                            String navigateField = getNavigateField(navigateValue, className, myFieldName);
+                            PsiField psiField = elementFactory.createFieldFromText(navigateField, targetClass);
+                            PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(navigateAnnotation, targetClass);
+                            PsiModifierList modifierList = psiField.getModifierList();
+                            if (modifierList == null) {
+                                Messages.showErrorDialog(project, "无法获取字段PsiModifierList值", "错误提示");
+                                return;
+                            }
+                            // 3. 把注解添加到字段
+                            modifierList.addBefore(annotationFromText, modifierList.getFirstChild());
+
                             // 4. 添加字段到类中
                             targetClass.add(psiField);
                         });
