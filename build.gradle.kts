@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.1.99"
+version = "0.2.0"
 repositories {
     maven {
         setUrl("https://maven.aliyun.com/repository/central/")
@@ -64,7 +64,7 @@ tasks {
         //插件起始支持版本
         sinceBuild.set("231")
         //插件结束支持版本
-        untilBuild.set("261.*")
+        untilBuild.set("262.*")
     }
 
     signPlugin {
