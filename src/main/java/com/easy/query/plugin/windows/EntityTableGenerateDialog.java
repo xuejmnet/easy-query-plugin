@@ -44,7 +44,6 @@ import com.intellij.psi.PsiPackage;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.PlatformIcons;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
@@ -546,7 +545,7 @@ public class EntityTableGenerateDialog extends JDialog {
         }
 
         List<String> selectedTabeList = tableList.getSelectedValuesList();
-        if (CollectionUtils.isEmpty(selectedTabeList)) {
+        if (selectedTabeList == null || selectedTabeList.isEmpty()) {
             Messages.showWarningDialog("请选择要生成的表", "提示");
             return false;
         }

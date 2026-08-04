@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.2.0"
+version = "0.2.1"
 repositories {
     maven {
         setUrl("https://maven.aliyun.com/repository/central/")
@@ -32,6 +32,9 @@ dependencies {
     implementation("com.google.guava:guava:31.0.1-jre")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.41")
     implementation("com.alibaba:druid:1.2.8")
+
+    // Apache Commons：原由 IntelliJ 平台隐式提供，2026.2 起不再暴露，改为显式声明
+    implementation("org.apache.commons:commons-lang3:3.14.0")
 
     implementation ("ch.qos.logback:logback-classic:1.4.12") // Logback 依赖
     implementation ("org.slf4j:slf4j-api:1.7.30") // SLF4J API 依赖

@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -41,7 +42,7 @@ public class EasyQueryRenameAction extends AnAction {
         }
 
 
-        String oldName = entityField.getName();
+        String oldName = ReadAction.compute(() -> entityField.getName());
         // 从用户输入获取新名字（弹原生 rename 对话框）
         // 这一步会阻塞，用户输入 newName 后才继续执行
         String newName = getUserInputNewName(project, oldName);
@@ -53,11 +54,14 @@ public class EasyQueryRenameAction extends AnAction {
             return;
         }
 
+        // PSI 读取与 RenameProcessor 构建需在 read action 内；run() 由平台自管写锁，置于 read action 外
+        final RenameProcessor[] processorHolder = new RenameProcessor[1];
+        ReadAction.run(() -> {
         // 找到 Proxy 类
         PsiClass proxyClass = findProxyClass(entityField);
         if (proxyClass == null) {
             // 只有实体字段，正常 rename
-            new RenameProcessor(project, entityField, newName, false, false).run();
+            processorHolder[0] = new RenameProcessor(project, entityField, newName, false, false);
             return;
         }
 
@@ -65,7 +69,7 @@ public class EasyQueryRenameAction extends AnAction {
         PsiMethod proxyMethod = findProxyMethod(proxyClass, oldName);
         if (proxyMethod == null) {
             // 没有 proxy方法，正常 rename 实体字段
-            new RenameProcessor(project, entityField, newName, false, false).run();
+            processorHolder[0] = new RenameProcessor(project, entityField, newName, false, false);
             return;
         }
 
@@ -95,7 +99,12 @@ public class EasyQueryRenameAction extends AnAction {
 
 
         processor.addElement(entityField, newName);
-        processor.run();
+        processorHolder[0] = processor;
+        });
+
+        if (processorHolder[0] != null) {
+            processorHolder[0].run();
+        }
 
     }
 

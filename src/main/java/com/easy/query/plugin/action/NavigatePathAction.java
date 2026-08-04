@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.LangDataKeys;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -50,60 +51,65 @@ public class NavigatePathAction extends AnAction {
         Project project = e.getProject();
 
         try {
-
-
             PsiFile psiFile = e.getData(LangDataKeys.PSI_FILE);
             if (psiFile != null) {
                 if (psiFile instanceof KtFile) {
                     return;
                 }
-                PsiClassOwner psiClassOwner = (PsiClassOwner) psiFile;
-                DataContext dataContext = e.getDataContext();
-                Editor editor = CommonDataKeys.EDITOR.getData(dataContext);
-                if (editor != null) {
+                // 2026.2 起 PSI 读取需 read action；WriteCommandAction 必须在 read action 外以避免 write-inside-read 死锁
+                final PsiElement[] elementAtHolder = new PsiElement[1];
+                final PsiAnnotation[] annotationHolder = new PsiAnnotation[1];
+                final PsiField[] fieldHolder = new PsiField[1];
+                final PsiModifierList[] modListHolder = new PsiModifierList[1];
+                final boolean[] shouldWrite = {false};
+                ReadAction.run(() -> {
+                    PsiClassOwner psiClassOwner = (PsiClassOwner) psiFile;
+                    DataContext dataContext = e.getDataContext();
+                    Editor editor = CommonDataKeys.EDITOR.getData(dataContext);
+                    if (editor == null) return;
                     int offset = editor.getCaretModel().getOffset();
                     PsiElement elementAt = psiFile.findElementAt(offset);
-                    if (elementAt == null) {
-                        return;
-                    }
+                    if (elementAt == null) return;
+                    if (!ELEMENT_FIELD.accepts(elementAt)) return;
                     //如果是字段的话
-                    if (ELEMENT_FIELD.accepts(elementAt)) {
-                        PsiIdentifier field = (PsiIdentifier) elementAt;
-                        String fieldName = MyStringUtil.toUpperUnderlined(field.getText());
-
-//                        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
-                        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-                        PsiClass ownerClass = psiClassOwner.getClasses()[0];
-                        String className = ownerClass.getName();
-                        PsiDocComment docComment = ownerClass.getDocComment();
-                        String text = docComment != null ? docComment.getText() : "";
-                        String referenceClassName = getReferenceClassName(className, text);
-                        PsiField psiField = elementFactory.createFieldFromText(String.format("private static final MappingPath %s_PATH =%s.TABLE", fieldName, referenceClassName + "Proxy"), ownerClass);
-                        PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(String.format("@NavigateFlat(pathAlias=\"%s_PATH\")", fieldName), psiField);
-                        PsiElement prevSibling = elementAt.getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling();
-                        PsiModifierList psiModifierList = prevSibling instanceof PsiModifierList ? (PsiModifierList) prevSibling : null;
-                        WriteCommandAction.runWriteCommandAction(project, () -> {
-
-                            if (psiModifierList != null) {
-                                psiFile.addBefore(annotationFromText, psiModifierList);
-                            } else {
-                                Optional<PsiElement> psiElement = Optional.of(elementAt).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling());
-                                if(psiElement.isPresent()){
-                                    PsiElement psiElement1 = psiElement.get();
-                                    psiFile.addBefore(annotationFromText, psiElement1);
-
-                                }
+                    PsiIdentifier field = (PsiIdentifier) elementAt;
+                    String fieldName = MyStringUtil.toUpperUnderlined(field.getText());
+                    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                    PsiClass ownerClass = psiClassOwner.getClasses()[0];
+                    String className = ownerClass.getName();
+                    PsiDocComment docComment = ownerClass.getDocComment();
+                    String text = docComment != null ? docComment.getText() : "";
+                    String referenceClassName = getReferenceClassName(className, text);
+                    PsiField psiField = elementFactory.createFieldFromText(String.format("private static final MappingPath %s_PATH =%s.TABLE", fieldName, referenceClassName + "Proxy"), ownerClass);
+                    PsiAnnotation annotationFromText = elementFactory.createAnnotationFromText(String.format("@NavigateFlat(pathAlias=\"%s_PATH\")", fieldName), psiField);
+                    PsiElement prevSibling = elementAt.getPrevSibling().getPrevSibling().getPrevSibling().getPrevSibling();
+                    elementAtHolder[0] = elementAt;
+                    annotationHolder[0] = annotationFromText;
+                    fieldHolder[0] = psiField;
+                    modListHolder[0] = prevSibling instanceof PsiModifierList ? (PsiModifierList) prevSibling : null;
+                    shouldWrite[0] = true;
+                });
+                if (shouldWrite[0]) {
+                    PsiElement elementAt = elementAtHolder[0];
+                    PsiAnnotation annotationFromText = annotationHolder[0];
+                    PsiField psiField = fieldHolder[0];
+                    PsiModifierList psiModifierList = modListHolder[0];
+                    WriteCommandAction.runWriteCommandAction(project, () -> {
+                        if (psiModifierList != null) {
+                            psiFile.addBefore(annotationFromText, psiModifierList);
+                        } else {
+                            Optional<PsiElement> psiElement = Optional.of(elementAt).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling()).map(s -> s.getPrevSibling());
+                            if (psiElement.isPresent()) {
+                                PsiElement psiElement1 = psiElement.get();
+                                psiFile.addBefore(annotationFromText, psiElement1);
                             }
-                            if (elementAt.getParent() != null) {
-                                psiFile.addBefore(psiField, elementAt.getParent());
-                            }
-                        });
-                    }
+                        }
+                        if (elementAt.getParent() != null) {
+                            psiFile.addBefore(psiField, elementAt.getParent());
+                        }
+                    });
                 }
-
             }
-
-
         } catch (Exception ex) {
             Messages.showErrorDialog(e.getProject(), "请按规定：将光标移动到对应的Class的属性上:" + ex.getMessage(), "错误提示");
         }

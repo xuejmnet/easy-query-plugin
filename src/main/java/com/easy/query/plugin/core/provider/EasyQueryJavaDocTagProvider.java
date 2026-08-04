@@ -3,8 +3,8 @@ package com.easy.query.plugin.core.provider;
 import com.easy.query.plugin.core.provider.doctag.EasyQueryDTODocTagInfo;
 import com.intellij.psi.javadoc.CustomJavadocTagProvider;
 import com.intellij.psi.javadoc.JavadocTagInfo;
-import org.apache.commons.compress.utils.Lists;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -15,7 +15,7 @@ import java.util.List;
 public class EasyQueryJavaDocTagProvider implements CustomJavadocTagProvider {
     @Override
     public List<JavadocTagInfo> getSupportedTags() {
-        List<JavadocTagInfo> tagInfoList = Lists.newArrayList();
+        List<JavadocTagInfo> tagInfoList = new ArrayList<>();
         tagInfoList.add(new EasyQueryDTODocTagInfo());
         return tagInfoList;
     }

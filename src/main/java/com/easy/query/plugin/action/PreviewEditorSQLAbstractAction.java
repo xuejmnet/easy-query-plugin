@@ -27,6 +27,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileStatusNotification;
@@ -246,7 +247,7 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
 
 //        selectedText = selectedElements.getChildren()[0].getChildren()[0].getText();
 
-        List<PsiReferenceExpression> refOrVarList = PsiTreeUtil
+        List<PsiReferenceExpression> refOrVarList = ReadAction.compute(() -> PsiTreeUtil
                 .findChildrenOfType(selectedElements, PsiReferenceExpression.class).stream()
                 .filter(ref -> {
                     PsiElement resolved = ref.resolve();
@@ -269,13 +270,13 @@ public abstract class PreviewEditorSQLAbstractAction extends AnAction {
                     }
                     return false;
                 })
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
 
         updateGitignore(psiFile.getProject());
 
         PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(psiFile.getProject());
         // 需要把这些外部变量给定义了
-        List<String> varList = constructSearchReq(refOrVarList, elementFactory, psiClassSource);
+        List<String> varList = ReadAction.compute(() -> constructSearchReq(refOrVarList, elementFactory, psiClassSource));
 
         Module currentModule = MyModuleUtil.getModuleForFile(psiFile.getProject(), psiFile.getVirtualFile());
 

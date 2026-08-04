@@ -9,6 +9,7 @@ import com.easy.query.plugin.core.util.VirtualFileUtils;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -124,44 +125,47 @@ public class EntityQueryImplementAction extends AnAction {
     private void implementJava(Project project, PsiFile psiFile) {
         PsiClassOwner psiClassOwner = (PsiClassOwner) psiFile;
         DumbService.getInstance(project).runWhenSmart(() -> {
-
-            PsiClass psiClass = psiClassOwner.getClasses()[0];
-            PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
-            PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
-            if (entityProxy == null && entityFileProxy == null) {
-                return;
-            }
-            boolean implementInterface = isImplementInterface(psiClass);
-            if (!implementInterface) {//没有注解或者没实现
+            // 2026.2 起后台线程 PSI 读取需 read action；读取与写分离，write command 置 read action 外
+            final PsiClass[] psiClassHolder = new PsiClass[1];
+            final PsiImportStatement[] importStmtHolder = new PsiImportStatement[1];
+            final PsiJavaCodeReferenceElement[] refHolder = new PsiJavaCodeReferenceElement[1];
+            final boolean[] shouldWrite = {false};
+            ReadAction.run(() -> {
+                PsiClass psiClass = psiClassOwner.getClasses()[0];
+                PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
+                PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
+                if (entityProxy == null && entityFileProxy == null) {
+                    return;
+                }
+                if (isImplementInterface(psiClass)) {
+                    return;
+                }
                 JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
                 PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                 String entityName = psiClass.getName();
-                //获取对应的代理对象名称
                 String entityProxyName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value", entityName + "Proxy");
-                PsiImportStatement importProxyAvailableStatement = getImportStatement(true, javaPsiFacade, elementFactory, "com.easy.query.core.proxy.ProxyEntityAvailable", project);
-                PsiJavaCodeReferenceElement referenceFromText = elementFactory.createReferenceFromText(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName), psiClass);
-//                    PsiElement navigationElement = referenceFromText.getNavigationElement();
-//                    PsiElement navigationElement = referenceFromText.getNavigationElement();
-//                    PsiMethod method = elementFactory.createMethodFromText(String.format("public Class<%s> proxyTableClass() {return %s.class;}", entityProxyName, entityProxyName), psiClass);
-//                    method.getModifierList().addAnnotation("Override" );
-                WriteCommandAction.runWriteCommandAction(project, () -> {
-                    if (importProxyAvailableStatement != null) {
-
-                        PsiImportList importList = ((PsiJavaFile) psiClass.getContainingFile()).getImportList();
-                        if (importList != null) {
-                            importList.add(importProxyAvailableStatement);
-                        }
-                    }
-//                        KtPsiFactory psiFactory = new KtPsiFactory(project);
-//                        KtSuperTypeEntry superTypeEntry = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
-//                        KtSuperTypeList superTypeList = ktClass.getSuperTypeList();
-//                        superTypeList.add(navigationElement);
-                    if (psiClass.getImplementsList() != null) {
-                        psiClass.getImplementsList().add(referenceFromText);
-                    }
-//                        psiClass.add(method);
-                });
+                psiClassHolder[0] = psiClass;
+                importStmtHolder[0] = getImportStatement(true, javaPsiFacade, elementFactory, "com.easy.query.core.proxy.ProxyEntityAvailable", project);
+                refHolder[0] = elementFactory.createReferenceFromText(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName), psiClass);
+                shouldWrite[0] = true;
+            });
+            if (!shouldWrite[0]) {
+                return;
             }
+            PsiClass psiClass = psiClassHolder[0];
+            PsiImportStatement importProxyAvailableStatement = importStmtHolder[0];
+            PsiJavaCodeReferenceElement referenceFromText = refHolder[0];
+            WriteCommandAction.runWriteCommandAction(project, () -> {
+                if (importProxyAvailableStatement != null) {
+                    PsiImportList importList = ((PsiJavaFile) psiClass.getContainingFile()).getImportList();
+                    if (importList != null) {
+                        importList.add(importProxyAvailableStatement);
+                    }
+                }
+                if (psiClass.getImplementsList() != null) {
+                    psiClass.getImplementsList().add(referenceFromText);
+                }
+            });
         });
     }
 
@@ -170,106 +174,98 @@ public class EntityQueryImplementAction extends AnAction {
         if (ktClass != null) {
 
             DumbService.getInstance(project).runWhenSmart(() -> {
-                boolean isOk = false;
-                for (PsiClass psiClass : ktFile.getClasses()) {
-                    if (isOk) {
-                        break;
-                    }
-                    PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
-                    PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
-                    if (entityProxy == null && entityFileProxy == null) {
-                        break;
-                    }
-                    boolean implementInterface = isImplementInterface(psiClass);
-                    if (!implementInterface) {//没有注解或者没实现
-                        isOk = true;
+                // 2026.2 起后台线程 PSI 读取需 read action；读取与写分离
+                final PsiImportStatement[] importStmtHolder = new PsiImportStatement[1];
+                final KtSuperTypeEntry[] superTypeHolder = new KtSuperTypeEntry[1];
+                final boolean[] shouldWrite = {false};
+                ReadAction.run(() -> {
+                    for (PsiClass psiClass : ktFile.getClasses()) {
+                        PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
+                        PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
+                        if (entityProxy == null && entityFileProxy == null) {
+                            break;
+                        }
+                        if (isImplementInterface(psiClass)) {
+                            break;
+                        }
                         JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
                         PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
                         String entityName = psiClass.getName();
-                        String qualifiedName = psiClass.getQualifiedName();
                         String entityProxyName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value", entityName + "Proxy");
-                        //获取对应的代理对象名称
-                        PsiImportStatement importProxyAvailableStatement = getImportStatement(true, javaPsiFacade, elementFactory, "com.easy.query.core.proxy.ProxyEntityAvailable", project);
+                        importStmtHolder[0] = getImportStatement(true, javaPsiFacade, elementFactory, "com.easy.query.core.proxy.ProxyEntityAvailable", project);
                         KtPsiFactory psiFactory = new KtPsiFactory(project);
-                        KtSuperTypeEntry referenceSuperType = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
-//                    PsiElement navigationElement = referenceFromText.getNavigationElement();
-//                    PsiElement navigationElement = referenceFromText.getNavigationElement();
-//                        KtNamedFunction function = psiFactory.createFunction(String.format("override fun proxyTableClass(): Class<%s> {return %s::class.java;}", entityProxyName, entityProxyName));
-//                        PsiMethod method = elementFactory.createMethodFromText(String.format("public Class<%s> proxyTableClass() {return %s.class;}", entityProxyName, entityProxyName), psiClass);
-//                        method.getModifierList().addAnnotation("Override" );
-//                        KtClassBody ktClassBody = Arrays.stream(ktClass.getChildren()).filter(o -> o instanceof KtClassBody).map(o -> (KtClassBody) o).findFirst().orElse(null);
-                        WriteCommandAction.runWriteCommandAction(project, () -> {
-                            if (importProxyAvailableStatement != null) {
-                                KtImportList importList = ktFile.getImportList();
-                                if (importList != null) {
-                                    ktFile.addAfter(importProxyAvailableStatement, importList);
-//                                    importList.addAfter(importProxyAvailableStatement,importList.getLastChild());
-//                                    importList.add(importProxyAvailableStatement);
-                                }
-//                                ktClass.addBefore(importProxyAvailableStatement,ktImportDirective);
-                            }
-                            ktClass.addSuperTypeListEntry(referenceSuperType);
-//                            if(ktClassBody!=null){
-//                                ktClassBody.addBefore(function,ktClassBody.getLastChild());
-//                            }
-//                        KtSuperTypeEntry superTypeEntry = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
-//                        KtSuperTypeList superTypeList = ktClass.getSuperTypeList();
-//                        superTypeList.add(navigationElement);
-//                            psiClass.add(method);
-                        });
+                        superTypeHolder[0] = psiFactory.createSuperTypeEntry(String.format("ProxyEntityAvailable<%s , %s>", entityName, entityProxyName));
+                        shouldWrite[0] = true;
+                        break;
                     }
+                });
+                if (!shouldWrite[0]) {
+                    return;
                 }
+                PsiImportStatement importProxyAvailableStatement = importStmtHolder[0];
+                KtSuperTypeEntry referenceSuperType = superTypeHolder[0];
+                WriteCommandAction.runWriteCommandAction(project, () -> {
+                    if (importProxyAvailableStatement != null) {
+                        KtImportList importList = ktFile.getImportList();
+                        if (importList != null) {
+                            ktFile.addAfter(importProxyAvailableStatement, importList);
+                        }
+                    }
+                    ktClass.addSuperTypeListEntry(referenceSuperType);
+                });
             });
         }
     }
 
     private void importProxy(Project project, VirtualFile virtualFile) {
         DumbService.getInstance(project).runWhenSmart(() -> {
-
-            PsiManager psiManager = PsiManager.getInstance(project);
-            PsiFile psiFile = psiManager.findFile(virtualFile);
-            // 支持java和kotlin
-            if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {
-                return;
-            }
-            Set<String> importSet = new HashSet<>();
-            if (psiFile instanceof KtFile) {
-                KtFile ktFile = (KtFile) psiFile;
-                importSet = KtFileUtil.getImportSet(ktFile);
-            }
-            if (psiFile instanceof PsiJavaFile) {
-                PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
-                importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
-            }
-            PsiClassOwner psiClassOwnerFile = (PsiClassOwner) VirtualFileUtils.getPsiFile(project, virtualFile);
-            boolean isOk = false;
-            for (PsiClass psiClass : psiClassOwnerFile.getClasses()) {
-                if (isOk) {
-                    break;
+            // 2026.2 起后台线程 PSI 读取需 read action；读取决策与写分离
+            final PsiFile[] psiFileHolder = new PsiFile[1];
+            final PsiImportStatement[] importStmtHolder = new PsiImportStatement[1];
+            final boolean[] needImportKotlin = {false};
+            final boolean[] needImportJava = {false};
+            ReadAction.run(() -> {
+                PsiManager psiManager = PsiManager.getInstance(project);
+                PsiFile psiFile = psiManager.findFile(virtualFile);
+                // 支持java和kotlin
+                if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {
+                    return;
                 }
-                String entityName = psiClass.getName();
-                PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
-                PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
-                if (entityProxy == null && entityFileProxy == null) {
-                    break;
+                psiFileHolder[0] = psiFile;
+                Set<String> importSet = new HashSet<>();
+                if (psiFile instanceof KtFile) {
+                    importSet = KtFileUtil.getImportSet((KtFile) psiFile);
                 }
-                isOk = true;
-                String entityProxyName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value", entityName + "Proxy");
-                String psiClassQualifiedName = psiClass.getQualifiedName();
-//            return importSet.contains("com.easy.query.core.annotation.EntityProxy" );
-                String qualifiedName = psiClassQualifiedName == null ? "" : psiClassQualifiedName.substring(0, psiClassQualifiedName.lastIndexOf(".")) + ".proxy." + entityProxyName;
-                if (!importSet.contains(qualifiedName)) {
-                    JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
-
-
-                    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-                    PsiImportStatement importEntityProxyStatement = getImportStatement(true, javaPsiFacade, elementFactory, qualifiedName, project);
-                    if (!(psiFile instanceof PsiJavaFile)) {
-                        importProxyKotlin(project, importEntityProxyStatement, (KtFile) psiFile);
-                    } else {
-                        importProxyJava(project, importEntityProxyStatement, (PsiJavaFile) psiFile);
+                if (psiFile instanceof PsiJavaFile) {
+                    importSet = PsiJavaFileUtil.getQualifiedNameImportSet((PsiJavaFile) psiFile);
+                }
+                PsiClassOwner psiClassOwnerFile = (PsiClassOwner) VirtualFileUtils.getPsiFile(project, virtualFile);
+                for (PsiClass psiClass : psiClassOwnerFile.getClasses()) {
+                    String entityName = psiClass.getName();
+                    PsiAnnotation entityProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityProxy");
+                    PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
+                    if (entityProxy == null && entityFileProxy == null) {
+                        break;
                     }
+                    String entityProxyName = PsiUtil.getPsiAnnotationValueIfEmpty(entityProxy, "value", entityName + "Proxy");
+                    String psiClassQualifiedName = psiClass.getQualifiedName();
+                    String qualifiedName = psiClassQualifiedName == null ? "" : psiClassQualifiedName.substring(0, psiClassQualifiedName.lastIndexOf(".")) + ".proxy." + entityProxyName;
+                    if (!importSet.contains(qualifiedName)) {
+                        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
+                        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                        importStmtHolder[0] = getImportStatement(true, javaPsiFacade, elementFactory, qualifiedName, project);
+                        needImportKotlin[0] = !(psiFile instanceof PsiJavaFile);
+                        needImportJava[0] = psiFile instanceof PsiJavaFile;
+                    }
+                    break;
                 }
+            });
+            PsiFile psiFile = psiFileHolder[0];
+            PsiImportStatement importEntityProxyStatement = importStmtHolder[0];
+            if (needImportKotlin[0] && psiFile instanceof KtFile) {
+                importProxyKotlin(project, importEntityProxyStatement, (KtFile) psiFile);
+            } else if (needImportJava[0] && psiFile instanceof PsiJavaFile) {
+                importProxyJava(project, importEntityProxyStatement, (PsiJavaFile) psiFile);
             }
         });
     }

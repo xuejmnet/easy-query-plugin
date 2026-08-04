@@ -8,7 +8,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.AnnotationTargetsSearch;
 import com.intellij.psi.search.searches.ClassInheritorsSearch;
-import org.apache.commons.collections.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -136,7 +135,7 @@ public class PsiJavaFileUtil {
                     return virtualFile;
                 })
                 .collect(Collectors.toList());
-        if(CollectionUtils.isNotEmpty(virtualFiles)){
+        if(virtualFiles != null && !virtualFiles.isEmpty()){
             EasyQueryDocumentChangeHandler.createAptFile(virtualFiles,project,true);
         }
     }

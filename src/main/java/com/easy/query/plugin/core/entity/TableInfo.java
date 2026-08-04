@@ -1,6 +1,5 @@
 package com.easy.query.plugin.core.entity;
 
-import org.apache.commons.collections.CollectionUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -39,7 +38,7 @@ public class TableInfo {
     }
 
     public void addImportClassItem(String importClassItem) {
-        if (CollectionUtils.isEmpty(importClassList)) {
+        if (importClassList == null || importClassList.isEmpty()) {
             importClassList = new HashSet<>();
         }
         this.importClassList.add(importClassItem);

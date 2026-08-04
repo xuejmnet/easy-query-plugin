@@ -193,6 +193,7 @@ public class TableUtils {
 //            DbPsiFacade dbPsiFacade = DbPsiFacade.getInstance(project);
             DbTableImpl table = (DbTableImpl)  DatabaseCoreUiService.getInstance().findElement(project, dasTable);
             DbDataSourceImpl dataSource = table.getDataSource();
+
             return dataSource.getDatabaseDialect();
         }else{
             DbTableImpl table = (DbTableImpl) dasTable;

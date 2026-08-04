@@ -19,7 +19,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
 import com.intellij.ui.DocumentAdapter;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -155,7 +154,7 @@ public class EntitySelectDialog extends JDialog {
         // add your code here
 
         List<String> selectedEntityList = entityList.getSelectedValuesList();
-        if (CollectionUtils.isEmpty(selectedEntityList)) {
+        if (selectedEntityList == null || selectedEntityList.isEmpty()) {
             Messages.showWarningDialog("请选择要生成的表", "提示");
             return;
         }

@@ -14,6 +14,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.LangDataKeys;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -94,7 +95,9 @@ public class AnonymousMapAction extends AnAction {
                                         if (!b) {
                                             return;
                                         }
-                                        parseChainMapProxy(element, anonymousParseContext);
+                                        ReadAction.run(() -> {
+                        parseChainMapProxy(element, anonymousParseContext);
+                        });
                                         lambdaBodyContent(element, anonymousParseContext);
                                         //element.getParent().getParent().getParent().getParent().getParent().getTextOffset()
 //                                            System.out.println(document.getCharsSequence().subSequence(anonymousParseContext.getStart(),anonymousParseContext.getEnd()));
@@ -104,7 +107,7 @@ public class AnonymousMapAction extends AnAction {
 //                                                PackageUtil.selectPackage(e.getProject(),)
                                             RenderEasyQueryTemplate.renderAnonymousType(anonymousParseContext);
 
-                                            PsiClass newPsiClass = JavaPsiFacade.getInstance(e.getProject()).findClass(anonymousParseContext.getModelPackage() + ".proxy." + anonymousParseContext.getAnonymousName() + "Proxy", GlobalSearchScope.projectScope(e.getProject()));
+                                            PsiClass newPsiClass = ReadAction.compute(() -> JavaPsiFacade.getInstance(e.getProject()).findClass(anonymousParseContext.getModelPackage() + ".proxy." + anonymousParseContext.getAnonymousName() + "Proxy", GlobalSearchScope.projectScope(e.getProject())));
                                             if (newPsiClass == null) {
                                                 return;
                                             }
@@ -191,7 +194,7 @@ public class AnonymousMapAction extends AnAction {
                 return false;
             }
             anonymousParseContext.setModelPackage(StrUtil.subBefore(packageWithClassName, ".", true));
-            PsiClass psiClass = JavaPsiFacade.getInstance(project).findClass(packageWithClassName, GlobalSearchScope.allScope(project));
+            PsiClass psiClass = ReadAction.compute(() -> JavaPsiFacade.getInstance(project).findClass(packageWithClassName, GlobalSearchScope.allScope(project)));
             if (psiClass == null) {
                 return false;
             }
