@@ -83,7 +83,6 @@ public class EasyQueryConfig extends EasyQueryBasicConfig{
     private String modelSuperClass;
 
     private String ignoreColumns;
-    private Map<String, List<MatchTypeMapping>> typeMapping;
 
     public String getModelSuperClass() {
         return modelSuperClass;
@@ -261,13 +260,6 @@ public class EasyQueryConfig extends EasyQueryBasicConfig{
         this.entityFileProxy = entityFileProxy;
     }
 
-    public Map<String, List<MatchTypeMapping>> getTypeMapping() {
-        return typeMapping;
-    }
-
-    public void setTypeMapping(Map<String, List<MatchTypeMapping>> typeMapping) {
-        this.typeMapping = typeMapping;
-    }
 
     public String getIgnoreColumns() {
         return ignoreColumns;

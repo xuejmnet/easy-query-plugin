@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.easy-query"
-version = "0.2.1"
+version = "0.2.2"
 repositories {
     maven {
         setUrl("https://maven.aliyun.com/repository/central/")
