@@ -16,14 +16,16 @@ public class CompileAllAction extends AnAction {
         if (project == null) {
             return;
         }
-        PsiJavaFileUtil.createAptFile(project);
+        // 编译全部已后台化：搜索与生成在读操作中执行，写回在 EDT 逐文件执行；
+        // 收尾动作（标记源根、清缓存、通知）仅在任务成功完成后执行，取消时不通知
+        PsiJavaFileUtil.createAptFile(project, () -> {
+            // 更新 generated sources root ，生成的代码需要标记一下
+            ProjectStartupHelper.updateGeneratedSourceRoot(project);
 
-        // 更新 generated sources root ，生成的代码需要标记一下
-        ProjectStartupHelper.updateGeneratedSourceRoot(project);
-
-        // 清除缓存
-        EasyQueryConfigManager.invalidateProjectCache(project);
-        // 添加气泡提醒
-        NotificationUtils.notifySuccess("编译完成", "EasyQuery", project);
+            // 清除缓存
+            EasyQueryConfigManager.invalidateProjectCache(project);
+            // 添加气泡提醒
+            NotificationUtils.notifySuccess("编译完成", "EasyQuery", project);
+        });
     }
 }

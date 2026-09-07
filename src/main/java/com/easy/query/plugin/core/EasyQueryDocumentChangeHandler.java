@@ -1,77 +1,37 @@
 package com.easy.query.plugin.core;
 
 import com.easy.query.plugin.core.config.CustomConfig;
-import com.easy.query.plugin.core.entity.AptFileCompiler;
-import com.easy.query.plugin.core.entity.AptPropertyInfo;
-import com.easy.query.plugin.core.entity.AptSelectPropertyInfo;
-import com.easy.query.plugin.core.entity.AptSelectorInfo;
-import com.easy.query.plugin.core.entity.AptValueObjectInfo;
 import com.easy.query.plugin.core.entity.GenerateFileEntry;
-import com.easy.query.plugin.core.entity.PropertyColumn;
-import com.easy.query.plugin.core.enums.BeanPropTypeEnum;
-import com.easy.query.plugin.core.enums.FileTypeEnum;
-import com.easy.query.plugin.core.util.BooleanUtil;
-import com.easy.query.plugin.core.util.ClassUtil;
-import com.easy.query.plugin.core.util.KtFileUtil;
-import com.easy.query.plugin.core.util.MyModuleUtil;
-import com.easy.query.plugin.core.util.ObjectUtil;
-import com.easy.query.plugin.core.util.ProjectUtils;
-import com.easy.query.plugin.core.util.PsiJavaFileUtil;
-import com.easy.query.plugin.core.util.PsiUtil;
-import com.easy.query.plugin.core.util.StrUtil;
-import com.easy.query.plugin.core.util.VelocityUtils;
-import com.easy.query.plugin.core.util.VirtualFileUtils;
+import com.easy.query.plugin.core.util.*;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.event.DocumentEvent;
-import com.intellij.openapi.editor.event.DocumentListener;
-import com.intellij.openapi.editor.event.EditorFactoryEvent;
-import com.intellij.openapi.editor.event.EditorFactoryListener;
-import com.intellij.openapi.editor.event.EditorMouseEvent;
-import com.intellij.openapi.editor.event.EditorMouseListener;
-import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
-import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.editor.event.*;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassOwner;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiType;
+import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.testFramework.LightVirtualFile;
-import com.intellij.util.messages.MessageBus;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.velocity.VelocityContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtFile;
 
-import javax.lang.model.element.TypeElement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 
@@ -79,14 +39,62 @@ import java.util.stream.Collectors;
  * @author bigtian
  */
 public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorFactoryListener, Disposable {
-    private static final Logger log = Logger.getInstance(EasyQueryDocumentChangeHandler.class);
     public static final Key<Boolean> CHANGE = Key.create("change");
+    private static final Logger log = Logger.getInstance(EasyQueryDocumentChangeHandler.class);
     private static final Key<Boolean> LISTENER = Key.create("listener");
+    /**
+     * 编译全部进行中标志：期间忽略新的编译全部/单文件生成触发，读+写全部结束后释放
+     */
+    private static final AtomicBoolean COMPILING = new AtomicBoolean(false);
+    /**
+     * 插件自身写命令执行期间为 true（仅 EDT 访问）。
+     * 期间产生的文档变更不算用户修改，documentChanged 不标记 CHANGE，
+     * 避免生成文件在编辑器中打开时 mouseExited 触发多余的重新生成。
+     */
+    private static boolean selfWriting = false;
+
+    public EasyQueryDocumentChangeHandler() {
+        super();
+
+        try {
+            // 所有的文档监听
+//            EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this, this);
+            //获取已打开的编辑器
+            Editor[] allEditors = EditorFactory.getInstance().getAllEditors();
+            for (Editor editor : allEditors) {
+                addEditorListener(editor);
+            }
+//            Project project = ProjectUtils.getCurrentProject();
+//            if (Objects.isNull(project)) {
+//                return;
+//            }
+////            Deprecated
+////            Use com.intellij.util.messages.MessageBus instead: see FileEditorManagerListener.FILE_EDITOR_MANAGER
+//
+////            FileEditorManager.getInstance(project).addFileEditorManagerListener(this);
+//            MessageBus messageBus = project.getMessageBus();
+//            messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+        } catch (Exception e) {
+            log.error("初始化EasyQueryDocumentChangeHandler出错:" + e.getMessage(), e);
+        }
+
+    }
+
+    public static boolean tryAcquireCompileLock() {
+        return COMPILING.compareAndSet(false, true);
+    }
+
+    public static void releaseCompileLock() {
+        COMPILING.set(false);
+    }
 
 //    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
+    public static boolean isCompiling() {
+        return COMPILING.get();
+    }
 
-    public static void createAptFile0(PsiClassOwner psiFile, PsiClass psiClass, Project project, Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap, String moduleDirPath, CustomConfig config,
+    public static void createAptFile0(PsiClassOwner psiFile, PsiClass psiClass, Project project, Map<String, List<GenerateFileEntry>> psiDirectoryMap, String moduleDirPath, CustomConfig config,
                                       Module moduleForFile, VirtualFile oldFile, boolean allCompileFrom) {
         PsiAnnotation entityFileProxy = psiClass.getAnnotation("com.easy.query.core.annotation.EntityFileProxy");
 
@@ -122,7 +130,11 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
     }
 
     public static void createAptFile(List<VirtualFile> virtualFiles, Project project, boolean allCompileFrom) {
-//        Project project = ProjectUtils.getCurrentProject();
+        // 编译全部进行中时忽略新的生成触发
+        if (isCompiling()) {
+            log.info("EasyQuery 正在编译中，忽略本次生成触发");
+            return;
+        }
         // 检查索引是否已准备好
         if (BooleanUtils.isTrue(DumbService.getInstance(project).isDumb())) {
             log.info("索引未准备好，将在索引完成后重新执行");
@@ -133,21 +145,44 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
             });
             return;
         }
-
-        virtualFiles = virtualFiles.stream()
-            .filter(oldFile -> {
-                if (Objects.isNull(oldFile)) {
-                    return false;
+        // 生成阶段放后台读操作（含模板渲染的 PSI 解析），仅写入回到 EDT，
+        // 避免在 EDT 上累积解析/索引等待造成界面冻结
+        new Task.Backgroundable(project, "EasyQuery: 生成 APT 文件", true) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                Map<String, List<GenerateFileEntry>> psiDirectoryMap =
+                        DumbService.getInstance(project).runReadActionInSmartMode(
+                                () -> generateAptFiles(virtualFiles, project, allCompileFrom, indicator));
+                if (psiDirectoryMap.isEmpty() || project.isDisposed()) {
+                    return;
                 }
-                Boolean userData = oldFile.getUserData(CHANGE);
-                return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
-            }).collect(Collectors.toList());
-        Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap = new HashMap<>();
+                ApplicationManager.getApplication().invokeLater(
+                        () -> writeAptFiles(project, psiDirectoryMap, indicator),
+                        ModalityState.NON_MODAL);
+            }
+        }.queue();
+    }
 
+    /**
+     * 生成阶段（纯只读，在后台线程的读操作中执行）：过滤待生成文件并构建 目录路径->生成条目 映射，
+     * 不执行任何写入；目录解析/创建延迟到写入阶段（EDT）。
+     */
+    public static Map<String, List<GenerateFileEntry>> generateAptFiles(List<VirtualFile> virtualFiles, Project project, boolean allCompileFrom, ProgressIndicator indicator) {
+        Map<String, List<GenerateFileEntry>> psiDirectoryMap = new HashMap<>();
         try {
+            List<VirtualFile> candidates = virtualFiles.stream()
+                    .filter(oldFile -> {
+                        if (Objects.isNull(oldFile)) {
+                            return false;
+                        }
+                        Boolean userData = oldFile.getUserData(CHANGE);
+                        return !(Objects.isNull(oldFile) || (!oldFile.getName().endsWith(".java") && !oldFile.getName().endsWith(".kt")) || !oldFile.isWritable()) && BooleanUtil.isTrue(userData) && checkFile(project, oldFile);
+                    }).collect(Collectors.toList());
 
-            // 检查索引是否已准备好
-            for (VirtualFile oldFile : virtualFiles) {
+            for (VirtualFile oldFile : candidates) {
+                if (indicator != null) {
+                    indicator.checkCanceled();
+                }
                 Module moduleForFile = com.intellij.openapi.module.ModuleUtil.findModuleForFile(oldFile, project);
                 if (moduleForFile == null) {
                     log.warn("moduleForFile is null," + oldFile.getName());
@@ -172,39 +207,112 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
                         }
                     }
                 }
-
             }
-            // 等待索引准备好
-            DumbService.getInstance(project).runWhenSmart(() -> {
-                // 执行需要索引的操作
-                WriteCommandAction.runWriteCommandAction(project, () -> {
-                    for (Map.Entry<PsiDirectory, List<GenerateFileEntry>> entry : psiDirectoryMap.entrySet()) {
-                        PsiDirectory psiDirectory = entry.getKey();
-                        List<GenerateFileEntry> psiFiles = entry.getValue();
-                        for (GenerateFileEntry generateFile : psiFiles) {
-                            PsiFile tmpFile = generateFile.getPsiFile();
-                            PsiFile file = psiDirectory.findFile(tmpFile.getName());
-                            if (ObjectUtil.isNotNull(file)) {
-                                //允许覆盖
-                                if (generateFile.isOverrideWrite()) {
-                                    CodeStyleManager.getInstance(project).reformat(tmpFile);
-                                    String text = tmpFile.getText();
-                                    Document document = file.getViewProvider().getDocument();
-                                    if (!Objects.equals(document.getText(), text)) {
-                                        document.setText(text);
-                                    }
-                                }
-                            } else {
-                                psiDirectory.add(tmpFile);
-                            }
+        } catch (ProcessCanceledException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("生成APT文件出错:" + e.getMessage(), e);
+        }
+        return psiDirectoryMap;
+    }
+
+    /**
+     * 写入阶段（须在 EDT 执行）：逐条目独立写命令落盘，命令间允许取消。
+     * 目录按生成阶段记录的路径字符串解析，缺失时创建。
+     *
+     * @return 是否完整写入（取消时抛出取消异常，不会返回 true）
+     */
+    public static boolean writeAptFiles(Project project, Map<String, List<GenerateFileEntry>> psiDirectoryMap, ProgressIndicator indicator) {
+        for (Map.Entry<String, List<GenerateFileEntry>> entry : psiDirectoryMap.entrySet()) {
+            String dirPath = entry.getKey();
+            for (GenerateFileEntry generateFile : entry.getValue()) {
+                if (indicator != null) {
+                    indicator.checkCanceled();
+                } else {
+                    ProgressManager.checkCanceled();
+                }
+                writeGeneratedFile(project, dirPath, generateFile);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 写入阶段（编译全部专用，须在 EDT 调用）：逐文件独立派发写入。
+     * 每个文件一次 invokeLater 派发，派发之间 EDT 可处理用户事件，避免整批写入在单次派发中长时间阻塞界面；
+     * 成功完成回调 onSuccess（任意终止路径——成功/取消/异常/项目释放——都会执行 onFinished 且仅执行一次）。
+     */
+    public static void writeAptFilesDispatched(Project project, Map<String, List<GenerateFileEntry>> psiDirectoryMap,
+                                               @org.jetbrains.annotations.Nullable ProgressIndicator indicator,
+                                               @org.jetbrains.annotations.NotNull Runnable onSuccess,
+                                               @org.jetbrains.annotations.NotNull Runnable onFinished) {
+        List<Map.Entry<String, GenerateFileEntry>> units = new ArrayList<>();
+        psiDirectoryMap.forEach((dirPath, files) -> files.forEach(generateFile -> units.add(new HashMap.SimpleEntry<>(dirPath, generateFile))));
+        dispatchNextWrite(project, units, 0, indicator, onSuccess, onFinished);
+    }
+
+    private static void dispatchNextWrite(Project project, List<Map.Entry<String, GenerateFileEntry>> units, int index,
+                                          ProgressIndicator indicator, Runnable onSuccess, Runnable onFinished) {
+        boolean scheduledNext = false;
+        try {
+            if (project.isDisposed()) {
+                return;
+            }
+            if (indicator != null) {
+                indicator.checkCanceled();
+            } else {
+                ProgressManager.checkCanceled();
+            }
+            if (index >= units.size()) {
+                onSuccess.run();
+                return;
+            }
+            Map.Entry<String, GenerateFileEntry> unit = units.get(index);
+            writeGeneratedFile(project, unit.getKey(), unit.getValue());
+            scheduledNext = true;
+            ApplicationManager.getApplication().invokeLater(
+                    () -> dispatchNextWrite(project, units, index + 1, indicator, onSuccess, onFinished),
+                    ModalityState.NON_MODAL);
+        } finally {
+            if (!scheduledNext) {
+                onFinished.run();
+            }
+        }
+    }
+
+    /**
+     * 落盘单个生成文件：独立写命令（共享 undo 组 id，可按文件撤销），
+     * 覆盖与新增两条路径统一先格式化再写入，保证输出格式一致。
+     * 目录按生成阶段记录的路径字符串在写入线程（EDT）解析，缺失时创建。
+     */
+    private static void writeGeneratedFile(Project project, String dirPath, GenerateFileEntry generateFile) {
+        WriteCommandAction.runWriteCommandAction(project, "EasyQuery 生成 APT 文件", "easy-query.apt.generate", () -> {
+            selfWriting = true;
+            try {
+                PsiDirectory psiDirectory = VirtualFileUtils.ensurePsiDirectory(project, dirPath);
+                if (psiDirectory == null) {
+                    log.warn("ensurePsiDirectory is null, path:" + dirPath);
+                    return;
+                }
+                PsiFile tmpFile = generateFile.getPsiFile();
+                CodeStyleManager.getInstance(project).reformat(tmpFile);
+                PsiFile file = psiDirectory.findFile(tmpFile.getName());
+                if (ObjectUtil.isNotNull(file)) {
+                    //允许覆盖
+                    if (generateFile.isOverrideWrite()) {
+                        String text = tmpFile.getText();
+                        Document document = file.getViewProvider().getDocument();
+                        if (!Objects.equals(document.getText(), text)) {
+                            document.setText(text);
                         }
                     }
-                });
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+                } else {
+                    psiDirectory.add(tmpFile);
+                }
+            } finally {
+                selfWriting = false;
+            }
+        });
     }
 
     private static String getEasyQueryVersion(PsiAnnotation entityProxy, PsiAnnotation entityFileProxy) {
@@ -227,34 +335,40 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         return "";
     }
 
-
-    public EasyQueryDocumentChangeHandler() {
-        super();
-
-        try {
-            // 所有的文档监听
-//            EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this, this);
-            //获取已打开的编辑器
-            Editor[] allEditors = EditorFactory.getInstance().getAllEditors();
-            for (Editor editor : allEditors) {
-                addEditorListener(editor);
-            }
-//            Project project = ProjectUtils.getCurrentProject();
-//            if (Objects.isNull(project)) {
-//                return;
-//            }
-////            Deprecated
-////            Use com.intellij.util.messages.MessageBus instead: see FileEditorManagerListener.FILE_EDITOR_MANAGER
-//
-////            FileEditorManager.getInstance(project).addFileEditorManagerListener(this);
-//            MessageBus messageBus = project.getMessageBus();
-//            messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
-        } catch (Exception e) {
-            log.error("初始化EasyQueryDocumentChangeHandler出错:" + e.getMessage(), e);
+    private static boolean checkFile(Project project, VirtualFile currentFile) {
+        if (Objects.isNull(currentFile) || currentFile instanceof LightVirtualFile) {
+            return false;
+        }
+        // 增加判断如果当前文件不合法, 则不触发
+        if (!currentFile.isValid()) {
+            return false;
+        }
+        // 检查索引是否准备好
+        if (DumbService.getInstance(project).isDumb()) {
+            return false; // 在索引未准备好时返回false，稍后会重试
         }
 
+        // 使用 ReadAction 包裹 PSI 访问，以兼容 IntelliJ IDEA 2026.1 的线程访问限制
+        return ReadAction.compute(() -> {
+            PsiManager psiManager = PsiManager.getInstance(project);
+            PsiFile psiFile = psiManager.findFile(currentFile);
+            // 支持java和kotlin
+            if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {
+                return false;
+            }
+            String text = psiFile.getText();
+            //        Set<String> importSet = new HashSet<>();
+            //        if (psiFile instanceof KtFile) {
+            //            KtFile ktFile = (KtFile) psiFile;
+            //            importSet = KtFileUtil.getImportSet(ktFile);
+            //        }
+            //        if (psiFile instanceof PsiJavaFile) {
+            //            PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
+            //            importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
+            //        }
+            return text.contains("com.easy.query.core.annotation.EntityProxy") || text.contains("com.easy.query.core.annotation.*") || text.contains("com.easy.query.core.annotation.EntityFileProxy");
+        });
     }
-
 
     private void addEditorListener(Editor editor) {
         Document document = editor.getDocument();
@@ -297,44 +411,12 @@ public class EasyQueryDocumentChangeHandler implements DocumentListener, EditorF
         removeEditorListener(editor);
     }
 
-
-    private static boolean checkFile(Project project, VirtualFile currentFile) {
-        if (Objects.isNull(currentFile) || currentFile instanceof LightVirtualFile) {
-            return false;
-        }
-        // 增加判断如果当前文件不合法, 则不触发
-        if (!currentFile.isValid()) {
-            return false;
-        }
-        // 检查索引是否准备好
-        if (DumbService.getInstance(project).isDumb()) {
-            return false; // 在索引未准备好时返回false，稍后会重试
-        }
-
-        // 使用 ReadAction 包裹 PSI 访问，以兼容 IntelliJ IDEA 2026.1 的线程访问限制
-        return ReadAction.compute(() -> {
-            PsiManager psiManager = PsiManager.getInstance(project);
-            PsiFile psiFile = psiManager.findFile(currentFile);
-            // 支持java和kotlin
-            if (!(psiFile instanceof PsiJavaFile) && !(psiFile instanceof KtFile)) {
-                return false;
-            }
-            String text = psiFile.getText();
-    //        Set<String> importSet = new HashSet<>();
-    //        if (psiFile instanceof KtFile) {
-    //            KtFile ktFile = (KtFile) psiFile;
-    //            importSet = KtFileUtil.getImportSet(ktFile);
-    //        }
-    //        if (psiFile instanceof PsiJavaFile) {
-    //            PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
-    //            importSet = PsiJavaFileUtil.getQualifiedNameImportSet(psiJavaFile);
-    //        }
-            return text.contains("com.easy.query.core.annotation.EntityProxy") || text.contains("com.easy.query.core.annotation.*") || text.contains("com.easy.query.core.annotation.EntityFileProxy");
-        });
-    }
-
     @Override
     public void documentChanged(@NotNull DocumentEvent event) {
+        // 插件自身写命令引发的变更不视为用户修改，不标记 CHANGE
+        if (selfWriting) {
+            return;
+        }
         Document document = event.getDocument();
         CharSequence newFragment = event.getNewFragment();
         if ((StrUtil.isBlank(newFragment) && StrUtil.isBlank(event.getOldFragment()))) {

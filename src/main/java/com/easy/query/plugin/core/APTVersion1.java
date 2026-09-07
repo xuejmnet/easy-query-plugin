@@ -17,10 +17,8 @@ import com.easy.query.plugin.core.util.ObjectUtil;
 import com.easy.query.plugin.core.util.PsiUtil;
 import com.easy.query.plugin.core.util.StrUtil;
 import com.easy.query.plugin.core.util.VelocityUtils;
-import com.easy.query.plugin.core.util.VirtualFileUtils;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
@@ -28,11 +26,9 @@ import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassOwner;
 import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiType;
-import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.apache.velocity.VelocityContext;
 import org.jetbrains.kotlin.psi.KtFile;
@@ -86,7 +82,7 @@ public class APTVersion1 {
         TYPE_COLUMN_MAPPING.put("boolean", new PropertyColumnImpl("SQLBooleanColumn", "java.lang.Boolean"));
     }
 
-    public static void generateApt(Project project, Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap,
+    public static void generateApt(Project project, Map<String, List<GenerateFileEntry>> psiDirectoryMap,
                                    PsiAnnotation entityFileProxy,PsiAnnotation entityProxy,
                                    PsiClassOwner psiFile,String moduleDirPath,CustomConfig config,
                                    Module moduleForFile,PsiClass psiClass,
@@ -105,9 +101,8 @@ public class APTVersion1 {
                 fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
                 + psiFile.getPackageName().replace(".", "/") + "/proxy";
 
-        PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);
-        // 等待索引准备好
-        DumbService.getInstance(project).runWhenSmart(() -> {
+        // 索引就绪由驱动方（runReadActionInSmartMode）保证；不再经 runWhenSmart 跳回 EDT 执行
+        Runnable generateBody = () -> {
             // 在智能模式下，执行需要等待索引准备好的操作，比如创建文件
             // 创建文件等操作代码
             oldFile.putUserData(EasyQueryDocumentChangeHandler.CHANGE, false);
@@ -144,7 +139,7 @@ public class APTVersion1 {
                 if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(name)) {
                     continue;
                 }
-                BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, name);
+                BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, field);
                 if (beanPropType==BeanPropTypeEnum.NOT) {
                     continue;
                 }
@@ -206,9 +201,9 @@ public class APTVersion1 {
             context.put("aptFileCompiler", aptFileCompiler);
             String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
             PsiFile psiProxyFile = VelocityUtils.render(project,context, Template.getTemplateContent("AptTemplate" + suffix), proxyEntityName + suffix);
-            CodeStyleManager.getInstance(project).reformat(psiProxyFile);
-            psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
-        });
+            psiDirectoryMap.computeIfAbsent(path, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
+        };
+        generateBody.run();
     }
 
     private static PropertyColumn getPropertyColumn(String fieldGenericType) {
@@ -278,7 +273,7 @@ public class APTVersion1 {
             if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(parentProperty + "." + name)) {
                 continue;
             }
-            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, name);
+            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, field);
             if (beanPropType==BeanPropTypeEnum.NOT) {
                 continue;
             }

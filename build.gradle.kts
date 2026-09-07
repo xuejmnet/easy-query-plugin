@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.7.20"
-    id("org.jetbrains.intellij") version "1.13.1"
+    id("org.jetbrains.intellij") version "1.17.4"
 }
 
 group = "com.easy-query"
@@ -45,6 +45,8 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok:1.18.34")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
 
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -61,6 +63,10 @@ tasks {
     }
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
+    }
+
+    test {
+        useJUnitPlatform()
     }
 
     patchPluginXml {

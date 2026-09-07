@@ -1,13 +1,20 @@
 package com.easy.query.plugin.core.util;
 
 import com.easy.query.plugin.core.EasyQueryDocumentChangeHandler;
+import com.easy.query.plugin.core.entity.GenerateFileEntry;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.AnnotationTargetsSearch;
 import com.intellij.psi.search.searches.ClassInheritorsSearch;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -119,9 +126,66 @@ public class PsiJavaFileUtil {
     }
 
     /**
-     * 生成 apt 文件
+     * 编译全部：非模态后台任务中完成搜索与生成（均为后台读操作，模板渲染的 PSI 解析亦在后台执行，不阻塞 EDT），
+     * 写回在 EDT 逐文件执行（含目录解析/创建）。全程可取消；收尾动作仅在写入完整完成（未被取消）后执行。
+     *
+     * @param onSuccess 任务成功完成后的收尾动作，可为 null
      */
-    public static void createAptFile(Project project) {
+    public static void createAptFile(Project project, Runnable onSuccess) {
+        if (!EasyQueryDocumentChangeHandler.tryAcquireCompileLock()) {
+            NotificationUtils.notifyWarning("EasyQuery 正在编译中，已忽略本次触发", "EasyQuery", project);
+            return;
+        }
+        new Task.Backgroundable(project, "EasyQuery: 编译全部", true) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                boolean writeScheduled = false;
+                try {
+                    // 搜索阶段：后台读操作，dumb 模式下等待 smart 后执行（保留原有等待语义）
+                    List<VirtualFile> virtualFiles = DumbService.getInstance(project).runReadActionInSmartMode(() -> {
+                        indicator.checkCanceled();
+                        return collectEntityFiles(project, indicator);
+                    });
+                    if (virtualFiles.isEmpty()) {
+                        return;
+                    }
+                    // 生成阶段：纯只读，仍在后台读操作中执行（含模板渲染），不阻塞 EDT
+                    Map<String, List<GenerateFileEntry>> psiDirectoryMap =
+                            DumbService.getInstance(project).runReadActionInSmartMode(
+                                    () -> EasyQueryDocumentChangeHandler.generateAptFiles(virtualFiles, project, true, indicator));
+                    if (psiDirectoryMap.isEmpty() || project.isDisposed()) {
+                        return;
+                    }
+                    writeScheduled = true;
+                    // 写入阶段回到 EDT：逐文件独立派发（派发间 EDT 可响应事件与取消），
+                    // 完成后释放编译锁并执行收尾，取消时不执行收尾
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        if (project.isDisposed()) {
+                            EasyQueryDocumentChangeHandler.releaseCompileLock();
+                            return;
+                        }
+                        EasyQueryDocumentChangeHandler.writeAptFilesDispatched(project, psiDirectoryMap, indicator,
+                                () -> {
+                                    if (onSuccess != null) {
+                                        onSuccess.run();
+                                    }
+                                },
+                                EasyQueryDocumentChangeHandler::releaseCompileLock);
+                    }, ModalityState.NON_MODAL);
+                } finally {
+                    // 搜索/生成失败、取消或无实体时直接释放锁（写入已调度则由 EDT 回调释放）
+                    if (!writeScheduled) {
+                        EasyQueryDocumentChangeHandler.releaseCompileLock();
+                    }
+                }
+            }
+        }.queue();
+    }
+
+    /**
+     * 搜索项目中所有标注 EntityProxy/EntityFileProxy 的实体文件并标记为待生成。
+     */
+    private static List<VirtualFile> collectEntityFiles(Project project, ProgressIndicator indicator) {
         Collection<PsiClass> annotationPsiProxyClass = PsiJavaFileUtil.getAnnotationPsiClass(project,"com.easy.query.core.annotation.EntityProxy" );
         Collection<PsiClass> annotationPsiFileProxyClass = PsiJavaFileUtil.getAnnotationPsiClass(project,"com.easy.query.core.annotation.EntityFileProxy" );
         ArrayList<PsiClass> annotationPsiClass = new ArrayList<>();
@@ -129,15 +193,14 @@ public class PsiJavaFileUtil {
         annotationPsiClass.addAll(annotationPsiFileProxyClass);
         List<VirtualFile> virtualFiles = annotationPsiClass.stream()
                 .map(el -> {
+                    indicator.checkCanceled();
                     VirtualFile virtualFile = el.getContainingFile()
                             .getVirtualFile();
                     virtualFile.putUserData(EasyQueryDocumentChangeHandler.CHANGE, true);
                     return virtualFile;
                 })
                 .collect(Collectors.toList());
-        if(virtualFiles != null && !virtualFiles.isEmpty()){
-            EasyQueryDocumentChangeHandler.createAptFile(virtualFiles,project,true);
-        }
+        return virtualFiles;
     }
     public static void createAptCurrentFile(VirtualFile virtualFile,Project project) {
         if(virtualFile!=null){

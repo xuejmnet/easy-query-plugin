@@ -153,6 +153,53 @@ public class VirtualFileUtils {
     }
 
     /**
+     * 按绝对路径解析 psi 目录，缺失时逐级创建（须在 EDT 调用，内部为写命令）。
+     * 供写入阶段使用：生成阶段只记录目标路径字符串，不再在后台线程触达目录写入。
+     *
+     * @return 目标目录；路径无法定位到任何已存在祖先时返回 null
+     */
+    public static PsiDirectory ensurePsiDirectory(Project project, String path) {
+        PsiDirectory target = getPsiDirectory(project, path);
+        if (ObjectUtil.isNotNull(target)) {
+            return target;
+        }
+        // 自底向上找最深已存在祖先，记录缺失的目录名后逐级创建
+        java.util.LinkedList<String> missing = new java.util.LinkedList<>();
+        String cursor = path;
+        while (StrUtil.isNotEmpty(cursor)) {
+            PsiDirectory dir = getPsiDirectory(project, cursor);
+            if (dir != null) {
+                break;
+            }
+            int idx = Math.max(cursor.lastIndexOf('/'), cursor.lastIndexOf('\\'));
+            if (idx <= 0) {
+                missing.clear();
+                break;
+            }
+            missing.addFirst(cursor.substring(idx + 1));
+            cursor = cursor.substring(0, idx);
+        }
+        PsiDirectory parent = getPsiDirectory(project, cursor);
+        if (parent == null) {
+            return null;
+        }
+        for (String name : missing) {
+            PsiDirectory sub = parent.findSubdirectory(name);
+            if (sub == null) {
+                PsiDirectory parentDir = parent;
+                AtomicReference<PsiDirectory> created = new AtomicReference<>();
+                WriteCommandAction.runWriteCommandAction(project, () -> created.set(parentDir.createSubdirectory(name)));
+                sub = created.get();
+            }
+            if (sub == null) {
+                return null;
+            }
+            parent = sub;
+        }
+        return parent;
+    }
+
+    /**
      * 清空psi目录
      */
     public static void clearPsiDirectoryMap() {

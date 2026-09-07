@@ -1,47 +1,19 @@
 package com.easy.query.plugin.core;
 
 import com.easy.query.plugin.core.config.CustomConfig;
-import com.easy.query.plugin.core.entity.AptFileCompiler;
-import com.easy.query.plugin.core.entity.AptPropertyInfo;
-import com.easy.query.plugin.core.entity.AptSelectPropertyInfo;
-import com.easy.query.plugin.core.entity.AptSelectorInfo;
-import com.easy.query.plugin.core.entity.AptValueObjectInfo;
-import com.easy.query.plugin.core.entity.GenerateFileEntry;
-import com.easy.query.plugin.core.entity.PropertyColumn;
-import com.easy.query.plugin.core.entity.PropertyColumn2Impl;
+import com.easy.query.plugin.core.entity.*;
 import com.easy.query.plugin.core.enums.BeanPropTypeEnum;
 import com.easy.query.plugin.core.enums.FileTypeEnum;
-import com.easy.query.plugin.core.util.ClassUtil;
-import com.easy.query.plugin.core.util.MyModuleUtil;
-import com.easy.query.plugin.core.util.ObjectUtil;
-import com.easy.query.plugin.core.util.PsiUtil;
-import com.easy.query.plugin.core.util.StrUtil;
-import com.easy.query.plugin.core.util.VelocityUtils;
-import com.easy.query.plugin.core.util.VirtualFileUtils;
+import com.easy.query.plugin.core.util.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassOwner;
-import com.intellij.psi.PsiClassType;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.psi.*;
 import org.apache.velocity.VelocityContext;
 import org.jetbrains.kotlin.psi.KtFile;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * create time 2024/4/27 09:56
@@ -83,7 +55,7 @@ public class APTVersion2_5 {
         TYPE_COLUMN_MAPPING.put("boolean", new PropertyColumn2Impl("SQLBooleanTypeColumn", "java.lang.Boolean"));
     }
 
-    public static void generateApt(Project project, Map<PsiDirectory, List<GenerateFileEntry>> psiDirectoryMap,
+    public static void generateApt(Project project, Map<String, List<GenerateFileEntry>> psiDirectoryMap,
                                    PsiAnnotation entityFileProxy, PsiAnnotation entityProxy,
                                    PsiClassOwner psiFile, String moduleDirPath, CustomConfig config,
                                    Module moduleForFile, PsiClass psiClass,
@@ -98,12 +70,11 @@ public class APTVersion2_5 {
 
 
         FileTypeEnum fileType = PsiUtil.getFileType(psiFile);
-        String path = moduleDirPath + CustomConfig.getConfig(config,config.getGenPath(),fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
+        String path = moduleDirPath + CustomConfig.getConfig(config, config.getGenPath(), fileType, MyModuleUtil.isMavenProject(moduleForFile), entityFileProxy != null)
                 + psiFile.getPackageName().replace(".", "/") + "/proxy";
 
-        PsiDirectory psiDirectory = VirtualFileUtils.createSubDirectory(moduleForFile, path);
-        // 等待索引准备好
-        DumbService.getInstance(project).runWhenSmart(() -> {
+        // 索引就绪由驱动方（runReadActionInSmartMode）保证；不再经 runWhenSmart 跳回 EDT 执行
+        Runnable generateBody = () -> {
             // 在智能模式下，执行需要等待索引准备好的操作，比如创建文件
             // 创建文件等操作代码
             oldFile.putUserData(EasyQueryDocumentChangeHandler.CHANGE, false);
@@ -127,7 +98,7 @@ public class APTVersion2_5 {
             aptFileCompiler.addImports(entityFullName);
             for (PsiField field : fields) {
                 boolean isStatic = PsiUtil.fieldIsStatic(field);
-                if(isStatic){
+                if (isStatic) {
                     continue;
                 }
                 PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
@@ -139,7 +110,7 @@ public class APTVersion2_5 {
                 if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(name)) {
                     continue;
                 }
-                BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, name);
+                BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, field);
                 if (beanPropType == BeanPropTypeEnum.NOT) {
                     continue;
                 }
@@ -154,7 +125,7 @@ public class APTVersion2_5 {
                 String proxyPropertyName = PsiUtil.getPsiAnnotationValue(proxyProperty, "value", null);
                 String generateAnyType = PsiUtil.getPsiAnnotationValue(proxyProperty, "generateAnyType", null);
                 Boolean anyType = StrUtil.isBlank(generateAnyType) ? null : Objects.equals("true", generateAnyType);
-                PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType,anyType);
+                PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType, anyType);
 
                 boolean includeProperty = navigate != null;
                 boolean includeManyProperty = false;
@@ -204,12 +175,13 @@ public class APTVersion2_5 {
             String suffix = ".java"; //Modules.getProjectTypeSuffix(moduleForFile);
             PsiFile psiProxyFile = VelocityUtils.render(project, context, Template.getTemplateContent("AptTemplate2_5" + suffix), proxyEntityName + suffix);
 //            CodeStyleManager.getInstance(project).reformat(psiProxyFile);
-            psiDirectoryMap.computeIfAbsent(psiDirectory, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
-        });
+            psiDirectoryMap.computeIfAbsent(path, k -> new ArrayList<>()).add(new GenerateFileEntry(psiProxyFile, allCompileFrom, strategy));
+        };
+        generateBody.run();
     }
 
-    private static PropertyColumn getPropertyColumn(String fieldGenericType,Boolean anyType) {
-        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn2Impl("SQLAnyTypeColumn", fieldGenericType,anyType));
+    private static PropertyColumn getPropertyColumn(String fieldGenericType, Boolean anyType) {
+        return TYPE_COLUMN_MAPPING.getOrDefault(fieldGenericType, new PropertyColumn2Impl("SQLAnyTypeColumn", fieldGenericType, anyType));
     }
 
     private static String getNavigatePropertyProxyFullName(Project project, String fullClassName, boolean propIsProxy) {
@@ -259,7 +231,7 @@ public class APTVersion2_5 {
         aptFileCompiler.addImports(fieldValueObjectClass.getQualifiedName());
         for (PsiField field : allFields) {
             boolean isStatic = PsiUtil.fieldIsStatic(field);
-            if(isStatic){
+            if (isStatic) {
                 continue;
             }
             PsiAnnotation columnIgnore = field.getAnnotation("com.easy.query.core.annotation.ColumnIgnore");
@@ -271,7 +243,7 @@ public class APTVersion2_5 {
             if (!tableAndProxyIgnoreProperties.isEmpty() && tableAndProxyIgnoreProperties.contains(parentProperty + "." + name)) {
                 continue;
             }
-            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, name);
+            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(fieldValueObjectClass, field);
             if (beanPropType == BeanPropTypeEnum.NOT) {
                 continue;
             }
@@ -288,7 +260,7 @@ public class APTVersion2_5 {
             String generateAnyType = PsiUtil.getPsiAnnotationValue(proxyProperty, "generateAnyType", null);
             Boolean anyType = StrUtil.isBlank(generateAnyType) ? null : Objects.equals("true", generateAnyType);
 
-            PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType,anyType);
+            PropertyColumn propertyColumn = getPropertyColumn(psiFieldPropertyType, anyType);
             aptFileCompiler.addImports(propertyColumn.getImport());
 
             boolean includeProperty = navigate != null;
