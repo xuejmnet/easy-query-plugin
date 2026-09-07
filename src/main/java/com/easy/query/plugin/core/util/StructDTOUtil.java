@@ -66,7 +66,7 @@ public class StructDTOUtil {
             }
 
             // 字段不包含 getter 和 setter 直接跳过
-            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, fieldName);
+            BeanPropTypeEnum beanPropType = ClassUtil.hasGetterAndSetter(psiClass, psiField);
             if (beanPropType == BeanPropTypeEnum.NOT) {
                 continue;
             }
